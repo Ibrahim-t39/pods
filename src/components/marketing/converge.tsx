@@ -2,7 +2,9 @@
 //   <Converge />  the logo's three circles, each with its white dot (the person), drift from apart into the logo's
 //                 overlap. Overlaps are mixed in OKLCH (pink, gold, teal) and the centre where all three meet turns
 //                 light: the pod. Geometry = brand/mark.svg (r 97, dots r 24). Used by the hero and "Finding your pod".
-//   <Huddle />    four people of one pod (flat, multiply on paper so overlaps deepen in the pod's own hue, never mud).
+//   <Huddle />    four people of one pod: solid discs in a light tint of the pod's hue (founder note 11: never washed-out
+//                 glass), multiplied on paper so each overlap deepens in the same hue (two people = mid blue, all four =
+//                 deep blue), never mud. Names sit with each person while apart.
 //                 Apart while the plan waits, together at the lock, closer still after round two.
 // Transform-free: only SVG geometry attributes and opacity animate. Reduced motion renders the end state.
 "use client";
@@ -134,7 +136,7 @@ export interface HuddleProps {
 }
 
 function hpos(a: number, close: number) {
-  const d = close <= 1 ? 138 - 88 * close : Math.max(26, 50 - (close - 1) * 60);
+  const d = close <= 1 ? 128 - 78 * close : Math.max(30, 50 - (close - 1) * 70);
   const r = (a * Math.PI) / 180;
   return { x: 200 + Math.cos(r) * d, y: 200 + Math.sin(r) * d };
 }

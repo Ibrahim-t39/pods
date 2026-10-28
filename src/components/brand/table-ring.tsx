@@ -241,7 +241,7 @@ export function TableRing({
                 data-nc
                 layoutId="you-disc"
                 className="grid place-items-center rounded-full font-serif leading-none"
-                style={{ position: "absolute", left: x, top: y + ds + 10, width: ds, height: ds, backgroundColor: YOU_COLOR.bg, backgroundImage: "var(--bead)", color: YOU_COLOR.fg, fontSize: Math.round(ds * 0.5), boxShadow: "var(--shadow-bead), var(--shadow-spark)" }}
+                style={{ position: "absolute", left: x, top: y + ds + 10, width: ds, height: ds, backgroundColor: YOU_COLOR.bg, backgroundImage: "var(--bead)", color: YOU_COLOR.fg, fontSize: Math.round(ds * 0.5), boxShadow: "var(--shadow-bead)" }}
               >
                 {st.initial ?? ""}
               </motion.span>

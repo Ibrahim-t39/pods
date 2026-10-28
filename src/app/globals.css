@@ -271,21 +271,23 @@
     --grain-blend: multiply;
     --grain-opacity: 0.035;
   }
+  /* POLISH r1: every journey light is a quiet edge glow (alpha <= .12, tucked off the edge), never a fog behind the
+     headline. The state still reads; the type sits on clean paper. */
   html[data-light="dawn"] {
-    --stage: #F5F9FF;
-    --stage-light: radial-gradient(circle 280px at 18% -40px, rgba(27, 120, 254, 0.24) 0 60%, rgba(27, 120, 254, 0) 100%), radial-gradient(circle 220px at calc(100% + 40px) 120px, rgba(25, 193, 133, 0.18) 0 60%, rgba(25, 193, 133, 0) 100%), radial-gradient(circle 160px at calc(100% + 30px) -30px, rgba(253, 97, 35, 0.12) 0 60%, rgba(253, 97, 35, 0) 100%);
+    --stage: #F6F9FE;
+    --stage-light: radial-gradient(circle 220px at 8% -90px, rgba(27, 120, 254, 0.12) 0 55%, rgba(27, 120, 254, 0) 100%), radial-gradient(circle 170px at calc(100% + 40px) -20px, rgba(25, 193, 133, 0.10) 0 55%, rgba(25, 193, 133, 0) 100%), radial-gradient(circle 130px at calc(100% - 90px) -70px, rgba(253, 97, 35, 0.08) 0 55%, rgba(253, 97, 35, 0) 100%);
   }
   html[data-light="clear"] {
     --stage: #F6FAFE;
-    --stage-light: linear-gradient(180deg, rgba(27, 120, 254, 0.16) 0%, rgba(27, 120, 254, 0) 34%, rgba(25, 193, 133, 0) 70%, rgba(25, 193, 133, 0.16) 100%);
+    --stage-light: linear-gradient(180deg, rgba(27, 120, 254, 0.08) 0%, rgba(27, 120, 254, 0) 22%, rgba(25, 193, 133, 0) 80%, rgba(25, 193, 133, 0.08) 100%);
   }
   html[data-light="rain"] {
-    --stage: #EEF3F7;
-    --stage-light: radial-gradient(100% 60% at 70% 0%, rgba(27, 120, 254, 0.12) 0%, rgba(27, 120, 254, 0) 70%), linear-gradient(180deg, rgba(1, 98, 126, 0.05), rgba(1, 98, 126, 0));
+    --stage: #EFF3F7;
+    --stage-light: radial-gradient(100% 40% at 70% 0%, rgba(27, 120, 254, 0.08) 0%, rgba(27, 120, 254, 0) 70%);
   }
   html[data-light="dusk"] {
-    --stage: #FBF8F8;
-    --stage-light: radial-gradient(70% 42% at 80% 100%, rgba(253, 97, 35, 0.16) 0%, rgba(253, 97, 35, 0) 70%), radial-gradient(60% 40% at 10% 100%, rgba(64, 49, 63, 0.10) 0%, rgba(64, 49, 63, 0) 70%), radial-gradient(60% 40% at 0% 0%, rgba(27, 120, 254, 0.08) 0%, rgba(27, 120, 254, 0) 70%);
+    --stage: #FBF8F7;
+    --stage-light: radial-gradient(70% 30% at 80% 100%, rgba(253, 97, 35, 0.12) 0%, rgba(253, 97, 35, 0) 70%), radial-gradient(50% 30% at 0% 0%, rgba(27, 120, 254, 0.06) 0%, rgba(27, 120, 254, 0) 70%);
   }
   html[data-light="night"] {
     --stage: var(--night);
@@ -469,34 +471,35 @@
    --orb-wash to override the wash (default: --pod-wash). Only on circles that are pods/tables. */
 /* plain classes (always emitted, not scan-dependent) */
 @layer components {
+/* POLISH (founder: "the bubbles are too transparent"): an orb is now a SOLID body. An opaque tint of the pod's hue that
+   deepens toward the rim, the pod's two-circle wash on top, one soft window top-left, and a defined 1.5px edge in the
+   hue. Reads at 16px and at 240px, on any light, and text or pills on it keep AA. One orb moment per screen. */
 .orb {
+  --orb-h: var(--orb, var(--pod));
   border-radius: 9999px;
   mix-blend-mode: normal;
   background:
-    var(--orb-window),
-    var(--orb-kick),
-    radial-gradient(closest-side, rgb(255 255 255 / 0) 60%, color-mix(in oklab, var(--orb, var(--pod)) 24%, transparent) 86%, color-mix(in oklab, var(--orb, var(--pod)) 52%, transparent) 97%, rgb(255 255 255 / .9) 99%, rgb(255 255 255 / 0) 100%),
+    radial-gradient(ellipse 30% 17% at 34% 21%, rgb(255 255 255 / .62) 0, rgb(255 255 255 / 0) 72%),
     var(--orb-wash, var(--pod-wash)),
-    color-mix(in oklab, var(--orb, var(--pod)) 7%, transparent);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .75), 0 24px 50px -28px color-mix(in oklab, var(--orb, var(--pod)) 70%, transparent);
+    radial-gradient(circle at 42% 36%, color-mix(in oklab, var(--orb-h) 74%, white) 0, color-mix(in oklab, var(--orb-h) 88%, white) 62%, color-mix(in oklab, var(--orb-h) 92%, black) 100%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .35), 0 1px 2px color-mix(in oklab, var(--orb-h) 30%, transparent), 0 14px 28px -18px color-mix(in oklab, var(--orb-h) 60%, transparent);
 }
-/* the same orb with a white body behind it (a table top that must hide what is under it) */
+/* the table top: same solid orb, a touch lighter in the middle so names and the Talk pill read on it */
 .orb-solid {
+  --orb-h: var(--orb, var(--pod));
   border-radius: 9999px;
   background:
-    var(--orb-window),
-    radial-gradient(closest-side, rgb(255 255 255 / 0) 62%, color-mix(in oklab, var(--orb, var(--pod)) 22%, transparent) 88%, color-mix(in oklab, var(--orb, var(--pod)) 46%, transparent) 97%, rgb(255 255 255 / .95) 99%, rgb(255 255 255 / 0) 100%),
+    radial-gradient(ellipse 30% 17% at 34% 21%, rgb(255 255 255 / .6) 0, rgb(255 255 255 / 0) 72%),
     var(--orb-wash, var(--pod-wash)),
-    var(--table);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .8), 0 30px 60px -30px color-mix(in oklab, var(--orb, var(--pod)) 60%, transparent);
+    radial-gradient(circle at 44% 38%, color-mix(in oklab, var(--orb-h) 36%, white) 0, color-mix(in oklab, var(--orb-h) 52%, white) 64%, color-mix(in oklab, var(--orb-h) 74%, white) 100%);
+  box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--orb-h) 62%, white), 0 1px 2px color-mix(in oklab, var(--orb-h) 26%, transparent), 0 24px 48px -30px color-mix(in oklab, var(--orb-h) 70%, transparent);
 }
-/* a pod that is not yet yours (after #1, open to join): a ghost bubble, rim and window only */
+/* a pod that is not yet yours: an outline with a faint tint (clearly "open", still legible) */
 .orb-ghost {
+  --orb-h: var(--orb, var(--pod));
   border-radius: 9999px;
-  background:
-    radial-gradient(ellipse 30% 16% at 32% 20%, rgb(255 255 255 / .7) 0, rgb(255 255 255 / 0) 72%),
-    radial-gradient(closest-side, rgb(255 255 255 / 0) 84%, color-mix(in oklab, var(--orb, var(--pod)) 22%, transparent) 97%, rgb(255 255 255 / 0) 100%);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--orb, var(--pod)) 30%, transparent);
+  background: color-mix(in oklab, var(--orb-h) 8%, white);
+  box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--orb-h) 45%, white);
 }
 /* the same orb on the moment's deep field: clear lit glass, a lit rim and a window (names sit outside it) */
 .orb-night {
@@ -667,7 +670,7 @@ html:not([data-light])[data-daypart="evening"] {
   --stage: var(--paper-evening);
 }
 html[data-daypart="evening"] {
-  --mesh-page: radial-gradient(circle 240px at calc(100% - 30px) 40px, rgba(253,97,35,.22) 0 62%, rgba(253,97,35,0) 100%), radial-gradient(circle 230px at calc(100% - 170px) 190px, rgba(27,120,254,.15) 0 62%, rgba(27,120,254,0) 100%), radial-gradient(circle 230px at calc(100% + 50px) 230px, rgba(64,49,63,.12) 0 62%, rgba(64,49,63,0) 100%);
+  --mesh-page: radial-gradient(circle 170px at calc(100% + 10px) -20px, rgba(253,97,35,.16) 0 55%, rgba(253,97,35,0) 100%), radial-gradient(circle 160px at calc(100% - 110px) -60px, rgba(27,120,254,.10) 0 55%, rgba(27,120,254,0) 100%), radial-gradient(circle 160px at calc(100% + 40px) 90px, rgba(25,193,133,.08) 0 55%, rgba(25,193,133,0) 100%);
 }
 
 /* The Director sits on the moment stage (wireframe K05): every role inside it reads lamp on the deep field. */
@@ -691,3 +694,12 @@ html[data-daypart="evening"] {
 /* One voice: no italics in display lines; the emphasised word is upright (colour carries emphasis instead). */
 .line em, .line i, .font-serif em, .font-serif i, [class*="text-display"] em, [class*="text-heading"] em, .italic { font-style: normal; }
 
+
+/* POLISH (founder: "not feeling the look"; fewer bubbles): the nav's active item is a flat tint of the plan's blue,
+   not a lit glass bead with a ring and a glow. Selected reads by colour and weight, like the best floating tab bars (r1). */
+.pods-nav-capsule .pods-nav-bubble,
+.pods-nav-rail .pods-nav-bubble {
+  background-color: var(--color-primary-soft);
+  background-image: none;
+  box-shadow: none;
+}

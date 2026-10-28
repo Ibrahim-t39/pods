@@ -24,6 +24,7 @@ export const TRIGGER_GROUP: Record<AppNotification["trigger"], NotificationGroup
   poll_opened: "podChat",
   reply: "podChat",
   pod_request: "news",
+  new_match: "news",
 };
 
 export function inQuietHours(iso: string): boolean {

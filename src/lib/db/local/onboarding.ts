@@ -4,6 +4,7 @@
 // `onboarding_step` always names the NEXT thing to do, so /app can resume (see components/onboarding/steps.ts).
 // Placement itself is U3's pure engine (src/lib/placement); this module only gates, applies and records it.
 import type { RepoCtx } from "./context";
+import { dropMatches, refreshMatches } from "./matches";
 import { ok, err, type RepoPart, type AppError } from "@/lib/db/repo";
 import { ageOn } from "@/lib/utils";
 import { newId } from "@/lib/ids";
@@ -106,11 +107,19 @@ export function onboardingRepo(
       if (faith?.code.startsWith("custom:") && faith.code.length > 47)
         return err({ code: "VALIDATION", field: "faith", message: "Keep it under 40 characters." });
       ctx.commit((d) => {
+        const before = d.identities[me];
         // Edge case 5: skipped or no consent → nothing stored (and anything stored before is removed).
         if (!consent || (!heritage && !faith)) delete d.identities[me];
         else d.identities[me] = { user_id: me, heritage, faith, consent_given_at: ctx.now() };
+        // A changed community drops its open or set-aside match, so the new one is looked for.
+        const after = d.identities[me];
+        dropMatches(d, me, (m) =>
+          m.kind === "interest" ? true : (m.kind === "heritage" ? before?.heritage?.code === after?.heritage?.code : before?.faith?.code === after?.faith?.code),
+        );
       });
       advance(me, "availability");
+      // After sign-up, a community added or changed in Your seat proposes its pod (Join / Not now).
+      refreshMatches(ctx);
       return ok(undefined);
     },
     async setAvailability(slots, blockedDays = []) {

@@ -1,9 +1,9 @@
 // [U8] Profile edits, interests, identity field deletion. U0 wrote a minimal working version; U8 owns it.
 import type { RepoCtx } from "./context";
-import { ensureStarterPlans } from "./starter";
+import { dropMatches, refreshMatches } from "./matches";
 import { ok, err, type RepoPart } from "@/lib/db/repo";
 import { newId } from "@/lib/ids";
-import { applyPlacementPlan, makeRun, placeUser } from "@/lib/placement";
+import { makeRun } from "@/lib/placement";
 
 export function profileRepo(ctx: RepoCtx): RepoPart<"updateProfile" | "addInterest" | "removeInterest" | "deleteIdentityField"> {
   return {
@@ -27,23 +27,23 @@ export function profileRepo(ctx: RepoCtx): RepoPart<"updateProfile" | "addIntere
       await ctx.latency();
       const me = ctx.meId();
       if (!me) return err({ code: "FORBIDDEN" });
+      if (!ctx.get().interests[id]?.active) return err({ code: "VALIDATION", field: "interests", message: "Pick from the list." });
       ctx.commit((d) => {
         if (!d.userInterests.some((u) => u.user_id === me && u.interest_id === id)) d.userInterests.push({ user_id: me, interest_id: id });
       });
-      // Place this one new interest only; existing pods are left alone.
+      // Likes are never final: a like added after sign-up proposes a pod ("New pod for you", Join / Not now).
+      // Nothing is joined here; the run returned is the dry run of what was found.
       const now = ctx.now();
-      const out = placeUser(ctx.get(), me, { now });
-      if (!out.ok) return ok(makeRun(newId("prun"), me, now, []));
-      const results = out.results.filter((r) => r.candidate.type === "interest" && r.candidate.topic_key === id);
-      const podIds = new Set(results.map((r) => r.pod_id));
-      const plan = { results, newPods: out.newPods.filter((np) => podIds.has(np.pod.id)) };
-      const run = makeRun(newId("prun"), me, now, results);
-      ctx.commit((d) => {
-        applyPlacementPlan(d, plan, me, now);
-        d.placementRuns.push(run);
-      });
-      await ensureStarterPlans(ctx, [...podIds].filter((x): x is string => !!x)); // Platform §F3
-      return ok(run);
+      const made = refreshMatches(ctx);
+      const results = makeRun(newId("prun"), me, now, [], true);
+      results.results = made.map((m) => ({
+        candidate: { type: "interest", community_kind: null, topic_key: m.topic_key, label: m.label },
+        outcome: ctx.get().pods[m.pod_id] ? "joined_existing" : "created_new",
+        pod_id: m.pod_id,
+        steps: [],
+        user_note: m.note,
+      }));
+      return ok(results);
     },
     async removeInterest(id) {
       await ctx.latency();
@@ -54,6 +54,8 @@ export function profileRepo(ctx: RepoCtx): RepoPart<"updateProfile" | "addIntere
         // Leave the matching interest pod, no rematch (edge case 27).
         for (const m of d.memberships)
           if (m.user_id === me && !m.left_at && d.pods[m.pod_id]?.type === "interest" && d.pods[m.pod_id].topic_key === id) m.left_at = ctx.now();
+        // An open or set-aside match for this like goes too, so adding it again looks again.
+        dropMatches(d, me, (m) => !(m.kind === "interest" && m.topic_key === id));
       });
       return ok(undefined);
     },
@@ -67,6 +69,7 @@ export function profileRepo(ctx: RepoCtx): RepoPart<"updateProfile" | "addIntere
         if (ident && !ident.heritage && !ident.faith) delete d.identities[me];
         for (const m of d.memberships)
           if (m.user_id === me && !m.left_at && d.pods[m.pod_id]?.community_kind === field) m.left_at = ctx.now();
+        dropMatches(d, me, (m) => m.kind !== field);
       });
       return ok(undefined);
     },

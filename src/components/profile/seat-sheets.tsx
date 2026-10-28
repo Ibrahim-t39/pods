@@ -7,6 +7,8 @@ import { useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Button, Chip, ResponsiveSheet, notify } from "@/components/ui";
 import { Disc } from "@/components/brand/disc";
+import { CirclesLoader } from "@/components/brand/circles-loader";
+import { NewPodCard } from "@/components/placement/new-pod";
 import { SNAPPY } from "@/components/brand/table-ring";
 import { useDb, useMe, useRepo } from "@/lib/db/hooks";
 import { faithLadder, faithNode, heritageLadder, heritageNode } from "@/data/taxonomy";
@@ -29,14 +31,29 @@ export function LikesSheet({ open, onClose }: SheetProps) {
   const me = useMe();
   const all = useDb((db) => Object.values(db.interests).filter((i) => i.active));
   const mine = useDb((db) => db.userInterests.filter((u) => u.user_id === db.me).map((u) => u.interest_id));
+  const max = useDb((db) => db.config.placement.maxInterestPods);
   const file = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // The last like you added and what placement found for it (continuous placement: likes are never final).
+  const [found, setFound] = useState<{ id: string; word: string; state: "looking" | "match" | "none" } | null>(null);
+  const match = useDb((db) => (found?.state === "match" ? ((db.podMatches ?? []).find((m) => m.user_id === db.me && m.kind === "interest" && m.topic_key === found.id) ?? null) : null));
+  const full = mine.length >= max;
 
-  async function toggle(id: string, on: boolean) {
+  async function toggle(id: string, on: boolean, word: string) {
+    if (on && full) return;
     setBusy(id);
+    if (on) setFound({ id, word, state: "looking" });
     const r = on ? await repo.addInterest(id) : await repo.removeInterest(id);
     setBusy(null);
-    if (!r.ok) notify.error("Not saved. Try again.");
+    if (!r.ok) {
+      notify.error("Not saved. Try again.");
+      setFound(null);
+      return;
+    }
+    if (on) {
+      const run = r.data as { results?: { candidate: { topic_key: string } }[] } | undefined;
+      setFound({ id, word, state: run?.results?.some((x) => x.candidate.topic_key === id) ? "match" : "none" });
+    } else if (found?.id === id) setFound(null);
   }
 
   function pickPhoto(f: File | undefined) {
@@ -49,20 +66,50 @@ export function LikesSheet({ open, onClose }: SheetProps) {
     reader.readAsDataURL(f);
   }
 
+  // yours first, then the rest: what you hold reads as one group, what you can add as another (Meetup, Bumble)
+  const ordered = [...all.filter((i) => mine.includes(i.id)), ...all.filter((i) => !mine.includes(i.id))];
   const photo = me?.photo_urls[0];
   return (
-    <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="You’re into" footer={done(onClose)}>
+    <ResponsiveSheet
+      open={open}
+      onOpenChange={(o) => !o && onClose()}
+      title="You’re into"
+      // one filled primary per sheet: while a new pod asks Join, Done steps back to the quiet pill
+      footer={<SheetFoot right={<Button variant={match && match.status === "new" ? "secondary" : "primary"} onClick={onClose}>Done</Button>} />}
+    >
       <PageName>Your seat</PageName>
-      <div className="flex flex-wrap gap-s2" role="group" aria-label="You’re into">
-        {all.map((i) => {
+      <SheetLine className="-mt-s3 mb-s6">{full ? `Up to ${max}. Remove one to add another.` : "Add more anytime. New pods find you."}</SheetLine>
+      <motion.div layout className="flex flex-wrap gap-s2" role="group" aria-label="You’re into">
+        {ordered.map((i) => {
           const on = mine.includes(i.id);
           const word = shortLike(i.id, i.label);
+          const label = word.charAt(0).toUpperCase() + word.slice(1);
           return (
-            <Chip key={i.id} size="sm" selected={on} className={on ? "border-select bg-select text-on-select" : "hover:border-select"} disabled={busy === i.id || (on && mine.length === 1)} onSelectedChange={(v) => toggle(i.id, v)}>
-              {word.charAt(0).toUpperCase() + word.slice(1)}
-            </Chip>
+            <motion.span key={i.id} layout="position" transition={SNAPPY}>
+              <Chip
+                size="sm"
+                selected={on}
+                aria-label={label}
+                className={on ? "border-select bg-select text-on-select" : "hover:border-select"}
+                disabled={busy === i.id || (on && mine.length === 1) || (!on && full)}
+                onSelectedChange={(v) => toggle(i.id, v, word)}
+              >
+                {label}
+              </Chip>
+            </motion.span>
           );
         })}
+      </motion.div>
+      <div aria-live="polite" className="mt-s6 empty:hidden">
+        {found?.state === "looking" && (
+          <p className="flex min-h-14 items-center gap-s3 text-label text-ink-2">
+            <CirclesLoader size={28} label="Looking" /> Looking for a {found.word} pod
+          </p>
+        )}
+        {found?.state === "match" && match && <NewPodCard match={match} variant="inline" onSkipped={() => setFound(null)} />}
+        {found?.state === "none" && (
+          <p className="min-h-14 text-label text-ink-2">No {found.word} pod nearby yet. We’ll keep looking.</p>
+        )}
       </div>
       <div className="mt-s8 flex items-center gap-s4 border-t border-line pt-s4">
         {photo ? (
@@ -180,25 +227,44 @@ export function CommunitySheet({ open, onClose }: SheetProps) {
   const h = ident?.heritage ?? null;
   const f = ident?.faith ?? null;
 
+  // a community added here proposes its pod (continuous placement); the newest open one shows under the rows
+  const [asked, setAsked] = useState<{ kind: "heritage" | "faith"; before: string[] } | null>(null);
+  const known = useDb((db) => (db.podMatches ?? []).map((m) => m.id));
+  const match = useDb((db) =>
+    asked ? ((db.podMatches ?? []).filter((m) => !asked.before.includes(m.id) && m.user_id === db.me && m.kind === asked.kind && m.status !== "skipped").at(-1) ?? null) : null,
+  );
+
   async function pick(o: Opt) {
+    const before = known;
     const isH = !!o.heritage;
     const on = isH ? under(h?.code, o.key, "heritage") : under(f?.code, o.key, "faith");
     const r = on
       ? await repo.deleteIdentityField(isH ? "heritage" : "faith")
       : await repo.setIdentity({ heritage: isH ? o.heritage : h, faith: isH ? f : o.faith, consent: true });
     if (!r.ok) notify.error("Not saved. Try again.");
+    else setAsked(on ? null : { kind: isH ? "heritage" : "faith", before });
   }
 
   return (
-    <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="Community pods" footer={done(onClose)}>
+    <ResponsiveSheet
+      open={open}
+      onOpenChange={(o) => !o && onClose()}
+      title="Community pods"
+      footer={<SheetFoot right={<Button variant={match && match.status === "new" ? "secondary" : "primary"} onClick={onClose}>Done</Button>} />}
+    >
       <PageName>Your seat</PageName>
-      <SheetLine className="-mt-s3 mb-s4">Only members see you there.</SheetLine>
+      <SheetLine className="-mt-s3 mb-s4">Only members see you there. Change it anytime.</SheetLine>
       <Rows label="Community pods">
         {COMMUNITY.map((o) => {
           const on = o.heritage ? under(h?.code, o.key, "heritage") : under(f?.code, o.key, "faith");
           return <ChoiceRow key={o.key} on={on} hue="grove" label={ownLabel(o, o.heritage ? h?.code : f?.code)} onToggle={() => pick(o)} />;
         })}
       </Rows>
+      {match && (
+        <div aria-live="polite" className="mt-s6">
+          <NewPodCard key={match.id} match={match} variant="inline" onSkipped={() => setAsked(null)} />
+        </div>
+      )}
     </ResponsiveSheet>
   );
 }

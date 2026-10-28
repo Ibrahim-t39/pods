@@ -202,8 +202,8 @@ function PodTableInner({ podId }: { podId: string }) {
       </div>
       {stage.overlay}
 
-      {docked && <TalkPanel podId={podId} podName={name} hue={hue} focusKey={focusTalk} />}
-      <TalkSheet open={!docked && sheet === "talk"} onOpenChange={(o) => (o ? setSheet("talk") : close())} podId={podId} podName={name} hue={hue} />
+      {docked && <TalkPanel podId={podId} podName={name} hue={hue} focusKey={focusTalk} onMembers={() => setSheet("members")} />}
+      <TalkSheet open={!docked && sheet === "talk"} onOpenChange={(o) => (o ? setSheet("talk") : close())} podId={podId} podName={name} hue={hue} onMembers={() => setSheet("members")} />
       <PodMenuSheet
         open={sheet === "menu"}
         onOpenChange={(o) => (o ? setSheet("menu") : close())}

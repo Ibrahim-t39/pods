@@ -122,7 +122,7 @@ function Problem() {
 }
 
 /* ── Built for meeting in person: mechanisms only, no "safe" or "verified" claims ──────────────────────────── */
-const SAFE = ["Public places, in daylight.", "Check in when you arrive.", "Report or block in one tap.", "18 and up. Leave anytime."];
+const SAFE = ["A live check before you join.", "Public places, in daylight.", "Check in when you arrive.", "Report or block in one tap."];
 
 function Safe() {
   return (

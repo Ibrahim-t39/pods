@@ -23,6 +23,7 @@ import { unreadCount } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
 import { dayWord, firstName, nextLine, opensAfter, roomTables, shortTime, tableState, type RoomTable } from "./model";
 import { sourceLine } from "./table-stage";
+import { NewPodsOnHome } from "@/components/placement/new-pod";
 import "./pods.css";
 
 const OVERLINE: Record<string, string> = {
@@ -103,6 +104,7 @@ export function Home() {
             {head}
             {lead && <Lead table={lead} minute={minute} moment={moment.moment} />}
           </section>
+          <NewPodsOnHome className="pods-home-new" />
           {tables.length > 0 && <PodOrbs tables={tables} minute={minute} widened={widened} needs={needs} />}
           {unread > 0 && (
             <Link href="/app/inbox" className="pods-home-inbox pressable flex min-h-14 items-center gap-s3 border-y border-line outline-offset-[-2px]">

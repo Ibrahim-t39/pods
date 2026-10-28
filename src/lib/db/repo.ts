@@ -29,6 +29,7 @@ import type {
   Memory,
   Invite,
   PodRequest,
+  PodMatch,
   ReactionKey,
   TrustedContact,
 } from "@/lib/types";
@@ -85,6 +86,11 @@ export interface Repo {
   addInterest(id: string): Promise<Result<PlacementRun>>;
   removeInterest(id: string): Promise<Result<void>>;
   deleteIdentityField(field: "heritage" | "faith"): Promise<Result<void>>;
+  // + Interests (continuous placement): likes and communities added after sign-up propose pods; nothing is joined
+  // until the person says so. findPodMatches re-scans and returns the matches it just created.
+  findPodMatches(): Promise<Result<PodMatch[]>>;
+  joinPodMatch(matchId: string): Promise<Result<{ podId: string }>>;
+  skipPodMatch(matchId: string): Promise<Result<void>>;
   report(input: {
     reportedUserId?: string;
     podId?: string;

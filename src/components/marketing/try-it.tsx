@@ -178,7 +178,7 @@ function Fit() {
   };
   return (
     <div id="fit" className="tr-beat">
-      <Head k="Fit" line="What do you like?" sub="Pick up to three." />
+      <Head k="Fit" line="What do you like?" sub="Pick a few. Add more anytime." />
       <div className="tr-obj tr-fit">
         <div className="tr-chips" role="group" aria-label="Interests">
           {INTERESTS.map((i) => {
@@ -216,27 +216,29 @@ function Pod() {
   const key = `${pod.k}-${run}-${played}`;
   return (
     <div id="pod" className="tr-beat">
-      <Head k="Pod" line={<>Your pod: <span className="tr-pod">{pod.pod}</span>.</>} sub={others.length ? `And ${others.join(", ")}.` : "8 people who fit. Same pod each time."} />
+      <Head k="Pod" line={<>Your pod: <span className="tr-pod">{pod.pod}</span>.</>} sub={others.length ? `And ${others.join(", ")}.` : "Placed by what you like and when you're free."} />
       <div className="tr-obj tr-podobj" ref={ref}>
         <Converge key={key} from={0} to={played ? 1 : 0} duration={2} delay={0.15} className="tr-cv" center={<span className="tr-cv-l">{pod.pod}</span>} />
-        <ul className="tr-members" aria-label={`${pod.pod}, 8 people`}>
-          <li className="tr-m tr-m-you">
-            <i aria-hidden />
-            You
-          </li>
-          {MEMBERS.map((m, i) => (
-            <motion.li
-              key={`${m}-${key}`}
-              className="tr-m"
-              initial={{ opacity: 0, y: 6 }}
-              animate={played ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
-              transition={calm ? { duration: 0 } : { ...SNAPPY, delay: 1.6 + i * 0.07 }}
-            >
-              <i aria-hidden />
-              {m}
-            </motion.li>
-          ))}
-        </ul>
+        <div className="tr-facewrap">
+          <ul className="tr-faces" aria-label={`${pod.pod}, 8 people`}>
+            <li className="tr-face" data-you="" aria-label="You">
+              You
+            </li>
+            {MEMBERS.map((m, i) => (
+              <motion.li
+                key={`${m}-${key}`}
+                className="tr-face"
+                aria-label={m}
+                initial={{ opacity: 0, scale: 0.6 }}
+                animate={played ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
+                transition={calm ? { duration: 0 } : { ...SNAPPY, delay: 1.5 + i * 0.07 }}
+              >
+                {m[0]}
+              </motion.li>
+            ))}
+          </ul>
+          <p className="tr-faces-l">8 people. Same pod each time.</p>
+        </div>
         {!picked.length && !done.fit && <p className="tr-note">Showing basketball. Pick yours above.</p>}
       </div>
     </div>
@@ -358,7 +360,7 @@ function Repeat() {
     <div id="repeat" className="tr-beat">
       <Head k="Repeat" line={all ? "Hangout #2 is on." : "After: run it back?"} sub={all ? `Same people. ${pod.next}.` : "Pods asks, so nobody has to."} />
       <div className="tr-obj tr-repobj">
-        <Huddle n={4} close={all ? 1.4 : 1} names={["Jordan", "Amara", "Theo", "You"]} className="tr-hd tr-hd-sm" />
+        <Huddle n={4} close={all ? 1.2 : 1} names={["Jordan", "Amara", "Theo", "You"]} className="tr-hd tr-hd-sm" />
         <div className="tr-vote">
           <span className="tr-votes" aria-hidden>
             {[0, 1, 2, 3].map((i) => (

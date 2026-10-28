@@ -131,7 +131,7 @@ html:has(.lp) { scroll-padding-top: 128px; }
 .cv-grove { fill: var(--pods-grove); }
 /* luminous mixes: OKLCH midpoints keep lightness, so overlaps glow instead of going brown */
 .cv-es { fill: color-mix(in oklch, color-mix(in oklch, var(--pods-ember), var(--pods-signal)) 88%, var(--lit)); }
-.cv-eg { fill: color-mix(in oklch, color-mix(in oklch, var(--pods-ember) 60%, var(--pods-grove)) 84%, var(--lit)); }
+.cv-eg { fill: color-mix(in oklch, color-mix(in oklch, var(--pods-ember) 64%, var(--pods-grove)) 76%, var(--lit)); }
 .cv-sg { fill: color-mix(in oklch, color-mix(in oklch, var(--pods-signal), var(--pods-grove)) 90%, var(--lit)); }
 .cv-all { fill: color-mix(in oklch, var(--lit) 78%, var(--pods-signal)); }
 .cv-dot { fill: var(--lit); }
@@ -269,11 +269,9 @@ html:has(.lp) { scroll-padding-top: 128px; }
   position: sticky;
   top: 64px;
   z-index: 30;
-  margin-inline: calc(var(--gut) * -1);
-  padding: 8px var(--gut);
-  background: color-mix(in oklch, var(--paper) 96%, transparent);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  margin-inline: calc(50% - 50vw);
+  padding: 8px max(var(--gut), calc(50vw - var(--max) / 2 + var(--gut)));
+  background: var(--paper);
   box-shadow: 0 1px 0 var(--line);
 }
 .tr-rail ol { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
@@ -314,12 +312,28 @@ html:has(.lp) { scroll-padding-top: 128px; }
 .tr-sub { margin: 0; font-size: 18px; line-height: 1.45; color: var(--ink-2); max-width: 30ch; }
 @media (min-width: 1024px) { .tr-sub { font-size: 20px; } }
 .tr-pod { color: var(--color-signal-text); }
-.tr-obj { display: grid; gap: 24px; justify-items: center; min-width: 0; }
+/* the stage: each beat's live piece of Pods sits on one calm tinted surface (the pod's colours at a whisper), so
+   the object, its count and its one action read as one group, and laptop beats fill their column. */
+.tr-obj {
+  display: grid;
+  gap: 24px;
+  justify-items: center;
+  align-content: center;
+  min-width: 0;
+  min-height: 400px;
+  padding: 32px 20px;
+  border-radius: 32px;
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in oklch, var(--pods-signal) 9%, transparent), transparent 60%),
+    radial-gradient(120% 90% at 100% 100%, color-mix(in oklch, var(--pods-grove) 8%, transparent), transparent 60%),
+    color-mix(in oklch, var(--lit) 70%, var(--paper));
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+@media (min-width: 1024px) { .tr-obj { min-height: 560px; padding: 48px; border-radius: 40px; } }
 .tr-note { margin: 0; font-size: 14px; color: var(--ink-3); }
 
 /* fit */
-.tr-fit { justify-items: start; }
-.tr-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.tr-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 520px; }
 .tr-chip {
   display: inline-flex;
   align-items: center;
@@ -356,15 +370,31 @@ html:has(.lp) { scroll-padding-top: 128px; }
   box-shadow: 0 6px 20px -8px rgb(14 26 34 / .35);
 }
 @media (min-width: 1024px) { .tr-cv-l { font-size: 20px; padding: 8px 18px; } }
-.tr-members { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; margin: 0; padding: 0; list-style: none; max-width: 360px; }
-@media (min-width: 1024px) { .tr-members { max-width: 520px; } .tr-m { font-size: 17px; } }
-.tr-m { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 500; color: var(--ink-2); }
-.tr-m i { width: 12px; height: 12px; border-radius: 999px; background: var(--pods-signal); }
-.tr-m-you { color: var(--ink); font-weight: 600; }
-.tr-m-you i { background: var(--ink); }
+/* the pod's eight people: flat solid discs with initials, slightly overlapping (people, sharing), you in ink */
+.tr-faces { display: flex; justify-content: center; margin: 0; padding: 0 0 0 8px; list-style: none; }
+.tr-face {
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  padding-inline: 0;
+  width: 40px;
+  height: 40px;
+  margin-left: -8px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lit);
+  background: var(--pods-signal);
+  box-shadow: 0 0 0 3px var(--paper);
+}
+.tr-face[data-you] { width: auto; padding-inline: 14px; background: var(--ink); }
+.tr-facewrap { display: grid; gap: 12px; justify-items: center; }
+.tr-faces-l { margin: 0; font-size: 15px; font-weight: 500; color: var(--ink-2); text-align: center; }
+@media (min-width: 1024px) { .tr-face { width: 52px; height: 52px; font-size: 17px; } .tr-faces-l { font-size: 17px; } }
 
 /* plan */
 .tr-card-wrap { width: min(100%, 400px); }
+.tr-card-wrap .tr-card { box-shadow: 0 1px 0 var(--line), 0 24px 48px -24px rgb(14 26 34 / .22); }
 .tr-card {
   min-height: 300px;
   padding: 24px;
@@ -397,9 +427,9 @@ html:has(.lp) { scroll-padding-top: 128px; }
 
 /* I'm in + repeat */
 .tr-hd { width: min(72vw, 280px); overflow: visible; isolation: isolate; }
-.tr-hd-sm { width: min(64vw, 240px); }
-@media (min-width: 1024px) { .tr-hd { width: 420px; } .tr-hd-sm { width: 380px; } }
-.hd-c { fill: var(--pods-signal); opacity: .5; mix-blend-mode: multiply; }
+.tr-hd-sm { width: min(72vw, 280px); }
+@media (min-width: 1024px) { .tr-hd { width: 400px; } .tr-hd-sm { width: 400px; } }
+.hd-c { fill: color-mix(in oklch, var(--pods-signal) 58%, var(--lit)); mix-blend-mode: multiply; }
 .hd-dot { fill: var(--lit); }
 .hd-you-dot { fill: var(--ink); }
 .hd-open { fill: none; stroke: var(--line-2); stroke-width: 2; stroke-dasharray: 6 6; }
@@ -436,3 +466,8 @@ html:has(.lp) { scroll-padding-top: 128px; }
     }
   }
 }
+
+/* the converge svg carries air around the mark; pull the faces up so the pod and its people read as one group */
+.tr-podobj { gap: 8px; }
+.tr-podobj .tr-cv { margin-block: -28px -8px; }
+@media (min-width: 1024px) { .tr-podobj .tr-cv { width: 420px; margin-block: -48px -16px; } }

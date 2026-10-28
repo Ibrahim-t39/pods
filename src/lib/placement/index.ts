@@ -7,3 +7,4 @@ export * from "./offers";
 export * from "./preview";
 export * from "./explain";
 export * from "./taxonomy";
+export * from "./matches";

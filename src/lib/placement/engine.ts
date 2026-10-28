@@ -340,7 +340,8 @@ function processCandidate(ctx: Ctx, c: Candidate): Processed {
       const topic = c.type === "interest" ? g.label : g.label;
       const pod: Pod = {
         id,
-        name: c.type === "interest" ? `Huntsville ${g.label}` : `${cap(g.label)} · Huntsville`,
+        // No city in a pod name (product rule 5): the city lives in the venue address only.
+        name: c.type === "interest" ? `${cap(g.label)} crew` : `${cap(g.label)} young adults`,
         photo_url: "",
         type: c.type,
         community_kind: c.community_kind,

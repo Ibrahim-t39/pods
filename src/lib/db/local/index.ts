@@ -8,6 +8,7 @@ import { podsRepo } from "./pods";
 import { chatRepo } from "./chat";
 import { hangoutsRepo } from "./hangouts";
 import { profileRepo } from "./profile";
+import { matchesRepo } from "./matches";
 import { safetyRepo } from "./safety";
 import { notificationsRepo } from "./notifications";
 import { adminRepo } from "./admin";
@@ -21,6 +22,7 @@ export function createLocalRepo(): Repo {
     ...chatRepo(ctx),
     ...hangoutsRepo(ctx),
     ...profileRepo(ctx),
+    ...matchesRepo(ctx),
     ...safetyRepo(ctx),
     ...notificationsRepo(ctx),
     ...socialRepo(ctx),

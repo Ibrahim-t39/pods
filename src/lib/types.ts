@@ -436,7 +436,8 @@ export interface AppNotification {
     | "report_update"
     | "poll_opened" // + Platform §F2
     | "pod_request" // + Platform §F5
-    | "reply"; // + Platform §F2: someone answered your message
+    | "reply" // + Platform §F2: someone answered your message
+    | "new_match"; // + Interests: a new pod found you after you added a like or a community
   title: string;
   body: string;
   href: string;
@@ -480,6 +481,30 @@ export interface ClockState {
 export type AppMode = "demo" | "live";
 
 // ── The whole local DB ─────────────────────────────────────────────────
+/**
+ * + Interests (continuous placement): a pod that found you after you added a like or a community. Nothing is joined
+ * until you say so; "Not now" keeps it quiet until that like is removed and added again.
+ */
+export interface PodMatch {
+  id: ID;
+  user_id: ID;
+  kind: "interest" | "heritage" | "faith";
+  /** The interest id, or the person's own taxonomy key for a community. */
+  topic_key: string;
+  /** The like or community in your words: "Running", "Southern African". */
+  label: string;
+  /** The pod you'd join (an existing pod, or one placement would start). */
+  pod_id: ID;
+  pod_name: string;
+  /** People in the pod once you join, you included. */
+  size: number;
+  /** One short line when placement widened the group ("Widened to Southern African."). */
+  note: string | null;
+  status: "new" | "joined" | "skipped";
+  created_at: ISODateTime;
+  decided_at: ISODateTime | null;
+}
+
 export interface DbState {
   rev: number;
   me: ID | null;
@@ -511,6 +536,8 @@ export interface DbState {
   invites: Record<ID, Invite>;
   podRequests: PodRequest[];
   trustedContacts: Record<ID /*user*/, TrustedContact>;
+  /** + Interests: pods that found you after sign-up. Optional so older persisted blobs and seeds stay valid. */
+  podMatches?: PodMatch[];
   clock: ClockState;
   config: AppConfig;
 }

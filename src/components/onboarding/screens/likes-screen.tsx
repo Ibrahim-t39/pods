@@ -94,7 +94,7 @@ function Likes({ openCommunity }: { openCommunity: boolean }) {
           </Line>
           <Sub live className="min-h-6">
             <span key={full} className={cn(full > 0 && "inline-block animate-[pods-shake_420ms_ease]")}>
-              {full > 0 && picks.length >= max ? `Up to ${max}.` : ""}
+              {full > 0 && picks.length >= max ? `Up to ${max} for now. Add more anytime.` : picks.length ? "Add more anytime." : ""}
             </span>
           </Sub>
         </>
@@ -213,7 +213,7 @@ function CommunitySheet({ open, onOpenChange }: { open: boolean; onOpenChange: (
       open={open}
       onOpenChange={sync}
       title="Community pods"
-      description="Only members see you there."
+      description="Only members see you there. Change it anytime."
       size="sm"
       footer={
         <>

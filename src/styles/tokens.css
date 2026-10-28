@@ -248,23 +248,24 @@
   /* Finish: clean first, gloss as a highlight (founder 2026-10-28: "clean, glossy maybe"). Gloss lives on the few
      things you touch or that are people: filled buttons, discs, the lock ring. Glass lives only on things that float
      over colour: sheets, the condensed header, the toast. Never on text blocks or lists. */
-  --sheen: linear-gradient(180deg, rgb(255 255 255 / .30) 0%, rgb(255 255 255 / .08) 46%, rgb(255 255 255 / 0) 52%, rgb(0 0 0 / .05) 100%);
-  --sheen-press: linear-gradient(180deg, rgb(255 255 255 / .12) 0%, rgb(255 255 255 / 0) 50%, rgb(0 0 0 / .08) 100%);
-  --edge-gloss: inset 0 1px 0 rgb(255 255 255 / .38), inset 0 -1px 0 rgb(0 0 0 / .10);
+  --sheen: linear-gradient(180deg, rgb(255 255 255 / .14) 0%, rgb(255 255 255 / 0) 50%);
+  --sheen-press: linear-gradient(180deg, rgb(0 0 0 / .06) 0%, rgb(0 0 0 / .06) 100%);
+  --edge-gloss: inset 0 1px 0 rgb(255 255 255 / .22);
   /* BUBBLES (founder idea 8, won the bubble round: COLOR_LIFE §15). People and pods are glass orbs: clear in the middle,
      denser at the rim (Fresnel), one specular window top-left, a thin lit rim. Overlaps blend NORMAL (light through two
      layers of glass), so where worlds meet it turns brighter and richer, never muddy. Only circles that are people,
      pods or the moment are bubbles; cards, buttons, chips, sheets and text never are.
      A person is a BEAD: a solid hue body (so the initial keeps AA) with the bubble's window, rim and under-light. */
-  --bead: radial-gradient(ellipse 30% 18% at 34% 20%, rgb(255 255 255 / .72) 0, rgb(255 255 255 / .18) 58%, rgb(255 255 255 / 0) 74%), radial-gradient(closest-side, rgb(255 255 255 / 0) 74%, rgb(255 255 255 / .30) 94%, rgb(255 255 255 / 0) 100%), radial-gradient(circle at 50% 118%, rgb(255 255 255 / .30), rgb(255 255 255 / 0) 52%);
+  /* POLISH (founder: "too many bubbles"): people are FLAT discs again. The bead keeps one faint top light only. */
+  --bead: linear-gradient(180deg, rgb(255 255 255 / .10) 0%, rgb(255 255 255 / 0) 55%);
   --disc-sheen: var(--bead); /* v1 name */
-  --shadow-bead: inset 0 -3px 6px rgb(0 0 0 / .12), 0 6px 14px -7px rgb(14 26 34 / .38);
+  --shadow-bead: 0 1px 2px rgb(14 26 34 / .14);
   /* an orb's specular window and its small kick light (shared by .orb, the table top and the moment) */
   --orb-window: radial-gradient(ellipse 34% 20% at 34% 20%, rgb(255 255 255 / .92) 0, rgb(255 255 255 / .30) 55%, rgb(255 255 255 / 0) 72%);
   --orb-kick: radial-gradient(circle at 70% 80%, rgb(255 255 255 / .55) 0 2.4%, rgb(255 255 255 / 0) 4.6%);
-  --glass: rgb(255 255 255 / .74);
-  --glass-strong: rgb(255 255 255 / .86);
-  --glass-edge: inset 0 0 0 1px rgb(255 255 255 / .65), 0 0 0 1px rgb(14 26 34 / .06);
+  --glass: rgb(255 255 255 / .90);
+  --glass-strong: rgb(255 255 255 / .96);
+  --glass-edge: 0 0 0 1px rgb(14 26 34 / .08);
   --glass-blur: blur(22px) saturate(1.7);
 
   /* Gradients (COLOR_LIFE §5): only the logo's circles meeting. A pod is TWO circles meeting (its overlap is its
@@ -279,7 +280,9 @@
   --grad-venn: radial-gradient(circle at 50% 30%, rgba(253,97,35,.85) 0 22%, rgba(253,97,35,0) 40%), radial-gradient(circle at 30% 64%, rgba(27,120,254,.9) 0 24%, rgba(27,120,254,0) 42%), radial-gradient(circle at 70% 64%, rgba(25,193,133,.85) 0 24%, rgba(25,193,133,0) 42%);
   /* the page light: the logo's three circles as soft coloured light at the top-right corner, overlapping (darker
      where more meet). Sits behind the object, never behind body text. */
-  --mesh-page: radial-gradient(circle 210px at calc(100% - 30px) 40px, rgba(253,97,35,.20) 0 62%, rgba(253,97,35,0) 100%), radial-gradient(circle 230px at calc(100% - 170px) 190px, rgba(27,120,254,.22) 0 62%, rgba(27,120,254,0) 100%), radial-gradient(circle 230px at calc(100% + 50px) 230px, rgba(25,193,133,.24) 0 62%, rgba(25,193,133,0) 100%);
+  /* POLISH: the light is a quiet corner glow, not a fog: three small circles tucked off the top-right edge at low alpha,
+     so headlines and cards always sit on clean paper. */
+  --mesh-page: radial-gradient(circle 150px at calc(100% + 10px) -20px, rgba(253,97,35,.13) 0 55%, rgba(253,97,35,0) 100%), radial-gradient(circle 160px at calc(100% - 110px) -60px, rgba(27,120,254,.12) 0 55%, rgba(27,120,254,0) 100%), radial-gradient(circle 160px at calc(100% + 40px) 90px, rgba(25,193,133,.12) 0 55%, rgba(25,193,133,0) 100%);
   /* the moment (lock, #2 is on): the centre of the logo. A deep field (the all-three overlap) with the three circles
      converging on the table as GLASS ORBS (bubble round, COLOR_LIFE §15): clear bodies, lit rims, a window each, so the
      overlaps are luminous instead of muddy (founder: "muddy brown/olive overlaps look dirty"). */
@@ -379,13 +382,13 @@
   --color-safe-soft: #EAF6F8;
   /* Cool shadows; the primary casts a blue shadow, never a glow. */
   --shadow-xs: 0 1px 0 rgba(14,26,34,.06);
-  --shadow-sm: 0 1px 2px rgba(14,26,34,.06), 0 8px 18px -12px rgba(14,26,34,.22);
-  --shadow-md: 0 1px 2px rgba(14,26,34,.06), 0 16px 32px -18px rgba(14,26,34,.30);
+  --shadow-sm: 0 0 0 1px rgba(14,26,34,.06), 0 1px 2px rgba(14,26,34,.05), 0 8px 20px -14px rgba(14,26,34,.20);
+  --shadow-md: 0 0 0 1px rgba(14,26,34,.06), 0 2px 4px rgba(14,26,34,.05), 0 16px 32px -20px rgba(14,26,34,.26);
   --shadow-lg: 0 30px 60px -28px rgba(14,26,34,.32);
   /* layered: a tight contact shadow plus a soft coloured cast (depth, never a glow) */
-  --shadow-primary: inset 0 1px 0 rgb(255 255 255 / .34), inset 0 -1px 0 rgb(0 0 0 / .14), 0 1px 1px rgba(1,78,181,.30), 0 6px 14px -6px rgba(1,97,221,.50), 0 18px 32px -18px rgba(1,97,221,.55);
-  --shadow-spark: inset 0 1px 0 rgb(255 255 255 / .40), inset 0 -1px 0 rgb(0 0 0 / .10), 0 1px 1px rgba(187,62,2,.28), 0 6px 14px -6px rgba(253,97,35,.55), 0 18px 32px -18px rgba(253,97,35,.60);
-  --shadow-disc: 0 1px 1px rgba(14,26,34,.16), 0 4px 10px -4px rgba(14,26,34,.28);
+  --shadow-primary: inset 0 1px 0 rgb(255 255 255 / .18), 0 1px 2px rgba(1,78,181,.30), 0 6px 14px -8px rgba(1,97,221,.45);
+  --shadow-spark: inset 0 1px 0 rgb(255 255 255 / .22), 0 1px 2px rgba(187,62,2,.28), 0 6px 14px -8px rgba(253,97,35,.50);
+  --shadow-disc: 0 1px 2px rgba(14,26,34,.14);
   --shadow-float: 0 1px 2px rgba(14,26,34,.06), 0 12px 28px -14px rgba(14,26,34,.24), 0 40px 80px -40px rgba(14,26,34,.30);
   --shadow-glow-signal: none;
   --shadow-glow-ember: none;
@@ -398,7 +401,7 @@
    (the text column stays on the deep field, PB 1.1). */
 @media (min-width: 1024px) {
   :root {
-    --mesh-page: radial-gradient(circle 320px at calc(100% - 60px) 30px, rgba(253,97,35,.14) 0 62%, rgba(253,97,35,0) 100%), radial-gradient(circle 360px at calc(100% - 280px) 250px, rgba(27,120,254,.15) 0 62%, rgba(27,120,254,0) 100%), radial-gradient(circle 360px at calc(100% + 40px) 330px, rgba(25,193,133,.17) 0 62%, rgba(25,193,133,0) 100%);
+    --mesh-page: radial-gradient(circle 240px at calc(100% + 20px) -40px, rgba(253,97,35,.10) 0 55%, rgba(253,97,35,0) 100%), radial-gradient(circle 260px at calc(100% - 200px) -100px, rgba(27,120,254,.09) 0 55%, rgba(27,120,254,0) 100%), radial-gradient(circle 260px at calc(100% + 60px) 140px, rgba(25,193,133,.09) 0 55%, rgba(25,193,133,0) 100%);
     --moment: radial-gradient(ellipse 80px 44px at calc(70% - 70px) calc(30% - 140px), rgb(255 255 255 / .70) 0, rgb(255 255 255 / 0) 100%), radial-gradient(ellipse 80px 44px at calc(60% - 80px) calc(64% - 150px), rgb(255 255 255 / .60) 0, rgb(255 255 255 / 0) 100%), radial-gradient(ellipse 80px 44px at calc(80% - 80px) calc(64% - 150px), rgb(255 255 255 / .55) 0, rgb(255 255 255 / 0) 100%), radial-gradient(circle 230px at 70% 30%, rgb(255 150 110 / .34) 0 52%, rgb(253 97 35 / .62) 88%, rgb(255 200 176 / .95) 97.5%, rgb(253 97 35 / 0) 100%), radial-gradient(circle 250px at 60% 64%, rgb(110 170 255 / .34) 0 52%, rgb(27 120 254 / .66) 88%, rgb(190 220 255 / .95) 97.5%, rgb(27 120 254 / 0) 100%), radial-gradient(circle 250px at 80% 64%, rgb(110 230 185 / .30) 0 52%, rgb(25 193 133 / .62) 88%, rgb(190 255 228 / .95) 97.5%, rgb(25 193 133 / 0) 100%), linear-gradient(170deg, #0B2F26 0%, #022634 100%);
   }
 }
