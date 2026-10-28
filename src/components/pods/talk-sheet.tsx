@@ -148,7 +148,9 @@ export function TalkSheet(props: TalkProps) {
               // land in the composer, like every desktop chat, instead of ringing the header
               const box = e.currentTarget as HTMLElement | null;
               const ta = box?.querySelector?.<HTMLTextAreaElement>("textarea:not(:disabled)");
-              if (ta) (e.preventDefault(), ta.focus());
+              if (!ta) return;
+              e.preventDefault();
+              ta.focus();
             }}
             className="fixed top-4 right-4 bottom-4 z-sheet flex w-[min(460px,calc(100vw-32px))] flex-col overflow-hidden rounded-[24px] bg-lit text-ink shadow-[0_0_0_1px_var(--line),var(--shadow-float)] outline-none"
           >

@@ -1,0 +1,15 @@
+import { chromium } from 'playwright';
+const CHROME = `${process.env.HOME}/Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
+const b = await chromium.launch({ executablePath: CHROME });
+const W=+process.argv[2]||390; const m=W<600;
+const c = await b.newContext({viewport:{width:W,height:m?844:900},deviceScaleFactor:1,isMobile:m,hasTouch:m});
+const p = await c.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message.slice(0,100)));
+let k=0; const shot=async(t)=>{await p.waitForTimeout(1200);await p.screenshot({path:'/private/tmp/claude-501/-Users-ibrahimtraore-Documents-PROPEL/192ac6d2-3129-48a3-9409-2f4587345c61/scratchpad/qa/qa/r'+W+'-'+String(++k).padStart(2,'0')+'-'+t+'.png'});console.log(k,t,p.url().replace('http://localhost:3000',''),'|',(await p.evaluate(()=>document.body.innerText)).replace(/\n+/g,' / ').slice(0,200));};
+await p.goto('http://localhost:3000/app/home?mode=demo&director=1',{waitUntil:'networkidle'}); await p.waitForTimeout(1500);
+const dir=async(t)=>{ if(!(await p.getByText('Video beats').isVisible().catch(()=>false))) await p.getByText('Director',{exact:true}).first().click({timeout:2500}).catch(()=>{}); await p.waitForTimeout(700); console.log('panel',await p.getByText('Video beats').isVisible().catch(()=>false)); await p.waitForTimeout(600); await p.getByText(t).first().click({timeout:4000}).catch(e=>console.log('dir fail',t)); };
+await dir('Skip sign-up'); await p.waitForTimeout(3000); await shot('after-skip');
+await dir('Jump to after hangout'); await p.waitForTimeout(3000); await shot('after-hangout');
+await dir('Everyone checks in'); await p.waitForTimeout(3000); await shot('checkins');
+await dir('Answer for the pod'); await p.waitForTimeout(3000); await shot('answers');
+await p.goto('http://localhost:3000/app/home',{waitUntil:'networkidle'}); await shot('home-after');
+await b.close(); console.log(errs);
