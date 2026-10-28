@@ -211,6 +211,9 @@ async function run(vpName, vp, mode) {
       await wait(1200);
     });
     await step("home", async () => {
+      // the reveal waits for the person: Continue (no auto-advance)
+      const cont = btn(/^Continue$/);
+      if (await cont.isVisible().catch(() => false)) await cont.click();
       await page.waitForURL(/\/app\/home/, { timeout: 60_000 });
       await wait(1800);
     });
