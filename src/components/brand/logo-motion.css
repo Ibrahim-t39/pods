@@ -1,0 +1,96 @@
+/* [U1] Pods logo motion (CSS variants: loader, splash, typeon, breathe, orbit). Copied from PODS/brand/react/pods-logo.css,
+   hex replaced with tokens, plus breathe + orbit. The intro / assemble variants are driven by motion/react in logo-animated.tsx. */
+.pods-logo{display:block;overflow:visible;--pods-spring:cubic-bezier(.34,1.56,.64,1);--pods-out:cubic-bezier(.2,0,0,1);--pods-inout:cubic-bezier(.65,0,.35,1)}
+.pods-logo .pods-c,.pods-logo .pods-d,.pods-logo .pods-l,.pods-logo .pods-period,.pods-logo .pods-rip,.pods-logo .pods-wordmark,.pods-logo .pods-lockup-mark{transform-box:fill-box;transform-origin:center}
+.pods-logo .pods-spin{transform-box:view-box;transform-origin:0 0}
+.pods-c-ember{--ox:0px;--oy:-34px}.pods-c-signal{--ox:-30px;--oy:17px}.pods-c-grove{--ox:30px;--oy:17px}
+.pods-d-ember{--ox:0px;--oy:-34px;--i:0}.pods-d-signal{--ox:-30px;--oy:17px;--i:1}.pods-d-grove{--ox:30px;--oy:17px;--i:2}
+.pods-rip-ember{--i:0}.pods-rip-signal{--i:1}.pods-rip-grove{--i:2}
+.pods-rip{opacity:0}
+
+/* 1. INTRO: circles gather with a spring, overlaps resolve, dots pop in like people joining,
+      letters rise, the period snaps into place. 1.9s, plays once. */
+.pods-anim-intro .pods-c{animation:pods-gather .95s var(--pods-spring) both}
+.pods-anim-intro .pods-c-ember{--fx:0px;--fy:-170px;animation-delay:.05s}
+.pods-anim-intro .pods-c-signal{--fx:-160px;--fy:95px;animation-delay:.14s}
+.pods-anim-intro .pods-c-grove{--fx:160px;--fy:95px;animation-delay:.23s}
+.pods-anim-intro .pods-ov{animation:pods-fade .4s ease-out .78s both}
+.pods-anim-intro .pods-d{animation:pods-pop .55s var(--pods-spring) both;animation-delay:calc(.82s + var(--i) * .1s)}
+.pods-anim-intro .pods-l{animation:pods-rise .7s var(--pods-out) both;animation-delay:calc(.95s + var(--i) * .07s)}
+.pods-anim-intro .pods-period{transform-origin:50% 100%;animation:pods-snap .75s var(--pods-out) 1.35s both}
+@keyframes pods-gather{0%{opacity:0;transform:translate(var(--fx),var(--fy)) scale(.35)}35%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes pods-fade{from{opacity:0}to{opacity:1}}
+@keyframes pods-pop{0%{opacity:0;transform:scale(0)}100%{opacity:1;transform:none}}
+@keyframes pods-rise{0%{opacity:0;transform:translateY(70px)}100%{opacity:1;transform:none}}
+@keyframes pods-snap{0%{opacity:0;transform:translateY(-300px) scale(.9,1.15)}55%{opacity:1;transform:translateY(0) scale(1.28,.7)}75%{transform:translateY(-14px) scale(.92,1.08)}100%{opacity:1;transform:none}}
+
+/* 2. LOADER ("Finding your pods"): circles breathe apart and back together; while apart the
+      dots pulse and the mark turns a third, so every colour visits every seat. 2.4s beat, 7.2s loop. */
+.pods-anim-loader .pods-c{animation:pods-breathe 2.4s var(--pods-inout) infinite}
+.pods-anim-loader .pods-d{animation:pods-breathe-dot 2.4s var(--pods-inout) infinite}
+.pods-anim-loader .pods-ov{animation:pods-ov-breathe 2.4s ease-in-out infinite}
+.pods-anim-loader .pods-spin{animation:pods-turn 7.2s var(--pods-inout) infinite}
+@keyframes pods-breathe{0%,28%{transform:none}44%,72%{transform:translate(var(--ox),var(--oy))}88%,100%{transform:none}}
+@keyframes pods-breathe-dot{0%,28%{transform:none}44%{transform:translate(var(--ox),var(--oy))}56%{transform:translate(var(--ox),var(--oy)) scale(1.35)}64%,72%{transform:translate(var(--ox),var(--oy))}88%,100%{transform:none}}
+@keyframes pods-ov-breathe{0%,26%{opacity:1}38%,78%{opacity:0}90%,100%{opacity:1}}
+@keyframes pods-turn{0%,15%{transform:rotate(0)}23.3%,48.3%{transform:rotate(120deg)}56.7%,81.7%{transform:rotate(240deg)}90%,100%{transform:rotate(360deg)}}
+
+/* 3. SPLASH: three people (dots) arrive, a pod grows around each, the circles overlap, then the
+      mark steps aside and the wordmark is revealed. 2.9s, plays once. Designed for the ink background. */
+.pods-anim-splash .pods-lockup-mark{animation:pods-slide 0.9s var(--pods-inout) 1.75s both}
+.pods-anim-splash .pods-d{animation:pods-pop .5s var(--pods-spring) both;animation-delay:calc(.15s + var(--i) * .16s)}
+.pods-anim-splash .pods-rip{animation:pods-ripple 1s ease-out both;animation-delay:calc(.2s + var(--i) * .16s)}
+.pods-anim-splash .pods-c{animation:pods-bloom .8s var(--pods-spring) both}
+.pods-anim-splash .pods-c-ember{transform-origin:50% 30.4%;animation-delay:.75s}
+.pods-anim-splash .pods-c-signal{transform-origin:33.5% 57.7%;animation-delay:.85s}
+.pods-anim-splash .pods-c-grove{transform-origin:66.5% 57.7%;animation-delay:.95s}
+.pods-anim-splash .pods-ov{animation:pods-fade .35s ease-out 1.45s both}
+.pods-anim-splash .pods-wordmark{animation:pods-reveal .8s var(--pods-out) 2.0s both}
+.pods-anim-splash .pods-period{transform-origin:50% 100%;animation:pods-snap .7s var(--pods-out) 2.45s both}
+@keyframes pods-ripple{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(3.2)}}
+@keyframes pods-bloom{0%{opacity:0;transform:scale(0)}100%{opacity:1;transform:none}}
+@keyframes pods-slide{0%{transform:translateX(482px) scale(1.25)}100%{transform:none}}
+@keyframes pods-reveal{0%{opacity:0;clip-path:inset(0 100% 0 0);transform:translateX(-60px)}20%{opacity:1}100%{opacity:1;clip-path:inset(0 0 0 0);transform:none}}
+
+/* 4. TYPE-ON: the blue period is a blinking cursor that types "pods", lands as the full stop,
+      then the pod forms beside it. 3s, plays once. */
+.pods-anim-typeon .pods-l{animation:pods-type 3s steps(1,end) both}
+.pods-anim-typeon .pods-l0{--t:16.6%}.pods-anim-typeon .pods-l1{--t:26%}.pods-anim-typeon .pods-l2{--t:35.3%}.pods-anim-typeon .pods-l3{--t:44.6%}
+.pods-anim-typeon .pods-l0{animation-name:pods-type0}.pods-anim-typeon .pods-l1{animation-name:pods-type1}.pods-anim-typeon .pods-l2{animation-name:pods-type2}.pods-anim-typeon .pods-l3{animation-name:pods-type3}
+@keyframes pods-type0{0%,16.6%{opacity:0}16.7%,100%{opacity:1}}
+@keyframes pods-type1{0%,25.9%{opacity:0}26%,100%{opacity:1}}
+@keyframes pods-type2{0%,35.2%{opacity:0}35.3%,100%{opacity:1}}
+@keyframes pods-type3{0%,44.5%{opacity:0}44.6%,100%{opacity:1}}
+.pods-anim-typeon .pods-period{animation:pods-cursor-move 3s cubic-bezier(.2,0,0,1) both,pods-blink .5s steps(1,end) 0s 3,pods-land .5s var(--pods-spring) 1.6s both}
+.pods-anim-typeon .pods-c{animation:pods-pop .6s var(--pods-spring) both}
+.pods-anim-typeon .pods-c-ember{animation-delay:1.85s}.pods-anim-typeon .pods-c-signal{animation-delay:1.97s}.pods-anim-typeon .pods-c-grove{animation-delay:2.09s}
+.pods-anim-typeon .pods-ov{animation:pods-fade .3s ease-out 2.4s both}
+.pods-anim-typeon .pods-d{animation:pods-pop .45s var(--pods-spring) both;animation-delay:calc(2.45s + var(--i) * .08s)}
+@keyframes pods-blink{50%{fill-opacity:0}}
+@keyframes pods-land{0%{fill:var(--pods-signal)}40%{fill:var(--signal-400)}100%{fill:var(--pods-signal)}}
+@keyframes pods-cursor-move{0%{transform:translateX(-943px)}16.66%{transform:translateX(-943px)}19.67%{transform:translateX(-649px)}25.99%{transform:translateX(-649px)}29.00%{transform:translateX(-426px)}35.32%{transform:translateX(-426px)}38.33%{transform:translateX(-213px)}44.66%{transform:translateX(-213px)}47.67%{transform:translateX(-0px)}100%{transform:translateX(0)}}
+
+@media (prefers-reduced-motion: reduce){
+  .pods-logo *{animation:none!important}
+  .pods-anim-loader .pods-d{animation:pods-reduced-pulse 1.6s ease-in-out infinite!important}
+}
+@keyframes pods-reduced-pulse{50%{opacity:.55}}
+
+/* 5. BREATHE: idle. The group swells 3% and the dots pulse once per 3.2s beat. */
+.pods-anim-breathe .pods-spin{animation:pods-breathe-all 3.2s var(--pods-inout) infinite;transform-box:view-box}
+.pods-anim-breathe .pods-d{animation:pods-dot-pulse 3.2s var(--pods-inout) infinite;animation-delay:calc(var(--i) * .18s)}
+@keyframes pods-breathe-all{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+@keyframes pods-dot-pulse{0%,40%,100%{transform:none}55%{transform:scale(1.22)}}
+
+/* 6. ORBIT: the circles step apart and travel round the centre (M12 "Finding your pods", around the avatar). */
+.pods-anim-orbit .pods-c,.pods-anim-orbit .pods-d{transform:translate(calc(var(--ox) * 1.9),calc(var(--oy) * 1.9))}
+.pods-anim-orbit .pods-ov{opacity:0}
+.pods-anim-orbit .pods-c{opacity:.92}
+.pods-anim-orbit .pods-spin{animation:pods-orbit-turn 3.6s linear infinite}
+.pods-anim-orbit .pods-d{animation:pods-dot-orbit-pulse 1.2s var(--pods-inout) infinite;animation-delay:calc(var(--i) * .4s)}
+@keyframes pods-orbit-turn{to{transform:rotate(360deg)}}
+@keyframes pods-dot-orbit-pulse{0%,100%{scale:1}50%{scale:1.25}}
+
+@media (prefers-reduced-motion: reduce){
+  .pods-anim-breathe *,.pods-anim-orbit *{animation:none!important}
+}

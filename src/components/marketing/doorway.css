@@ -1,0 +1,271 @@
+/* The Doorway (/): the logo as a scroll story (COLOR_LIFE §12.1). Template anatomy (DESIGN §9.6):
+   phone   chrome 16 + 44 · the circles take the rest · 32 · the line · foot 120 (32 clear / 56 pill / 32)
+   laptop  margin 64 · text column 520, head at 160 · 96 · the circles off-centre in the rest · foot at 64 from the bottom
+   Spacing steps only: 8 (inside a group), 16 (line to its sub), 24 (head), 32 (between groups), 64, 96.
+   No scroll-snap: the story follows normal scrolling (never hijacked). */
+
+/* On the Doorway the circles ARE the logo light, so the page light (three circles top-right) steps aside on paper. */
+html[data-light="paper"]:has(.pods-door) {
+  --stage-light: none;
+}
+
+.pods-door {
+  position: relative;
+  height: 440vh;
+}
+
+.door-stage {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.door-chrome {
+  position: absolute;
+  inset: calc(env(safe-area-inset-top) + 16px) 0 auto;
+  z-index: 2;
+  display: flex;
+  height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--gutter);
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.door-main {
+  position: absolute;
+  inset: calc(env(safe-area-inset-top) + 76px) var(--gutter) calc(120px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+}
+
+.door-obj {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.door-venn {
+  width: 100%;
+  height: 100%;
+  max-width: 372px;
+  max-height: 372px;
+  will-change: transform;
+}
+/* first arrival: the three worlds fade up */
+.door-obj {
+  animation: door-rise 900ms var(--ease-out) 80ms both;
+}
+
+/* "them.": the one gradient word (COLOR_LIFE §5.4.6): two logo circles meeting, blue into green at text-safe depths
+   (blue 5.3:1, green 6.1:1). Teal is safety only (COLOR_LIFE §14), so the midpoint is their own blend, not teal. */
+.door-them {
+  background-image: linear-gradient(100deg, var(--color-signal-text) 15%, var(--color-grove-text) 85%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* four scenes share one slot; scroll drives their opacity and rise (doorway.tsx) */
+.door-lines {
+  display: grid;
+  flex: none;
+  min-height: 176px;
+}
+.door-beat {
+  grid-area: 1 / 1;
+  align-self: end;
+}
+.door-beat .line {
+  text-wrap: balance;
+}
+/* the tagline's first half sits above the last line as its overline (video Scene 5 close) */
+.door-over {
+  margin-bottom: var(--s2);
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.door-sub {
+  margin-top: var(--s4);
+  font-size: 18px;
+  line-height: 28px;
+  max-width: 34ch;
+}
+.door-beat:first-child {
+  animation: door-rise 700ms var(--ease-out) 420ms both;
+}
+.door-foot .door-pill {
+  animation: door-rise 700ms var(--ease-out) 620ms both;
+}
+@keyframes door-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+.door-foot {
+  position: absolute;
+  inset: auto 0 calc(32px + env(safe-area-inset-bottom));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--gutter);
+  max-width: 1440px;
+  margin: 0 auto;
+}
+/* progress stays visible to the end; "Legal" arrives beside it on the last scene */
+.door-aside {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+}
+
+/* progress: four small seats; the live one stretches, the past ones stay filled (progress always visible) */
+.door-dots {
+  pointer-events: none;
+  display: inline-flex;
+  gap: var(--s2);
+  transition: opacity var(--dur-move) var(--ease-out);
+}
+.door-dots[data-hide] {
+  opacity: 0;
+}
+.door-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+  transition:
+    width var(--dur-move) var(--ease-out),
+    background var(--dur-move) var(--ease-out),
+    box-shadow var(--dur-move) var(--ease-out);
+}
+.door-dots i[data-past] {
+  background: var(--ink-3);
+  box-shadow: none;
+}
+.door-dots i[data-on] {
+  width: 20px;
+  background: var(--select);
+  box-shadow: none;
+}
+.door-legal {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--dur-move) var(--ease-out),
+    visibility 0s linear var(--dur-move);
+}
+.door-legal[data-show] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--dur-move) var(--ease-out) 160ms;
+}
+
+/* the scroll cue: a small circle sinking into a ring, only on the first screen */
+.door-cue {
+  position: absolute;
+  left: 50%;
+  bottom: calc(132px + env(safe-area-inset-bottom));
+  width: 20px;
+  height: 32px;
+  translate: -50% 0;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+  pointer-events: none;
+  display: none;
+}
+.door-cue::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  translate: -50% 0;
+  border-radius: 999px;
+  background: var(--ink-2);
+  animation: door-cue 1800ms var(--ease-in-out) 1200ms infinite;
+}
+@keyframes door-cue {
+  0% { transform: translateY(0); opacity: 0; }
+  20% { opacity: 1; }
+  70% { transform: translateY(12px); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@media (min-width: 1024px) {
+  .door-chrome {
+    top: 32px;
+    padding: 0 var(--s16);
+  }
+  .door-main {
+    inset: 0;
+    max-width: 1440px;
+    margin: 0 auto;
+    display: block;
+  }
+  .door-lines {
+    position: absolute;
+    top: 160px;
+    left: var(--s16);
+    width: 520px;
+    min-height: 0;
+  }
+  .door-beat {
+    align-self: start;
+  }
+  .door-sub,
+  .door-over {
+    font-size: 20px;
+    line-height: 30px;
+  }
+  .door-obj {
+    position: absolute;
+    top: var(--s24);
+    bottom: var(--s16);
+    left: calc(var(--s16) + 520px + var(--s24));
+    right: var(--s16);
+  }
+  .door-venn {
+    max-width: 700px;
+    max-height: 700px;
+  }
+  .door-foot {
+    bottom: var(--s16);
+    padding: 0 var(--s16);
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: var(--s8);
+  }
+  .door-cue {
+    display: block;
+    left: calc(var(--s16) + 10px);
+    bottom: calc(var(--s16) + 96px);
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .door-beat:first-child,
+  .door-foot .door-pill,
+  .door-obj {
+    animation: none;
+  }
+  .door-cue::after {
+    animation: none;
+    opacity: 1;
+  }
+}

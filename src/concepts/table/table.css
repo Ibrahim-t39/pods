@@ -1,0 +1,137 @@
+/* TABLE concept tokens + surface. Every value here is one of the CONCEPT.md tokens (surface, type, spacing). */
+.tb {
+  /* surface + light (PB 4.1, 4.7) */
+  --tb-paper: #f2ece2;
+  --tb-paper-lit: #fbf7f0;
+  --tb-table: #f8f3ea;
+  --tb-ink: #1d1a17;
+  --tb-ink-2: #625a50;
+  --tb-ink-3: #8a8175;
+  --tb-line: rgba(29, 26, 23, 0.16);
+  --tb-line-2: rgba(29, 26, 23, 0.32);
+  --tb-night: #17130f;
+  --tb-lamp: #f7e6c4;
+  /* the logo's hues + overlaps (brand/mark.svg) */
+  --tb-ember: #fd6123;
+  --tb-signal: #1b78fe;
+  --tb-grove: #19c185;
+  --tb-ember-deep: #40313f;
+  --tb-signal-deep: #01627e;
+  --tb-grove-deep: #315b26;
+  /* spacing (4 pt; one job per step) */
+  --s1: 4px;  /* label to value */
+  --s2: 8px;  /* inside a group */
+  --s4: 16px; /* line to its object */
+  --m: 20px;  /* mobile outer margin */
+  --s8: 32px; /* between groups */
+  --s12: 48px; /* clear zone around the primary */
+  --s16: 64px; /* desktop outer margin */
+  --s24: 96px; /* desktop table-to-text gap */
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: var(--tb-ink);
+  background-color: var(--tb-paper);
+  font-family: var(--tb-mono), ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 700ms var(--ease), color 700ms var(--ease);
+}
+@media (min-width: 1024px) {
+  .tb { --m: 64px; }
+}
+
+/* One off-axis warm lamp + fine paper grain (IL 30, 73, 27; TS 11, 45). */
+.tb::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at var(--lamp-x, 18%) var(--lamp-y, 10%), var(--tb-paper-lit) 0%, rgba(251, 247, 240, 0) 62%);
+  transition: opacity 700ms var(--ease);
+  z-index: 0;
+}
+.tb::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .1  0 0 0 0 .08  0 0 0 0 .06  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  z-index: 0;
+}
+.tb > * { position: relative; z-index: 1; }
+
+/* State surfaces (TS 33, 28, 35; SF 09). */
+.tb[data-mood="night"] { background-color: var(--tb-night); color: var(--tb-lamp); }
+.tb[data-mood="night"]::before { opacity: 0; }
+.tb[data-mood="dusk"] { background-color: #ebe5dc; }
+
+.tb-serif { font-family: var(--tb-serif), Georgia, serif; font-weight: 400; letter-spacing: -0.02em; line-height: 0.98; }
+.tb-mono { font-family: var(--tb-mono), ui-monospace, monospace; }
+.tb-muted { color: var(--tb-ink-2); }
+.tb-faint { color: var(--tb-ink-3); }
+
+/* Type scale: mono 12/13/15 · serif 30/44/72/clamp(cropped). */
+.tb-t-cap { font-size: 12px; line-height: 16px; letter-spacing: 0.01em; }
+.tb-t-label { font-size: 13px; line-height: 18px; }
+.tb-t-body { font-size: 15px; line-height: 22px; }
+.tb-t-l { font-size: 34px; line-height: 36px; }
+.tb-t-xl { font-size: 48px; line-height: 48px; letter-spacing: -0.025em; }
+.tb-t-xxl { font-size: 76px; line-height: 72px; letter-spacing: -0.03em; }
+@media (min-width: 1024px) {
+  .tb-t-l { font-size: 44px; line-height: 46px; }
+  .tb-t-xl { font-size: 72px; line-height: 70px; }
+  .tb-t-xxl { font-size: 120px; line-height: 108px; }
+}
+
+/* Buttons: mono label, ink disc or quiet text. 44px targets. */
+.tb-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+  min-height: 48px; min-width: 48px; padding: 0 22px;
+  border-radius: 999px; border: 0; cursor: pointer;
+  background: var(--tb-ink); color: var(--tb-paper-lit);
+  font: 500 14px/1 var(--tb-mono), ui-monospace, monospace;
+  transition: transform 140ms var(--ease), opacity 200ms var(--ease), background-color 200ms;
+  -webkit-tap-highlight-color: transparent;
+}
+.tb-btn:active { transform: scale(0.97); }
+.tb-btn:disabled { opacity: 0.28; cursor: default; }
+.tb-btn:focus-visible, .tb-quiet:focus-visible, .tb-hit:focus-visible { outline: 2px solid var(--tb-signal); outline-offset: 3px; }
+.tb[data-mood="night"] .tb-btn { background: var(--tb-lamp); color: var(--tb-night); }
+.tb-quiet {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  min-height: 44px; min-width: 44px; padding: 0 4px;
+  background: none; border: 0; cursor: pointer; color: inherit;
+  font: 400 13px/1 var(--tb-mono), ui-monospace, monospace;
+  -webkit-tap-highlight-color: transparent;
+}
+.tb-quiet:active { opacity: 0.6; }
+.tb-hit { background: none; border: 0; padding: 0; cursor: pointer; color: inherit; -webkit-tap-highlight-color: transparent; }
+
+/* Inputs: serif, on a single printed rule. */
+.tb-field {
+  width: 100%; border: 0; border-bottom: 1.5px solid var(--tb-line-2); background: transparent; color: var(--tb-ink);
+  font: 400 34px/1.1 var(--tb-serif), Georgia, serif; letter-spacing: -0.01em;
+  padding: 6px 0 10px; outline: none; border-radius: 0;
+}
+.tb-field:focus { border-bottom-color: var(--tb-ink); }
+.tb-field::placeholder { color: var(--tb-ink-3); }
+
+/* Seat hold ring */
+@keyframes tb-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.12); opacity: 0.55; } }
+.tb-pulse { animation: tb-pulse 1.6s var(--ease) infinite; }
+@keyframes tb-breathe { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+.tb-breathe { animation: tb-breathe 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .tb-pulse, .tb-breathe { animation: none; }
+}
+
+/* Talk sheet */
+.tb-sheet-scroll { overflow-y: auto; overscroll-behavior: contain; }
+.tb-sheet-scroll::-webkit-scrollbar { width: 0; }

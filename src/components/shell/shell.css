@@ -1,0 +1,235 @@
+/* App shell v3 (DESIGN.md §5, §7). No rail, no tab bar, no demo strip: the shell is the stage plus depth transitions.
+ *
+ * Variables other code may rely on (set on .pods-shell):
+ *   --shell-top     top safe area (sticky offset)
+ *   --sticky-top    where a sticky element should stick
+ *   --shell-bottom  0 (there is no bar to clear)
+ *   --shell-vh      the usable viewport height
+ */
+.pods-shell {
+  --shell-top: env(safe-area-inset-top);
+  --sticky-top: var(--shell-top);
+  --shell-bottom: 0px;
+  --shell-vh: 100dvh;
+  --pods-chrome-top: var(--shell-top);
+  min-height: 100dvh;
+  color: var(--stage-fg);
+}
+.pods-shell-main {
+  position: relative;
+  min-width: 0;
+  min-height: 100dvh;
+}
+.pods-shell-main:focus {
+  outline: none;
+}
+
+/* ── Panes (compat for screens not yet rebuilt; v3 screens are one object per screen) ── */
+.pods-panes {
+  position: relative;
+  min-width: 0;
+}
+.pods-pane {
+  min-width: 0;
+}
+.pods-panes[data-focus="main"] > .pods-pane-list,
+.pods-panes[data-focus="list"] > .pods-pane-main {
+  display: none;
+}
+.pods-pane-details {
+  position: fixed;
+  z-index: var(--z-overlay);
+  inset: 0;
+  background: var(--lit);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translateY(100%);
+  visibility: hidden;
+  transition:
+    transform var(--dur-slow) var(--ease-paper),
+    visibility 0s linear var(--dur-slow);
+}
+.pods-panes[data-details-open="true"] > .pods-pane-details {
+  transform: none;
+  visibility: visible;
+  transition:
+    transform var(--dur-slow) var(--ease-paper),
+    visibility 0s;
+}
+.pods-pane-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: var(--scrim);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease-standard);
+}
+.pods-panes[data-details-open="true"] > .pods-pane-scrim {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (min-width: 1024px) {
+  .pods-panes[data-has-list="true"] {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+  }
+  .pods-panes > .pods-pane-list,
+  .pods-panes > .pods-pane-main {
+    display: block;
+  }
+  .pods-pane-details {
+    top: 24px;
+    right: 24px;
+    bottom: 24px;
+    left: auto;
+    width: 480px;
+    border-radius: 28px;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(calc(100% + 24px));
+  }
+}
+
+/* ── Depth transitions (DESIGN.md §7) ── */
+@keyframes pods-in {
+  from {
+    transform: scale(0.94);
+    opacity: 0;
+  }
+}
+@keyframes pods-out {
+  from {
+    transform: scale(1.04);
+    opacity: 0;
+  }
+}
+@keyframes pods-side {
+  from {
+    transform: translate3d(24px, 0, 0);
+    opacity: 0;
+  }
+}
+@keyframes pods-xfade {
+  from {
+    opacity: 0;
+  }
+}
+.pods-page {
+  transform-origin: 50% 40%;
+}
+.pods-page[data-dir="in"] {
+  animation: pods-in 420ms var(--ease-paper) backwards;
+}
+.pods-page[data-dir="out"] {
+  animation: pods-out 360ms var(--ease-paper) backwards;
+}
+.pods-page[data-dir="side"] {
+  animation: pods-side 320ms var(--ease-paper) backwards;
+}
+.pods-page[data-dir="none"] {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pods-page[data-dir]:not([data-dir="none"]) {
+    animation: pods-xfade 160ms linear backwards !important;
+  }
+  .pods-pane-details,
+  .pods-pane-scrim {
+    transition: none !important;
+  }
+}
+
+/* loading: a dashed table breathing */
+@keyframes pods-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.pods-breathe {
+  animation: pods-breathe 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pods-breathe {
+    animation: none;
+  }
+}
+
+/* ── Page anatomy (template.md §1) ── */
+.pods-pg {
+  display: flex;
+  flex-direction: column;
+}
+.pods-pg-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-areas: "head" "obj" "foot";
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: 0 var(--gutter);
+}
+.pods-pg[data-head-low] .pods-pg-body {
+  grid-template-areas: "obj" "head" "foot";
+  grid-template-rows: minmax(0, 1fr) auto auto;
+}
+.pods-pg-col {
+  display: contents;
+}
+.pods-pg-head {
+  grid-area: head;
+  padding-top: var(--s6);
+}
+.pods-pg-obj {
+  grid-area: obj;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pods-pg-foot {
+  grid-area: foot;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  padding: var(--s8) 0 calc(var(--s8) + env(safe-area-inset-bottom));
+}
+@media (min-width: 1024px) {
+  .pods-pg-body,
+  .pods-pg[data-head-low] .pods-pg-body {
+    grid-template-areas: none;
+    grid-template-rows: none;
+    grid-template-columns: 520px minmax(0, 1fr);
+    column-gap: var(--s24);
+    padding: 0 var(--s16);
+    max-width: 1440px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .pods-pg-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 116px 0 var(--s16); /* 160 from the top, under the 44px chrome row at 32 */
+    min-height: 0;
+  }
+  .pods-pg-head {
+    padding-top: 0;
+  }
+  .pods-pg-foot {
+    min-height: 0;
+    padding: 0;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: var(--s8);
+  }
+  .pods-pg-obj {
+    grid-area: auto;
+  }
+}

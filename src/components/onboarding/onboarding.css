@@ -1,0 +1,376 @@
+/* First run (V3_SPEC §6.2). Tokens only: spacing steps from DESIGN §9, colour from §2/§4. */
+
+.pods-ob-obj {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+/* ── the sentence you type into (call graft; AW 06, 58) ─────────────────── */
+.pods-ob-field {
+  display: inline-grid;
+  vertical-align: baseline;
+  max-width: 100%;
+}
+.pods-ob-field > * {
+  grid-area: 1 / 1;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  margin: 0;
+  padding: 0 0.12em 0.02em 0.02em;
+}
+.pods-ob-mirror {
+  visibility: hidden;
+  white-space: pre;
+  min-width: 1.2ch;
+}
+.pods-ob-field input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  caret-color: var(--color-ember);
+  outline: none;
+  box-shadow: inset 0 -2px 0 var(--line-2);
+  transition: box-shadow var(--dur-fast, 160ms) ease;
+}
+.pods-ob-field input::placeholder {
+  color: var(--ink-3);
+  opacity: 1;
+}
+.pods-ob-field input:focus-visible,
+.pods-ob-field input:focus {
+  box-shadow: inset 0 -2px 0 var(--select);
+}
+/* the age box: a visible field, digits tabular */
+.pods-ob-field-box > * {
+  font-family: var(--font-ui);
+  font-size: 0.72em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  padding: 0.06em 0.34em 0.1em;
+  text-align: center;
+}
+.pods-ob-field-box .pods-ob-mirror {
+  min-width: 1.6ch;
+}
+.pods-ob-field-box input {
+  border-radius: 28px;
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+}
+.pods-ob-field-box input:focus {
+  box-shadow: inset 0 0 0 2px var(--select);
+}
+
+/* ── the ring of choices (likes, free) ──────────────────────────────────── */
+.pods-ob-ring {
+  position: relative;
+  flex: none;
+}
+.pods-ob-top {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--table);
+  box-shadow: inset 0 0 0 var(--rim, 8px) rgba(255, 255, 255, 0.55);
+}
+.pods-ob-top[data-on] {
+  background: var(--wash, none), var(--table);
+}
+.pods-ob-top {
+  transition: background 500ms var(--ease-paper, ease);
+}
+.pods-ob-shadow {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(14, 26, 34, 0.06);
+}
+.pods-ob-at {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+/* a like around the ring: outlined when free, blue (--select) when taken (Chip rules, B02) */
+.pods-ob-like {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--s4);
+  border-radius: 999px;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--lit);
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.pods-ob-like:hover {
+  box-shadow: inset 0 0 0 1.5px var(--select);
+}
+.pods-ob-like[aria-pressed="true"] {
+  background: var(--select);
+  color: var(--on-select);
+  box-shadow: var(--shadow-primary);
+}
+/* a taken like: its small disc pops in before the word (MOTION 5.1; pods-pop-in) */
+.pods-ob-like-dot {
+  width: 8px;
+  height: 8px;
+  margin-right: var(--s2);
+  border-radius: 50%;
+  background: var(--on-select);
+  flex: none;
+}
+/* the region whose countries are open: outlined in --select, still a tap away from clearing */
+.pods-ob-like[data-near] {
+  box-shadow: inset 0 0 0 1.5px var(--select);
+  color: var(--select);
+}
+/* a chosen community on the Likes step: the community hue (grove), tap to change */
+.pods-ob-like[data-community] {
+  background: var(--color-grove-soft);
+  color: var(--color-grove-text);
+  box-shadow: inset 0 0 0 1.5px var(--color-grove-soft-border);
+}
+.pods-ob-like[data-community] .pods-ob-like-dot { background: var(--color-grove); }
+.pods-ob-like[data-dashed] {
+  background: transparent;
+  box-shadow: none;
+  outline: 1.5px dashed var(--line-2);
+  outline-offset: -1.5px;
+  gap: var(--s2);
+}
+
+/* a day around the week ring: an outlined disc, blue (--select) when free (B04) */
+.pods-ob-day {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-family: var(--font-ui);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--lit);
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.pods-ob-day[aria-pressed="true"] {
+  background: var(--select);
+  color: var(--on-select);
+  box-shadow: var(--shadow-primary);
+}
+
+/* parts of the day, inside the table: words, underlined when on */
+.pods-ob-part {
+  min-height: 44px;
+  padding: 0 var(--s2);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-2);
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+}
+.pods-ob-part[aria-pressed="true"] {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  text-decoration-color: var(--select);
+}
+
+/* ── the code: six circles that fill (B06) ──────────────────────────────── */
+.pods-ob-code {
+  position: relative;
+  display: flex;
+  width: fit-content;
+}
+.pods-ob-dots {
+  display: flex;
+  gap: var(--s2);
+}
+.pods-ob-code input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  font-size: 16px;
+  caret-color: transparent;
+}
+.pods-ob-code i {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-style: normal;
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+  color: var(--ink);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.pods-ob-code i[data-on] {
+  background: var(--select);
+  color: var(--on-select);
+  box-shadow: none;
+}
+.pods-ob-code i[data-at] {
+  box-shadow: inset 0 0 0 2px var(--select);
+}
+.pods-ob-dots[data-wrong] i {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--color-ember);
+}
+.pods-ob-dots[data-wrong] {
+  animation: pods-shake 420ms ease;
+}
+
+/* the number field: one large line, tabular digits */
+.pods-ob-phone {
+  width: 100%;
+  max-width: 340px;
+  border: 0;
+  background: transparent;
+  outline: none;
+  padding: 0 0 var(--s2);
+  font-family: var(--font-ui);
+  font-size: 32px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  caret-color: var(--color-ember);
+  box-shadow: inset 0 -2px 0 var(--line-2);
+}
+.pods-ob-phone:focus {
+  box-shadow: inset 0 -2px 0 var(--select);
+}
+.pods-ob-phone::placeholder {
+  color: var(--ink-3);
+}
+
+/* the ring toggle (B07): a seat ring that fills when on */
+.pods-ob-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s3, 12px);
+  min-height: 44px;
+  text-align: left;
+  font-size: 16px;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+.pods-ob-toggle > i {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--select);
+  display: grid;
+  place-items: center;
+}
+.pods-ob-toggle > i::after {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--select);
+  transform: scale(0);
+  transition: transform 200ms var(--ease-paper, ease);
+}
+.pods-ob-toggle[aria-checked="true"] > i::after {
+  transform: scale(1);
+}
+
+/* the check: a seat with a ring that sweeps (Check it's you) */
+@keyframes pods-ob-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.pods-ob-sweep {
+  animation: pods-ob-sweep 2.4s linear infinite;
+}
+@keyframes pods-ob-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.pods-ob-breathe {
+  animation: pods-ob-breathe 2.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pods-ob-sweep,
+  .pods-ob-breathe,
+  .pods-ob-dots[data-wrong] {
+    animation: none;
+  }
+}
+
+
+@media (min-width: 1024px) {
+  .pods-ob-like,
+  .pods-ob-part {
+    font-size: 17px;
+    min-height: 48px;
+  }
+  .pods-ob-day {
+    width: 52px;
+    height: 52px;
+    font-size: 19px;
+  }
+  .pods-ob-phone {
+    font-size: 40px;
+    max-width: 400px;
+  }
+  .pods-ob-code i {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+  }
+}
+
+/* B08 placed: a found pod is its two-circle wash with a crisp rim in the pod's hue (COLOR_LIFE §6.3, §13 beat 2) */
+.pods-ob-found {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-image: var(--pod-wash);
+  background-color: color-mix(in srgb, var(--lit) 55%, transparent);
+  box-shadow: inset 0 0 0 2px var(--pod), var(--shadow-1, 0 1px 2px rgb(14 26 34 / .06));
+  mix-blend-mode: multiply;
+}
+.pods-ob-found-name {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  max-width: 11ch;
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+@media (min-width: 1024px) {
+  .pods-ob-found-name { font-size: 18px; }
+}

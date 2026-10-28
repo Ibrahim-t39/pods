@@ -1,0 +1,32 @@
+/* [U1] Keyframes for components/ui that globals/motion.css (U0) doesn't define. */
+@keyframes pods-caret{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes pods-ring-draw{from{stroke-dashoffset:var(--ring-len)}}
+@keyframes pods-check-draw{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
+@keyframes pods-stamp{0%{opacity:0;transform:scale(1.3)}60%{opacity:1;transform:scale(.96)}100%{transform:none}}
+.pods-stamp{animation:pods-stamp 360ms var(--ease-snap) both}
+@media (prefers-reduced-motion: reduce){.pods-stamp{animation:pods-fade-in 160ms both}}
+@keyframes pods-scrim-in{from{opacity:0}to{opacity:1}}
+@keyframes pods-scrim-out{from{opacity:1}to{opacity:0}}
+@keyframes pods-dialog-in{from{opacity:0;transform:translate(-50%,calc(-50% + 10px)) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes pods-dialog-out{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,calc(-50% + 6px)) scale(.98)}}
+@keyframes pods-drawer-in{from{transform:translateX(100%)}to{transform:none}}
+@keyframes pods-drawer-out{from{transform:none}to{transform:translateX(100%)}}
+@keyframes pods-pop-in{from{opacity:0;transform:scale(.96) translateY(var(--pop-y,4px))}to{opacity:1;transform:none}}
+@keyframes pods-pop-out{from{opacity:1}to{opacity:0;transform:scale(.98)}}
+.pods-scrim{background:var(--scrim);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.pods-scrim[data-state="open"]{animation:pods-scrim-in var(--dur-base) var(--ease-enter) both}
+.pods-scrim[data-state="closed"]{animation:pods-scrim-out 160ms var(--ease-exit) both}
+.pods-dialog[data-state="open"]{animation:pods-dialog-in var(--dur-base) var(--ease-enter) both}
+.pods-dialog[data-state="closed"]{animation:pods-dialog-out 160ms var(--ease-exit) both}
+.pods-drawer[data-state="open"]{animation:pods-drawer-in var(--dur-slow) var(--ease-enter) both}
+.pods-drawer[data-state="closed"]{animation:pods-drawer-out var(--dur-base) var(--ease-exit) both}
+.pods-pop[data-state="open"],.pods-pop[data-state="delayed-open"],.pods-pop[data-state="instant-open"]{animation:pods-pop-in var(--dur-fast) var(--ease-enter) both}
+.pods-pop[data-state="closed"]{animation:pods-pop-out 120ms var(--ease-exit) both}
+.pods-pop[data-side="top"]{--pop-y:4px}.pods-pop[data-side="bottom"]{--pop-y:-4px}
+@media (prefers-reduced-motion: reduce){.pods-dialog,.pods-drawer,.pods-pop{animation-duration:1ms!important}}
+/* v3 margin card (laptop sheet): slides in from the right edge by 24px, fades */
+@keyframes pods-margin-in{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@keyframes pods-margin-out{from{opacity:1;transform:none}to{opacity:0;transform:translateX(16px)}}
+.pods-margin-card[data-state="open"]{animation:pods-margin-in var(--dur-slow) var(--ease-paper) both}
+.pods-margin-card[data-state="closed"]{animation:pods-margin-out 160ms var(--ease-exit) both}
+@media (prefers-reduced-motion: reduce){.pods-margin-card{animation-duration:1ms!important}}

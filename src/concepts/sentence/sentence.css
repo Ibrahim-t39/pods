@@ -1,0 +1,314 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   SENTENCE concept: the whole app is one living line of type.
+   Surface: warm paper, fine grain, one off-axis window light (PB 4.1, 4.7; TS 11, 45; IL 30, 73).
+   Type: two voices only, a soft high-contrast serif and a small mono (PB 5.1, 5.2; AW 60, 62; SF 34, 53).
+   State is told by surface, not words (PB 4.4; TS 33, 28): paper → pod tint → pod flood on lock.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.snt {
+  --paper: #f2ece1;
+  --ink: #1a1712;
+  --ink-2: rgb(26 23 18 / 0.56);
+  --ink-3: rgb(26 23 18 / 0.3);
+  --ink-4: rgb(26 23 18 / 0.12);
+  --ember: #fd6123;
+  --signal: #1b78fe;
+  --grove: #19c185;
+  --hue: var(--ember);
+  --hue-ink: #b23a0a;
+  --surface: var(--paper);
+  --gutter: 20px;
+  --top: 18px;
+  --d: clamp(50px, 13.4vw, 132px); /* display */
+  --s: clamp(20px, 5.3vw, 28px); /* small serif, ~1:5 at mobile and desktop; mono sits at 11.5 → ~10:1 */
+
+  position: relative;
+  min-height: 100dvh;
+  color: var(--ink);
+  background: var(--surface);
+  font-family: var(--snt-serif), Georgia, serif;
+  font-variation-settings: "SOFT" 100, "WONK" 0, "opsz" 144;
+  font-optical-sizing: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+  transition: background-color 700ms cubic-bezier(0.2, 0.8, 0.2, 1), color 500ms ease;
+  isolation: isolate;
+}
+.snt[data-hue="ember"] { --hue: var(--ember); --hue-ink: #b23a0a; }
+.snt[data-hue="grove"] { --hue: var(--grove); --hue-ink: #0b6e4a; }
+.snt[data-hue="signal"] { --hue: var(--signal); --hue-ink: #1450b4; }
+/* entering a pod: the paper takes the pod's light (AW 20, 25; TS 33) */
+.snt[data-tint="1"] { --surface: color-mix(in oklab, var(--paper) 90%, var(--hue)); }
+/* the lock: the page floods with the pod colour (SF 09/02 "surface by state") */
+.snt[data-flood="1"] {
+  --surface: var(--hue);
+  --ink-2: rgb(26 23 18 / 0.66);
+  --ink-3: rgb(26 23 18 / 0.4);
+}
+.snt[data-flood="1"][data-hue="signal"] { --ink: #fbf6ec; --ink-2: rgb(251 246 236 / 0.75); --ink-3: rgb(251 246 236 / 0.45); }
+/* run-it-back is dusk: paper deepens (SF 09 "dawn / still / dusk") */
+.snt[data-dusk="1"] { --surface: color-mix(in oklab, #e4d8c4 88%, var(--hue)); }
+
+@media (min-width: 768px) {
+  .snt { --gutter: 56px; --top: 32px; }
+}
+@media (min-width: 1280px) {
+  .snt { --gutter: 88px; }
+}
+
+/* light + grain, fixed so it reads as the room, not the page */
+.snt-room {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 75% at 8% -12%, rgb(255 252 244 / 0.78), transparent 58%),
+    radial-gradient(70% 60% at 108% 112%, rgb(92 64 30 / 0.11), transparent 62%);
+}
+.snt-room::after {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0 0.05  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: 0.32;
+  mix-blend-mode: multiply;
+}
+.snt[data-flood="1"] .snt-room { background: radial-gradient(120% 75% at 8% -12%, rgb(255 255 255 / 0.22), transparent 60%); }
+
+/* ── page scaffold: top-left anchored, 70% silence (PB 1.2; TS 8, 5, 49; SF 49, 55) ── */
+.snt-page {
+  position: relative;
+  min-height: 100dvh;
+  padding: calc(var(--top) + env(safe-area-inset-top)) var(--gutter) calc(22px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+.snt-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  gap: 16px;
+}
+.snt-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+}
+
+/* ── voices ── */
+.snt-d {
+  font-size: var(--d);
+  line-height: 0.96;
+  letter-spacing: -0.038em;
+  font-weight: 330;
+  margin: 0;
+}
+.snt-s {
+  font-size: var(--s);
+  line-height: 1.12;
+  letter-spacing: -0.012em;
+  font-weight: 360;
+  font-variation-settings: "SOFT" 100, "WONK" 0, "opsz" 36;
+}
+.snt-i {
+  font-style: italic;
+  font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;
+}
+.snt-m {
+  font-family: var(--snt-mono), ui-monospace, monospace;
+  font-size: 11.5px;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  text-transform: lowercase;
+  color: var(--ink-2);
+  font-variation-settings: normal;
+}
+.snt-faint { color: var(--ink-3); }
+.snt-hueText { color: var(--hue-ink); }
+.snt[data-flood="1"] .snt-hueText { color: var(--ink); }
+
+/* ── words are the controls (discoverable underline, PB 1.6; AW 06, 58) ── */
+.snt-w {
+  all: unset;
+  cursor: pointer;
+  display: inline;
+  color: inherit;
+  font: inherit;
+  font-variation-settings: inherit;
+  letter-spacing: inherit;
+  background-image: linear-gradient(var(--ink-3), var(--ink-3));
+  background-repeat: no-repeat;
+  background-size: 100% max(1.5px, 0.035em);
+  background-position: 0 92%;
+  transition: background-size 220ms ease, color 220ms ease, background-image 220ms ease;
+  border-radius: 2px;
+  -webkit-tap-highlight-color: transparent;
+}
+.snt-w:hover { background-image: linear-gradient(currentColor, currentColor); }
+.snt-w[aria-expanded="true"] { background-image: linear-gradient(var(--hue), var(--hue)); background-size: 100% max(3px, 0.06em); }
+.snt-w:focus-visible { outline: 2px solid var(--hue); outline-offset: 4px; }
+.snt-w.snt-plain { background-image: none; }
+.snt-btn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  min-width: 44px;
+  -webkit-tap-highlight-color: transparent;
+}
+.snt-btn:focus-visible { outline: 2px solid var(--hue); outline-offset: 2px; border-radius: 6px; }
+
+.snt-sup {
+  font-family: var(--snt-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0;
+  vertical-align: super;
+  line-height: 0;
+  color: var(--hue-ink);
+  margin-left: 0.06em;
+  font-style: normal;
+}
+.snt[data-flood="1"] .snt-sup { color: var(--ink); }
+
+/* the blank is the seat */
+.snt-blank {
+  all: unset;
+  cursor: pointer;
+  position: relative;
+  display: inline-block;
+  min-width: 2.2em;
+  height: 0.82em;
+  vertical-align: baseline;
+  border-bottom: max(2px, 0.05em) solid currentColor;
+  -webkit-tap-highlight-color: transparent;
+}
+.snt-blank::after {
+  content: "";
+  position: absolute;
+  left: 0.08em;
+  bottom: 0.08em;
+  width: max(2px, 0.04em);
+  height: 0.7em;
+  background: var(--hue);
+  animation: snt-caret 1.1s steps(1) infinite;
+}
+.snt-blank[data-idle="1"]::after { display: none; }
+.snt-blank:focus-visible { outline: 2px solid var(--hue); outline-offset: 6px; }
+@keyframes snt-caret { 50% { opacity: 0; } }
+
+/* the full stop: a logo circle (brand wordmark already ends on a period) */
+.snt-stop {
+  display: inline-block;
+  width: 0.2em;
+  height: 0.2em;
+  border-radius: 50%;
+  background: var(--hue);
+  margin-left: 0.04em;
+  vertical-align: baseline;
+  transform-origin: 50% 100%;
+}
+.snt[data-flood="1"] .snt-stop { background: var(--ink); }
+
+/* inline inputs typeset as the sentence itself */
+.snt-input {
+  all: unset;
+  font: inherit;
+  font-style: italic;
+  font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;
+  letter-spacing: inherit;
+  color: var(--hue-ink);
+  caret-color: var(--hue);
+  border-bottom: max(2px, 0.05em) solid currentColor;
+  min-width: 1.5em;
+  field-sizing: content;
+  max-width: 100%;
+}
+.snt-input::placeholder { color: var(--ink-4); }
+
+/* ribbon of choices rising from the blank */
+.snt-ribbon {
+  display: flex;
+  gap: 6px 26px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 18px calc(var(--gutter) * -1) 0;
+  padding: 4px var(--gutter) 10px;
+  scroll-padding: var(--gutter);
+  mask-image: linear-gradient(90deg, transparent 0, #000 var(--gutter), #000 calc(100% - 40px), transparent);
+}
+.snt-ribbon::-webkit-scrollbar { display: none; }
+.snt-ribbon .snt-btn {
+  font-size: clamp(24px, 6.4vw, 34px);
+  font-style: italic;
+  font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 72;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: var(--ink-2);
+  transition: color 160ms ease;
+}
+.snt-ribbon .snt-btn:hover, .snt-ribbon .snt-btn[aria-pressed="true"] { color: var(--hue-ink); }
+.snt-ribbon .snt-btn[aria-pressed="true"]::before {
+  content: "";
+  width: 0.24em; height: 0.24em; border-radius: 50%; background: var(--hue); flex: none;
+}
+@media (min-width: 1024px) {
+  .snt-ribbon { flex-wrap: wrap; overflow: visible; mask-image: none; margin: 22px 0 0; padding: 0; max-width: 980px; }
+}
+
+/* footnotes: mono, under the line on phones, in the margin on desktop (TS 2, 7, 12) */
+.snt-notes { display: grid; gap: 10px; margin-top: 22px; max-width: 34ch; }
+.snt-note { display: grid; grid-template-columns: 18px 1fr; gap: 4px 6px; }
+.snt-note b { font-weight: 500; color: var(--hue-ink); }
+.snt[data-flood="1"] .snt-note b { color: var(--ink); }
+.snt-note a { color: inherit; text-underline-offset: 3px; }
+@media (min-width: 1024px) {
+  .snt-split { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 48px; align-items: start; }
+  .snt-notes { margin-top: 0.6em; position: sticky; top: 120px; }
+}
+
+/* home: verses (10:1 scale between the next pod and the rest) */
+.snt-verses { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.snt-verse-small { color: var(--ink-2); }
+
+/* proof marks: Claude's visible work as an editor's strike (AW 39 readymag proof; PB 3.6 "flip to reason", rethought) */
+.snt-strike {
+  position: relative;
+  color: var(--ink-3);
+  font-size: 0.42em;
+  letter-spacing: -0.01em;
+  vertical-align: 0.9em;
+  margin-right: 0.18em;
+  white-space: nowrap;
+}
+.snt-strike > i {
+  position: absolute; left: -2%; right: -2%; top: 55%; height: 2px; background: var(--hue); transform-origin: 0 50%;
+}
+
+/* pen stroke under your name */
+.snt-pen { position: absolute; left: -0.04em; right: -0.04em; bottom: -0.16em; height: 0.28em; overflow: visible; pointer-events: none; }
+
+/* big off-edge circle: one lit object on a quiet stage (AW 06 Rauno, AW 04; PB 4.8) */
+.snt-orb {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--hue);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.snt-logo { display: block; height: 22px; width: auto; }
+@media (min-width: 768px) { .snt-logo { height: 26px; } }
+
+.snt-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .snt *, .snt { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}

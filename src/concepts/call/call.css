@@ -1,0 +1,253 @@
+/* Call concept surface, type and spacing. Every colour is a token or a color-mix of tokens (no hex).
+   Spacing scale (4 pt), one job per step:
+     --s1 4   inside a word group      --s2 8   inside a group (discs, footnote lines)
+     --s4 16  phone gutter             --s6 24  between related groups (call → responses)
+     --s12 48 between groups           --s24 96 desktop gutter / clear zone around the answer */
+
+.call {
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px; --s8: 32px; --s12: 48px; --s16: 64px; --s24: 96px;
+  --gutter: var(--s4);
+  --c-paper: color-mix(in oklab, var(--amber-50) 62%, var(--neutral-0));
+  --c-paper-deep: color-mix(in oklab, var(--amber-100) 40%, var(--c-paper));
+  --c-ink: var(--neutral-ink);
+  --c-ink-2: color-mix(in oklab, var(--neutral-ink) 66%, var(--c-paper));
+  --c-ink-3: color-mix(in oklab, var(--neutral-ink) 40%, var(--c-paper));
+  --c-rule: color-mix(in oklab, var(--neutral-ink) 14%, transparent);
+  --hue: var(--signal-500);
+  --hue-field: var(--signal-100);
+  --hue-deep: var(--signal-200);
+  --hue-ink: var(--signal-800);
+  --serif: var(--call-serif), "Iowan Old Style", Georgia, serif;
+  --mono: var(--call-mono), ui-monospace, Menlo, monospace;
+  position: relative;
+  min-height: 100svh;
+  background-color: var(--c-paper);
+  color: var(--c-ink);
+  font-family: var(--serif);
+  overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (min-width: 1024px) { .call { --gutter: var(--s24); } }
+
+.call[data-hue="ember"] { --hue: var(--ember-500); --hue-field: var(--ember-100); --hue-deep: var(--ember-200); --hue-ink: var(--ember-800); }
+.call [data-hue="ember"] { --hue: var(--ember-500); --hue-field: var(--ember-100); --hue-deep: var(--ember-200); --hue-ink: var(--ember-800); }
+.call[data-hue="grove"], .call [data-hue="grove"] { --hue: var(--grove-500); --hue-field: var(--grove-100); --hue-deep: var(--grove-200); --hue-ink: var(--grove-800); }
+.call[data-hue="signal"], .call [data-hue="signal"] { --hue: var(--signal-500); --hue-field: var(--signal-100); --hue-deep: var(--signal-200); --hue-ink: var(--signal-800); }
+
+/* Dusk: after the hangout the paper cools a little (surface by state, PB 4.4; SF 09, 02). */
+.call [data-surface="dusk"] { background-color: color-mix(in oklab, var(--signal-50) 45%, var(--c-paper)); }
+
+/* Fine grain: one layer, 5% (PB 4.1, 4.6; AW 62, 60). */
+.call-grain {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.07;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* The one hue circle: off-axis, cropped by the right edge, multiply under the serif (AW 06; TS 9; IL 30). */
+.call-sun {
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+  border-radius: 9999px;
+  background: var(--hue-field);
+  mix-blend-mode: multiply;
+  width: 132vw; height: 132vw;
+  right: -78vw; top: 6svh;
+}
+@media (min-width: 1024px) { .call-sun { width: 64vw; height: 64vw; right: -22vw; top: -14vw; } }
+
+/* ── Type ───────────────────────────────────────────── */
+.call-line {
+  position: relative;
+  z-index: 1;
+  font-family: var(--serif);
+  font-optical-sizing: auto;
+  font-variation-settings: "opsz" 72;
+  font-weight: 360;
+  letter-spacing: -0.025em;
+  line-height: 0.98;
+  font-size: var(--size, 60px);
+  text-wrap: balance;
+  transition: font-weight 560ms cubic-bezier(.2,.8,.2,1);
+}
+.call-line[data-weight="on"] { font-weight: 560; }
+.call-line .row { display: block; }
+.call-line .row:nth-child(2n) { padding-left: 0.62em; } /* alternating indent, call-and-response (AW 06) */
+.call-line em { font-style: italic; font-weight: inherit; }
+
+.call-mono {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0;
+  text-transform: lowercase;
+  color: var(--c-ink-2);
+}
+.call-mono.sm { font-size: 11px; }
+
+/* Underlined words are the controls (visible at rest). */
+.call-word {
+  all: unset;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.12em;
+  text-decoration-color: color-mix(in oklab, var(--c-ink) 55%, transparent);
+  border-radius: 6px;
+  transition: text-decoration-color 140ms;
+}
+.call-word:hover { text-decoration-color: var(--c-ink); }
+.call-word:focus-visible { outline: 2px solid var(--signal-600); outline-offset: 4px; }
+.call-word[aria-pressed="true"] { text-decoration-color: var(--c-ink); text-decoration-style: solid; }
+.call-word.quiet { text-decoration-thickness: 1px; text-decoration-color: color-mix(in oklab, var(--c-ink) 40%, transparent); }
+
+.call-link {
+  all: unset;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 16px;
+  text-transform: lowercase;
+  color: var(--c-ink-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.call-link:hover { color: var(--c-ink); }
+.call-link:focus-visible { outline: 2px solid var(--signal-600); outline-offset: 2px; border-radius: 4px; }
+
+/* ── The answer: the only filled element ───────────────── */
+.call-answer {
+  all: unset;
+  cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s3);
+  height: 64px;
+  padding: 0 var(--s6) 0 var(--s2);
+  border-radius: 9999px;
+  background: var(--c-ink);
+  color: var(--c-paper);
+  font-family: var(--serif);
+  font-size: 24px;
+  font-style: italic;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 color-mix(in oklab, var(--c-ink) 20%, transparent), 0 10px 24px -14px color-mix(in oklab, var(--c-ink) 60%, transparent);
+  transition: transform 140ms cubic-bezier(.2,.8,.2,1), opacity 220ms;
+}
+.call-answer .dot { width: 48px; height: 48px; border-radius: 9999px; background: var(--hue); display: grid; place-items: center; color: var(--c-ink); }
+.call-answer:active { transform: scale(.97); }
+.call-answer:focus-visible { outline: 2px solid var(--signal-600); outline-offset: 4px; }
+.call-answer[aria-disabled="true"] { opacity: .28; cursor: default; }
+
+/* ── Discs (faces as flat circles, IL 41, 24, 71) ───────── */
+.call-discs { display: flex; align-items: center; }
+.call-disc {
+  --d: 48px;
+  position: relative;
+  width: var(--d); height: var(--d);
+  border-radius: 9999px;
+  display: grid; place-items: center;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: calc(var(--d) * 0.42);
+  color: var(--c-ink);
+  flex: none;
+}
+.call-disc + .call-disc { margin-left: calc(var(--d) * -0.18); }
+.call-disc[data-kind="seat"] { background: transparent; border: 1.5px dashed var(--c-ink-3); color: var(--c-ink-2); font-family: var(--mono); font-style: normal; font-size: 11px; }
+.call-disc[data-kind="me"] { box-shadow: 0 0 0 2px var(--c-paper); }
+.call-disc[data-tone="0"] { background: var(--ember-300); }
+.call-disc[data-tone="1"] { background: var(--signal-300); }
+.call-disc[data-tone="2"] { background: var(--grove-300); }
+.call-disc[data-tone="3"] { background: var(--amber-300); }
+.call-disc[data-tone="4"] { background: var(--ember-200); }
+.call-disc[data-tone="5"] { background: var(--signal-200); }
+.call-disc[data-tone="6"] { background: var(--grove-200); }
+.call-disc[data-tone="me"] { background: var(--hue); color: var(--neutral-0); }
+.call-disc[data-tone="private"] { background: var(--c-ink); --d: 14px; }
+.call-disc[data-tone="private-empty"] { background: transparent; border: 1.5px solid var(--c-ink-3); --d: 14px; }
+.call-disc[data-tone="private"] + .call-disc, .call-disc[data-tone="private-empty"] + .call-disc { margin-left: 6px; }
+
+/* ── Chrome ─────────────────────────────────────────── */
+.call-top {
+  position: fixed; z-index: 30; left: 0; right: 0; top: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px; padding: 0 var(--gutter);
+  pointer-events: none;
+}
+.call-top > * { pointer-events: auto; }
+.call-mark { all: unset; cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; margin-left: -10px; border-radius: 9999px; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.call-mark:focus-visible { outline: 2px solid var(--signal-600); }
+
+.call-index { position: fixed; z-index: 30; right: max(10px, calc(var(--gutter) / 2 - 12px)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; }
+.call-index button { all: unset; cursor: pointer; width: 44px; height: 30px; display: grid; place-items: center; }
+.call-index i { display: block; width: 16px; height: 16px; border-radius: 9999px; border: 1.5px solid var(--hue); background: transparent; transition: background 220ms, transform 220ms; }
+.call-index button[aria-current="true"] i { background: var(--hue); transform: scale(1.12); }
+.call-index i[data-open="false"] { border-style: dashed; border-color: var(--c-ink-3); }
+.call-index button:focus-visible i { outline: 2px solid var(--signal-600); outline-offset: 3px; }
+
+/* Pages: one call per page, vertical page turn. */
+.call-pages { height: 100svh; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
+.call-pages::-webkit-scrollbar { display: none; }
+.call-page { position: relative; height: 100svh; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; }
+
+/* Popup sheet: bottom on phones, margin card on desktop. */
+.call-scrim { position: fixed; inset: 0; z-index: 60; background: color-mix(in oklab, var(--neutral-ink) 18%, transparent); }
+.call-sheet {
+  position: fixed; z-index: 61; left: 0; right: 0; bottom: 0;
+  background: var(--c-paper);
+  border-radius: 28px 28px 0 0;
+  padding: var(--s8) var(--gutter) calc(var(--s8) + env(safe-area-inset-bottom));
+  box-shadow: 0 -20px 40px -24px color-mix(in oklab, var(--neutral-ink) 40%, transparent);
+  max-height: 86svh; overflow: auto;
+}
+@media (min-width: 1024px) {
+  .call-sheet { left: auto; right: var(--s8); bottom: var(--s8); top: auto; width: 400px; border-radius: 28px; padding: var(--s8); }
+}
+.call-sheet h2 { font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1.04; letter-spacing: -0.02em; margin: 0; font-variation-settings: "opsz" 60; }
+.call-sheet dl { margin: var(--s6) 0 0; display: grid; grid-template-columns: 56px 1fr; row-gap: var(--s3); column-gap: var(--s4); }
+.call-sheet dt { font-family: var(--mono); font-size: 11px; line-height: 20px; color: var(--c-ink-3); text-transform: lowercase; }
+.call-sheet dd { margin: 0; font-family: var(--serif); font-size: 18px; line-height: 1.3; }
+
+/* The room: pulled down from the top. */
+.call-room {
+  position: fixed; z-index: 61; left: 0; right: 0; top: 0;
+  height: min(86svh, 760px);
+  background: var(--c-paper);
+  border-radius: 0 0 28px 28px;
+  box-shadow: 0 20px 40px -24px color-mix(in oklab, var(--neutral-ink) 40%, transparent);
+  display: flex; flex-direction: column;
+}
+@media (min-width: 1024px) { .call-room { left: 50%; right: auto; width: 560px; margin-left: -280px; } }
+.call-input {
+  all: unset;
+  font-family: var(--serif);
+  color: var(--c-ink);
+  caret-color: var(--hue);
+  /* underline drawn at the baseline offset of .call-word (0.12em), not at the box edge */
+  --u: color-mix(in oklab, var(--c-ink) 55%, transparent);
+  background: linear-gradient(var(--u), var(--u)) no-repeat 0 0.9em / 100% 2px;
+  line-height: 1;
+  height: 1em;
+  padding-bottom: 0.12em;
+  vertical-align: baseline;
+  min-width: 1ch;
+}
+.call-input::placeholder { color: var(--c-ink-3); }
+.call-input:focus { --u: var(--c-ink); }
+
+.call-stop { display: inline-block; width: 0.2em; height: 0.2em; border-radius: 9999px; background: var(--hue); margin-left: 0.04em; vertical-align: 0.02em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .call-line { transition: none; }
+}

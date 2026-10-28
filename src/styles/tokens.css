@@ -1,0 +1,432 @@
+/* Pods design tokens v3 (DESIGN.md is the guide; colour system: PODS/v3/color/COLOR_LIFE.md, "Overlap").
+   Colour follows the thesis: the logo is three people (three circles) and what they share (the overlaps, darker where
+   more meet). So the app is crisp white lit by the three circles; each pod is two circles meeting; its wash deepens with
+   every hangout held (data-depth); the lock is the centre where all three meet. The blue period of "pods." is the plan,
+   settled: it is the commit button. Teal (blue x green) is safety. Ember is you and the warm yes.
+   v1 names are kept so existing components resolve; their values follow the colour system. */
+
+:root {
+  /* Brand (from logo, sampled from IMG_4920.PNG) */
+  --pods-ember: #FD6123;
+  --pods-signal: #1B78FE;
+  --pods-grove: #19C185;
+  --pods-ink: #0E1A22;
+  --pods-paper: #F7F9FB;
+  --pods-teal: #01627E;   /* signal x grove overlap: safety and trust (check-in, verified, the safety centre) */
+  --pods-plum: #40313F;   /* ember x signal overlap: the dusk pod family */
+  --pods-overlap-ember-signal: #40313F;
+  --pods-overlap-ember-grove: #315B26;
+  --pods-overlap-signal-grove: #01627E;
+  --pods-overlap-all: #0B2F26;
+
+  /* Palette ramps */
+  --ember-50: #FFF4F1;
+  --ember-100: #FEE7E0;
+  --ember-200: #FED1C2;
+  --ember-300: #FFB298;
+  --ember-400: #FF8D66;
+  --ember-500: #FD6123;
+  --ember-600: #DF4B01;
+  --ember-700: #BB3E02;
+  --ember-800: #973000;
+  --ember-900: #762706;
+  --ember-950: #5A200A;
+  --signal-50: #F2F7FE;
+  --signal-100: #E3EEFE;
+  --signal-200: #C9DEFE;
+  --signal-300: #A7C9FE;
+  --signal-400: #68A3FF;
+  --signal-500: #1B78FE;
+  --signal-600: #0161DD;
+  --signal-700: #004EB5;
+  --signal-800: #003A8B;
+  --signal-900: #002968;
+  --signal-950: #001B4C;
+  --grove-50: #E7FDF1;
+  --grove-100: #D3F7E3;
+  --grove-200: #AFEDCD;
+  --grove-300: #81DEB1;
+  --grove-400: #52D199;
+  --grove-500: #19C185;
+  --grove-600: #05A771;
+  --grove-700: #008D5F;
+  --grove-800: #03724C;
+  --grove-900: #075B3D;
+  --grove-950: #114831;
+  --teal-50: #EAF6F8;
+  --teal-100: #D2ECF1;
+  --teal-200: #A6D8E2;
+  --teal-300: #6FBFCF;
+  --teal-400: #2E9CB3;
+  --teal-500: #01627E;
+  --teal-600: #014F66;
+  --teal-700: #013E50;
+  --teal-800: #01475C;
+  --teal-900: #022F3C;
+  --teal-950: #021F28;
+  --amber-50: #FFF5E9;
+  --amber-100: #FFE9CD;
+  --amber-200: #FDD59F;
+  --amber-300: #F5BC6A;
+  --amber-400: #F2AB37;
+  --amber-500: #FBAC16;
+  --amber-600: #DD9607;
+  --amber-700: #C08100;
+  --amber-800: #A06C05;
+  --amber-900: #835A17;
+  --amber-950: #6B4C1E;
+  --red-50: #FFF4F4;
+  --red-100: #FFE6E6;
+  --red-200: #FECFCF;
+  --red-300: #FEAFB0;
+  --red-400: #FF6C78;
+  --red-500: #E2314E;
+  --red-600: #C50B3A;
+  --red-700: #A2002C;
+  --red-800: #7C001F;
+  --red-900: #5C0015;
+  --red-950: #42010D;
+  --neutral-0: #FFFFFF;
+  --neutral-25: #F9FBFC;
+  --neutral-50: #F5F8FB;
+  --neutral-100: #ECF1F5;
+  --neutral-200: #DDE5EB;
+  --neutral-300: #C5D0D9;
+  --neutral-400: #A2AFBA;
+  --neutral-500: #8A97A4;
+  --neutral-600: #5B6875;
+  --neutral-700: #475563;
+  --neutral-800: #24323D;
+  --neutral-900: #0E1A22;
+  --neutral-950: #08121A;
+  --neutral-ink: #0E1A22;
+
+  /* One voice: Archivo, the typeface the "pods." wordmark is drawn from (PODS/brand/BRAND.md §2; founder 2026-10-28: "use the same font as the logo").
+     Headlines: 800-850, font-stretch ~108%, tight tracking, so they read as the logo speaking. UI and body: 400-600 at normal width.
+     --font-serif / --font-display are kept as names so every screen picks up the change. */
+  --font-display: var(--font-archivo), 'Archivo', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-serif: var(--font-display);
+  --font-ui: var(--font-archivo), 'Archivo', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  --text-display-2xl-size: clamp(4rem, 2.2rem + 7.4vw, 10.5rem);
+  --text-display-2xl-line: 0.95;
+  --text-display-2xl-weight: 850;
+  --text-display-2xl-tracking: -0.035em;
+  --text-display-2xl-family: var(--font-serif);
+  --text-display-xl-size: clamp(3.5rem, 2.4rem + 4.6vw, 7rem);
+  --text-display-xl-line: 1;
+  --text-display-xl-weight: 850;
+  --text-display-xl-tracking: -0.03em;
+  --text-display-xl-family: var(--font-serif);
+  --text-display-lg-size: clamp(3rem, 2.4rem + 2.4vw, 4.5rem);
+  --text-display-lg-line: 1.04;
+  --text-display-lg-weight: 800;
+  --text-display-lg-tracking: -0.025em;
+  --text-display-lg-family: var(--font-serif);
+  --text-heading-xl-size: clamp(2.5rem, 2.2rem + 1.2vw, 3.5rem);
+  --text-heading-xl-line: 1.08;
+  --text-heading-xl-weight: 800;
+  --text-heading-xl-tracking: -0.02em;
+  --text-heading-xl-family: var(--font-serif);
+  --text-heading-lg-size: 2rem;
+  --text-heading-lg-line: 1.125;
+  --text-heading-lg-weight: 700;
+  --text-heading-lg-tracking: -0.015em;
+  --text-heading-lg-family: var(--font-serif);
+  --text-heading-md-size: 1.125rem;
+  --text-heading-md-line: 1.333;
+  --text-heading-md-weight: 600;
+  --text-heading-md-tracking: -0.01em;
+  --text-heading-md-family: var(--font-ui);
+  --text-heading-sm-size: 1rem;
+  --text-heading-sm-line: 1.5;
+  --text-heading-sm-weight: 600;
+  --text-heading-sm-tracking: -0.005em;
+  --text-heading-sm-family: var(--font-ui);
+  --text-body-lg-size: 1.125rem;
+  --text-body-lg-line: 1.556;
+  --text-body-lg-weight: 400;
+  --text-body-lg-tracking: -0.005em;
+  --text-body-lg-family: var(--font-ui);
+  --text-body-size: 16px;
+  --text-body-line: 1.5;
+  --text-body-weight: 400;
+  --text-body-tracking: -0.003em;
+  --text-body-family: var(--font-ui);
+  --text-body-sm-size: 14px;
+  --text-body-sm-line: 1.428;
+  --text-body-sm-weight: 400;
+  --text-body-sm-tracking: 0em;
+  --text-body-sm-family: var(--font-ui);
+  --text-label-size: 14px;
+  --text-label-line: 1.428;
+  --text-label-weight: 500;
+  --text-label-tracking: 0em;
+  --text-label-family: var(--font-ui);
+  --text-caption-size: 12px;
+  --text-caption-line: 1.333;
+  --text-caption-weight: 500;
+  --text-caption-tracking: 0.005em;
+  --text-caption-family: var(--font-ui);
+  /* No uppercase tracked eyebrows (PB 8): the overline is the quiet 14px label used above a line ("Hoopers #1 · closes Thu"). */
+  --text-overline-size: 14px;
+  --text-overline-line: 1.428;
+  --text-overline-weight: 400;
+  --text-overline-tracking: 0em;
+  --text-overline-family: var(--font-ui);
+  --text-mono-size: 14px;
+  --text-mono-line: 1.428;
+  --text-mono-weight: 400;
+  --text-mono-tracking: 0em;
+  --text-mono-family: var(--font-ui);
+
+  /* Space, radius, z */
+  /* Spacing: 4 pt, one job per step (DESIGN.md §4). check-spacing fails anything off this list. */
+  --s1: 4px;   /* inside one control: glyph to its label */
+  --s2: 8px;   /* inside a group: label to value, disc to disc */
+  --s3: 12px;  /* rows of one list */
+  --s4: 16px;  /* a line to its object; sheet inner padding */
+  --gutter: 20px; /* phone outer margin */
+  --s6: 24px;  /* head below the top bar */
+  --s8: 32px;  /* between groups; clear zone above the primary (phone) */
+  --s12: 48px; /* clear zone around the primary (laptop); hero gaps */
+  --s16: 64px; /* laptop outer margin */
+  --s24: 96px; /* laptop gap between the text column and the object */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 28px;
+  --radius-2xl: 32px;
+  --radius-pill: 999px;
+  --radius-icon: 22.37%;
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-header: 20;
+  --z-overlay: 40;
+  --z-sheet: 50;
+  --z-toast: 60;
+  --z-tooltip: 70;
+
+  /* Motion: one language (COLOR_LIFE §12; DESIGN §7). Four durations, each with one job, three curves and two springs
+     (JS twins in src/components/brand/motion.ts). Transform and opacity only. */
+  --dur-tap: 150ms;     /* press feedback, toggles, a disc popping in */
+  --dur-move: 250ms;    /* a thing moving within the screen: a segment filling, a sheet's content, a count ticking */
+  --dur-settle: 400ms;  /* a screen or object arriving: page in, sheet up, the plan card becoming the lock */
+  --dur-light: 700ms;   /* the stage changing its light (dawn, clear, night, dusk) and the moment */
+  --ease-out: cubic-bezier(.22,1,.36,1);     /* ARRIVE: things entering and settling */
+  --ease-in-out: cubic-bezier(.65,0,.35,1);  /* TRAVEL: things moving from A to B on screen */
+  --ease-exit: cubic-bezier(.4,0,1,1);       /* LEAVE: quick and quiet */
+  /* the SNAPPY spring as a CSS curve (stiffness 420, damping 32): one 4% overshoot, no wobble */
+  --ease-spring: linear(0, .21 6%, .62 16%, .88 26%, 1.02 38%, 1.04 46%, 1.01 62%, 1);
+  /* v1 names, mapped onto the language above */
+  --dur-instant: 80ms;
+  --dur-fast: var(--dur-tap);
+  --dur-base: var(--dur-move);
+  --dur-slow: var(--dur-settle);
+  --dur-slower: 560ms;
+  --dur-story: 1200ms;
+  --ease-standard: var(--ease-out);
+  --ease-enter: var(--ease-out);
+  --ease-snap: var(--ease-spring);
+  --ease-paper: cubic-bezier(.2,.8,.2,1); /* light changes and sheets */
+
+  /* Finish: clean first, gloss as a highlight (founder 2026-10-28: "clean, glossy maybe"). Gloss lives on the few
+     things you touch or that are people: filled buttons, discs, the lock ring. Glass lives only on things that float
+     over colour: sheets, the condensed header, the toast. Never on text blocks or lists. */
+  --sheen: linear-gradient(180deg, rgb(255 255 255 / .30) 0%, rgb(255 255 255 / .08) 46%, rgb(255 255 255 / 0) 52%, rgb(0 0 0 / .05) 100%);
+  --sheen-press: linear-gradient(180deg, rgb(255 255 255 / .12) 0%, rgb(255 255 255 / 0) 50%, rgb(0 0 0 / .08) 100%);
+  --edge-gloss: inset 0 1px 0 rgb(255 255 255 / .38), inset 0 -1px 0 rgb(0 0 0 / .10);
+  /* a disc is lit from the top-left like the logo's circles: a soft specular spot, then the solid hue */
+  --disc-sheen: radial-gradient(circle at 34% 26%, rgb(255 255 255 / .46) 0, rgb(255 255 255 / .10) 34%, rgb(255 255 255 / 0) 52%);
+  --glass: rgb(255 255 255 / .74);
+  --glass-strong: rgb(255 255 255 / .86);
+  --glass-edge: inset 0 0 0 1px rgb(255 255 255 / .65), 0 0 0 1px rgb(14 26 34 / .06);
+  --glass-blur: blur(22px) saturate(1.7);
+
+  /* Gradients (COLOR_LIFE §5): only the logo's circles meeting. A pod is TWO circles meeting (its overlap is its
+     colour: tide = blue x green -> teal, grove = green x ember -> moss, dusk = ember x blue -> plum). Few stops, soft.
+     Solid hues stay for small UI (buttons, discs, ring segments). */
+  --grad-logo: linear-gradient(135deg, #1B78FE 0%, #01627E 50%, #19C185 100%);             /* blue into green through their overlap */
+  --grad-tide: linear-gradient(135deg, #1B78FE 0%, #01627E 55%, #19C185 100%);             /* pod family: tide (blue x green) */
+  --grad-grove: linear-gradient(in oklch 135deg, #19C185 0%, #FD6123 100%);                 /* pod family: grove (green x ember) */
+  --grad-dusk: linear-gradient(135deg, #FD6123 0%, #40313F 55%, #1B78FE 100%);              /* pod family: dusk (ember x blue) */
+  /* the three circles at full strength, meeting at the centre (the logo, as a field): splash, OG, the lock */
+  --grad-venn: radial-gradient(circle at 50% 30%, rgba(253,97,35,.85) 0 22%, rgba(253,97,35,0) 40%), radial-gradient(circle at 30% 64%, rgba(27,120,254,.9) 0 24%, rgba(27,120,254,0) 42%), radial-gradient(circle at 70% 64%, rgba(25,193,133,.85) 0 24%, rgba(25,193,133,0) 42%);
+  /* the page light: the logo's three circles as soft coloured light at the top-right corner, overlapping (darker
+     where more meet). Sits behind the object, never behind body text. */
+  --mesh-page: radial-gradient(circle 210px at calc(100% - 30px) 40px, rgba(253,97,35,.20) 0 62%, rgba(253,97,35,0) 100%), radial-gradient(circle 230px at calc(100% - 170px) 190px, rgba(27,120,254,.22) 0 62%, rgba(27,120,254,0) 100%), radial-gradient(circle 230px at calc(100% + 50px) 230px, rgba(25,193,133,.24) 0 62%, rgba(25,193,133,0) 100%);
+  /* the moment (lock, #2 is on): the centre of the logo. A deep field (the all-three overlap) with the three circles
+     converging on the table: blue and green below, the ember spark above where they meet. */
+  --moment: radial-gradient(circle 150px at 50% 27%, rgba(253,97,35,.82) 0 64%, rgba(253,97,35,0) 100%), radial-gradient(circle 160px at 27% 50%, rgba(27,120,254,.90) 0 64%, rgba(27,120,254,0) 100%), radial-gradient(circle 160px at 73% 50%, rgba(25,193,133,.82) 0 64%, rgba(25,193,133,0) 100%), linear-gradient(170deg, #0B2F26 0%, #022634 100%);
+  /* v1 names */
+  --gradient-aurora: var(--mesh-page);
+  --gradient-signal-gloss: var(--grad-tide);
+  --gradient-ember-gloss: linear-gradient(#FD6123, #FD6123);
+  --gradient-grove-gloss: var(--grad-grove);
+  --gradient-glass-light: linear-gradient(#FFFFFF, #FFFFFF);
+  --gradient-glass-dark: linear-gradient(#FFFFFF, #FFFFFF);
+
+  /* Semantic roles. One theme: crisp white under the circles' light. The moment is a STATE (the centre), not a theme. */
+  color-scheme: light;
+  --paper: #F7F9FB;    /* the page: crisp cool white */
+  --paper-evening: #FBF9F8; /* the same page after 6pm: a degree warmer (shell/daypart.tsx) */
+  --lit: #FFFFFF;      /* sheets, cards, table tops */
+  --table: #FFFFFF;
+  --ink: #0E1A22;      /* text: cool near-black (16.6:1 on paper) */
+  --ink-2: #475563;    /* secondary text (7.2:1) */
+  --ink-3: #8A97A4;    /* rules and dashes only (2.8:1, never text) */
+  --line: rgba(14,26,34,.12);
+  --line-2: rgba(14,26,34,.26);
+  --night: #06262B;    /* the moment field (the all-three overlap, deepened), under --moment */
+  --lamp: #F2FFFA;     /* text and pills on the moment (10:1) */
+  --teal: #01627E;
+  --plum: #40313F;
+  --spark: #FD6123;    /* ember: you, I'm in, the lock spark. Never a field. */
+  --on-spark: #0E1A22; /* 5.8:1 */
+  --scrim: rgba(1,72,92,.22); /* a calm teal veil (safety colour), frosted by .pods-scrim */
+  --color-bg: #F7F9FB;
+  --color-surface: #FFFFFF;
+  --color-raised: #FFFFFF;
+  --color-sunken: #ECF1F5;
+  --color-border: rgba(14,26,34,.12);
+  --color-border-strong: rgba(14,26,34,.26);
+  --color-text: #0E1A22;
+  --color-text-muted: #475563;
+  --color-text-subtle: #5B6875;
+  --color-text-inverse: #FFFFFF;
+  /* the commit button: the blue period of "pods." (the plan, settled). signal-600, 5.6:1 with white */
+  --color-primary: #0161DD;
+  --color-primary-hover: #004EB5;
+  --color-primary-pressed: #003A8B;
+  --color-on-primary: #FFFFFF;
+  --color-primary-soft: #EAF2FE;
+  --color-primary-soft-text: #0161DD;
+  --color-link: #0161DD;
+  --color-focus-ring: #1B78FE;
+  --color-ember: #FD6123;
+  --color-ember-text: #BB3E02;
+  --color-ember-soft: #FFF1EB;
+  --color-ember-soft-border: #FED1C2;
+  --color-on-ember: #0E1A22;
+  --color-signal: #1B78FE;
+  --color-signal-text: #0161DD;
+  --color-signal-soft: #EAF2FE;
+  --color-signal-soft-border: #C9DEFE;
+  --color-on-signal: #FFFFFF;
+  --color-grove: #19C185;
+  --color-grove-text: #03684A;
+  --color-grove-soft: #E3F8EF;
+  --color-grove-soft-border: #AFEDCD;
+  --color-on-grove: #0E1A22;
+  /* chosen / selected / active (a picked chip, the current step, an active underline): the plan's blue.
+     Teal is NOT a selection colour; it means safety. */
+  --select: #0161DD;
+  --on-select: #FFFFFF;
+  --color-teal: #01627E;
+  --color-teal-soft: #EAF6F8;
+  --color-on-teal: #FFFFFF;
+  /* Safety reads calm: confirmed and verified are grove, information is signal, caution is a quiet amber word.
+     Red is only for destroying something (delete, admin remove). Never red for a normal safety state. */
+  --color-success: #19C185;
+  --color-success-text: #03684A;
+  --color-success-soft: #E3F8EF;
+  --color-success-border: #AFEDCD;
+  --color-warning: #DD9607;
+  --color-warning-text: #835A17;
+  --color-warning-soft: #FFF5E9;
+  --color-warning-border: #FDD59F;
+  --color-on-warning: #0E1A22;
+  --color-danger: #C50B3A;
+  --color-danger-hover: #A2002C;
+  --color-danger-text: #C50B3A;
+  --color-danger-soft: #FFF4F4;
+  --color-danger-border: #FECFCF;
+  --color-on-danger: #FFFFFF;
+  --color-info: #1B78FE;
+  --color-info-text: #0161DD;
+  --color-info-soft: #EAF2FE;
+  --color-info-border: #C9DEFE;
+  --color-verified: #05A771;  /* the verified mark (3.1:1 as an icon) */
+  --color-safe: #01627E;      /* safety centre, check-in, shared location */
+  --color-safe-soft: #EAF6F8;
+  /* Cool shadows; the primary casts a blue shadow, never a glow. */
+  --shadow-xs: 0 1px 0 rgba(14,26,34,.06);
+  --shadow-sm: 0 1px 2px rgba(14,26,34,.06), 0 8px 18px -12px rgba(14,26,34,.22);
+  --shadow-md: 0 1px 2px rgba(14,26,34,.06), 0 16px 32px -18px rgba(14,26,34,.30);
+  --shadow-lg: 0 30px 60px -28px rgba(14,26,34,.32);
+  /* layered: a tight contact shadow plus a soft coloured cast (depth, never a glow) */
+  --shadow-primary: inset 0 1px 0 rgb(255 255 255 / .34), inset 0 -1px 0 rgb(0 0 0 / .14), 0 1px 1px rgba(1,78,181,.30), 0 6px 14px -6px rgba(1,97,221,.50), 0 18px 32px -18px rgba(1,97,221,.55);
+  --shadow-spark: inset 0 1px 0 rgb(255 255 255 / .40), inset 0 -1px 0 rgb(0 0 0 / .10), 0 1px 1px rgba(187,62,2,.28), 0 6px 14px -6px rgba(253,97,35,.55), 0 18px 32px -18px rgba(253,97,35,.60);
+  --shadow-disc: 0 1px 1px rgba(14,26,34,.16), 0 4px 10px -4px rgba(14,26,34,.28);
+  --shadow-float: 0 1px 2px rgba(14,26,34,.06), 0 12px 28px -14px rgba(14,26,34,.24), 0 40px 80px -40px rgba(14,26,34,.30);
+  --shadow-glow-signal: none;
+  --shadow-glow-ember: none;
+  --shadow-glow-grove: none;
+  --shadow-inset-gloss: none;
+  --gradient-glass: var(--gradient-glass-light);
+}
+
+/* Laptop: the page circles grow with the canvas, and the moment's circles gather on the right where the table sits
+   (the text column stays on the deep field, PB 1.1). */
+@media (min-width: 1024px) {
+  :root {
+    --mesh-page: radial-gradient(circle 320px at calc(100% - 60px) 30px, rgba(253,97,35,.14) 0 62%, rgba(253,97,35,0) 100%), radial-gradient(circle 360px at calc(100% - 280px) 250px, rgba(27,120,254,.15) 0 62%, rgba(27,120,254,0) 100%), radial-gradient(circle 360px at calc(100% + 40px) 330px, rgba(25,193,133,.17) 0 62%, rgba(25,193,133,0) 100%);
+    --moment: radial-gradient(circle 230px at 73% 30%, rgba(253,97,35,.80) 0 64%, rgba(253,97,35,0) 100%), radial-gradient(circle 250px at 63% 64%, rgba(27,120,254,.88) 0 64%, rgba(27,120,254,0) 100%), radial-gradient(circle 250px at 83% 64%, rgba(25,193,133,.80) 0 64%, rgba(25,193,133,0) 100%), linear-gradient(170deg, #0B2F26 0%, #022634 100%);
+  }
+}
+
+/* Pod washes (COLOR_LIFE §5.3). Each wash is two logo circles meeting; --depth deepens them with every hangout held
+   (repeat made visible: data-depth="1" first hangout, "2" after the second, "3" from the third on). They are declared on
+   :root AND on every [data-depth] element so the alpha is recomputed where depth is set (TableRing sets it from `worn`). */
+:root, [data-depth] {
+  --grad-tide-soft: radial-gradient(52% 52% at 34% 36%, rgb(27 120 254 / calc(.30 * var(--depth, 1))) 0 58%, rgb(27 120 254 / 0) 100%), radial-gradient(52% 52% at 66% 64%, rgb(25 193 133 / calc(.32 * var(--depth, 1))) 0 58%, rgb(25 193 133 / 0) 100%);
+  --grad-grove-soft: radial-gradient(52% 52% at 34% 36%, rgb(25 193 133 / calc(.32 * var(--depth, 1))) 0 58%, rgb(25 193 133 / 0) 100%), radial-gradient(52% 52% at 66% 64%, rgb(253 97 35 / calc(.22 * var(--depth, 1))) 0 58%, rgb(253 97 35 / 0) 100%);
+  --grad-dusk-soft: radial-gradient(52% 52% at 34% 36%, rgb(253 97 35 / calc(.24 * var(--depth, 1))) 0 58%, rgb(253 97 35 / 0) 100%), radial-gradient(52% 52% at 66% 64%, rgb(27 120 254 / calc(.28 * var(--depth, 1))) 0 58%, rgb(27 120 254 / 0) 100%);
+}
+[data-depth="1"] { --depth: 1; }
+[data-depth="2"] { --depth: 1.45; }
+[data-depth="3"] { --depth: 1.9; }
+
+/* Pod families. The data-pod-hue KEY names the pod's slot; the family is what it renders:
+   key "ember" (first interest pod) = TIDE (blue x green), "grove" (community) = GROVE (green x ember),
+   "signal" (second interest) = DUSK (ember x blue). --pod is the pod's solid (rings, room circles), --pod-grad its
+   gradient, --pod-wash the soft two-circle wash. */
+:root, [data-pod-hue="signal"] { --pod: var(--color-signal); --pod-text: var(--color-signal-text); --pod-soft: var(--color-signal-soft); --pod-soft-border: var(--color-signal-soft-border); --pod-on: var(--color-on-signal); --pod-gloss: var(--grad-dusk); --pod-grad: var(--grad-dusk); --pod-wash: var(--grad-dusk-soft); --pod-glow: none; }
+[data-pod-hue="ember"], [data-pod-type="interest"] { --pod: var(--color-signal); --pod-text: var(--color-signal-text); --pod-soft: var(--color-signal-soft); --pod-soft-border: var(--color-signal-soft-border); --pod-on: var(--color-on-signal); --pod-gloss: var(--grad-tide); --pod-grad: var(--grad-tide); --pod-wash: var(--grad-tide-soft); --pod-glow: none; }
+[data-pod-hue="grove"], [data-pod-type="community"] { --pod: var(--color-grove); --pod-text: var(--color-grove-text); --pod-soft: var(--color-grove-soft); --pod-soft-border: var(--color-grove-soft-border); --pod-on: var(--color-on-grove); --pod-gloss: var(--grad-grove); --pod-grad: var(--grad-grove); --pod-wash: var(--grad-grove-soft); --pod-glow: none; }
+
+/* Type utility classes */
+.text-display-2xl { font-family: var(--text-display-2xl-family); font-size: var(--text-display-2xl-size); line-height: var(--text-display-2xl-line); font-weight: var(--text-display-2xl-weight); letter-spacing: var(--text-display-2xl-tracking); }
+.text-display-xl { font-family: var(--text-display-xl-family); font-size: var(--text-display-xl-size); line-height: var(--text-display-xl-line); font-weight: var(--text-display-xl-weight); letter-spacing: var(--text-display-xl-tracking); }
+.text-display-lg { font-family: var(--text-display-lg-family); font-size: var(--text-display-lg-size); line-height: var(--text-display-lg-line); font-weight: var(--text-display-lg-weight); letter-spacing: var(--text-display-lg-tracking); }
+.text-heading-xl { font-family: var(--text-heading-xl-family); font-size: var(--text-heading-xl-size); line-height: var(--text-heading-xl-line); font-weight: var(--text-heading-xl-weight); letter-spacing: var(--text-heading-xl-tracking); }
+.text-heading-lg { font-family: var(--text-heading-lg-family); font-size: var(--text-heading-lg-size); line-height: var(--text-heading-lg-line); font-weight: var(--text-heading-lg-weight); letter-spacing: var(--text-heading-lg-tracking); }
+.text-heading-md { font-family: var(--text-heading-md-family); font-size: var(--text-heading-md-size); line-height: var(--text-heading-md-line); font-weight: var(--text-heading-md-weight); letter-spacing: var(--text-heading-md-tracking); }
+.text-heading-sm { font-family: var(--text-heading-sm-family); font-size: var(--text-heading-sm-size); line-height: var(--text-heading-sm-line); font-weight: var(--text-heading-sm-weight); letter-spacing: var(--text-heading-sm-tracking); }
+.text-body-lg { font-family: var(--text-body-lg-family); font-size: var(--text-body-lg-size); line-height: var(--text-body-lg-line); font-weight: var(--text-body-lg-weight); letter-spacing: var(--text-body-lg-tracking); }
+.text-body { font-family: var(--text-body-family); font-size: var(--text-body-size); line-height: var(--text-body-line); font-weight: var(--text-body-weight); letter-spacing: var(--text-body-tracking); }
+.text-body-sm { font-family: var(--text-body-sm-family); font-size: var(--text-body-sm-size); line-height: var(--text-body-sm-line); font-weight: var(--text-body-sm-weight); letter-spacing: var(--text-body-sm-tracking); }
+.text-label { font-family: var(--text-label-family); font-size: var(--text-label-size); line-height: var(--text-label-line); font-weight: var(--text-label-weight); letter-spacing: var(--text-label-tracking); }
+.text-caption { font-family: var(--text-caption-family); font-size: var(--text-caption-size); line-height: var(--text-caption-line); font-weight: var(--text-caption-weight); letter-spacing: var(--text-caption-tracking); }
+.text-overline { font-family: var(--text-overline-family); font-size: var(--text-overline-size); line-height: var(--text-overline-line); font-weight: var(--text-overline-weight); letter-spacing: var(--text-overline-tracking); color: var(--color-text-muted); }
+.text-mono { font-family: var(--text-mono-family); font-size: var(--text-mono-size); line-height: var(--text-mono-line); font-weight: var(--text-mono-weight); letter-spacing: var(--text-mono-tracking); }
+
+/* Reduced motion: nothing travels; state changes become a 160 ms cross-fade (nothing is lost, only the travel). */
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-tap: 0ms; --dur-move: 160ms; --dur-settle: 160ms; --dur-slower: 160ms; --dur-story: 0ms; --ease-spring: linear; }
+}

@@ -1,0 +1,115 @@
+/* /waitlist flow step. Steps: 16 line to its sub, 32 field to the pill (the primary's clear zone), 8 field to its error. */
+.wl-sub {
+  margin-top: var(--s4);
+  font-size: 18px;
+  line-height: 28px;
+  max-width: 30ch;
+}
+.wl-city input {
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  height: 44px;
+  padding: 8px 0;
+  margin: -8px 0;
+  vertical-align: baseline;
+  field-sizing: content;
+  min-width: 4ch;
+  max-width: 100%;
+  border-radius: 0;
+  box-shadow: inset 0 -9.5px 0 -8px var(--line-2);
+  outline-offset: 2px;
+}
+.wl-city input::placeholder {
+  color: var(--ink);
+  opacity: 1;
+}
+.wl-city input:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  border-radius: 6px;
+}
+
+.wl-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.wl-field input {
+  width: 100%;
+  height: 56px;
+  border-radius: 28px;
+  border: 0;
+  padding: 0 var(--s6);
+  background: var(--lit);
+  box-shadow: inset 0 0 0 1.5px var(--line);
+  font: inherit;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  outline-offset: 3px;
+}
+.wl-field input::placeholder {
+  color: var(--ink-2);
+}
+.wl-field input:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+}
+.wl-field[data-error] input {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.wl-err {
+  margin-top: var(--s2);
+  padding-left: var(--s6);
+}
+.wl-pill {
+  margin-top: var(--s8);
+  align-self: flex-end;
+}
+
+@media (min-width: 1024px) {
+  .wl-sub {
+    font-size: 20px;
+    line-height: 30px;
+  }
+  .wl-form {
+    max-width: 400px;
+  }
+  .wl-pill {
+    align-self: flex-start;
+  }
+}
+
+/* the table's circles are the logo light here, as on the Doorway, so the paper page light steps aside */
+html[data-light="paper"]:has(.wl-obj) {
+  --stage-light: none;
+}
+.wl-obj {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+/* the Doorway's circles at rest: small on the phone (the field and pill own the foot), larger on laptop */
+.wl-venn {
+  width: 100%;
+  height: 100%;
+  max-width: 280px;
+  max-height: 280px;
+}
+@media (min-width: 1024px) {
+  .wl-venn {
+    max-width: 480px;
+    max-height: 480px;
+  }
+}
+.wl-done {
+  margin-left: auto;
+}
+@media (min-width: 1024px) {
+  .wl-done {
+    margin-left: 0;
+  }
+}

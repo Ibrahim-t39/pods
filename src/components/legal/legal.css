@@ -1,0 +1,133 @@
+/* Legal pages (L01-L03). Steps: chrome 16+44, head 24, 32 title to rows, rows 72 tall with 12 inside, 32 rows to the
+   sibling links, 64 floor. Laptop: 520 | 96 | 640, title at 160 from the top. `flow-root` stops the chrome row's
+   top margin collapsing through the page (it showed a lighter band above the row). */
+.legal {
+  display: flow-root;
+  min-height: 100dvh;
+  padding-bottom: var(--s16);
+}
+.legal-body {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--s6) var(--gutter) 0;
+}
+.legal-title {
+  text-wrap: balance;
+}
+/* The rows sit on one white sheet (COLOR_LIFE §6.1: legal is a white column under the page light), so body text is
+   never laid over the logo light (gradient rule 3). Hairlines only between rows. */
+.legal-rows {
+  margin-top: var(--s8);
+  padding: 0 var(--s4);
+  border-radius: var(--radius-lg);
+  background: var(--lit);
+  box-shadow: var(--shadow-sm);
+}
+.legal-rows > li + li {
+  border-top: 1px solid var(--line);
+}
+.legal-row {
+  display: flex;
+  width: 100%;
+  min-height: 72px;
+  align-items: center;
+  gap: var(--s4);
+  padding: var(--s3) 0;
+  text-align: left;
+  color: inherit;
+  outline-offset: 2px;
+}
+.legal-row:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  border-radius: 8px;
+}
+.legal-glyph {
+  flex: none;
+  color: var(--color-link);
+  transition: transform 320ms var(--ease-paper);
+}
+/* the safety page's row marks: the trust colour on its softest tint (COLOR_LIFE §8) */
+.legal-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--color-safe-soft);
+  color: var(--color-safe);
+}
+li[data-open] .legal-mark {
+  background: var(--color-safe);
+  color: var(--lit);
+  transition: background 280ms var(--ease-paper), color 280ms var(--ease-paper);
+}
+.legal-more .legal-911 {
+  color: var(--color-danger-text);
+  font-weight: 600;
+}
+li[data-open] .legal-glyph {
+  animation: legal-pop var(--dur-tap) var(--ease-out);
+}
+@keyframes legal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+a.legal-row:hover .legal-glyph {
+  transform: translateX(4px);
+}
+li:has(.legal-mark) .legal-more {
+  padding-left: 56px;
+}
+.legal-more {
+  max-width: 60ch;
+  padding-bottom: var(--s6);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--ink-2);
+  animation: legal-open 320ms var(--ease-paper);
+}
+.legal-more p + p {
+  margin-top: var(--s3);
+}
+@keyframes legal-open {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+.legal-next {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--s6);
+  margin-top: var(--s8);
+}
+
+@media (min-width: 1024px) {
+  .legal-body {
+    display: grid;
+    grid-template-columns: 520px minmax(0, 640px);
+    column-gap: var(--s24);
+    padding: 116px var(--s16) 0;
+  }
+  .legal-title {
+    position: sticky;
+    top: 116px;
+    align-self: start;
+  }
+  .legal-rows {
+    margin-top: 0;
+    padding: 0 var(--s6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legal-more {
+    animation-duration: 160ms;
+  }
+  .legal-glyph {
+    transition-duration: 160ms;
+  }
+}

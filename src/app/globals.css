@@ -1,26 +1,646 @@
+/* Pods global styles (v3; DESIGN.md is the guide). Tokens live in src/styles/tokens.css and are exposed to Tailwind
+   through @theme inline below. The stage (cool white, logo light, grain, light states) is defined in the base layer.
+   Colour system: PODS/v3/color/COLOR_LIFE.md ("Overlap"). */
 @import "tailwindcss";
+@import "../styles/tokens.css" layer(base);
+@import "../styles/motion.css" layer(base);
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* One theme (cool white). `dark:` classes left in older components only match data-theme="dark", which v3 never sets. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Drop Tailwind's default palette: tokens only. */
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: var(--neutral-0);
+  --color-black: var(--pods-ink);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-paper: var(--paper);
+  --color-lit: var(--lit);
+  --color-table: var(--table);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-night: var(--night);
+  --color-lamp: var(--lamp);
+  --color-stage-fg: var(--stage-fg);
+  --color-teal: var(--teal);
+  --color-select: var(--select);
+  --color-on-select: var(--on-select);
+  --color-plum: var(--plum);
+  --color-spark: var(--spark);
+  --color-on-spark: var(--on-spark);
+  --color-scrim: var(--scrim);
+  --color-safe: var(--color-safe);
+  --color-safe-soft: var(--color-safe-soft);
+  --color-teal-soft: var(--color-teal-soft);
+  --color-on-teal: var(--color-on-teal);
+
+  /* Semantic roles */
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-raised: var(--color-raised);
+  --color-sunken: var(--color-sunken);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-fg: var(--color-text);
+  --color-fg-muted: var(--color-text-muted);
+  --color-fg-subtle: var(--color-text-subtle);
+  --color-fg-inverse: var(--color-text-inverse);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-pressed: var(--color-primary-pressed);
+  --color-on-primary: var(--color-on-primary);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-primary-soft-text: var(--color-primary-soft-text);
+  --color-link: var(--color-link);
+  --color-focus-ring: var(--color-focus-ring);
+  --color-ember: var(--color-ember);
+  --color-ember-text: var(--color-ember-text);
+  --color-ember-soft: var(--color-ember-soft);
+  --color-ember-soft-border: var(--color-ember-soft-border);
+  --color-on-ember: var(--color-on-ember);
+  --color-signal: var(--color-signal);
+  --color-signal-text: var(--color-signal-text);
+  --color-signal-soft: var(--color-signal-soft);
+  --color-signal-soft-border: var(--color-signal-soft-border);
+  --color-on-signal: var(--color-on-signal);
+  --color-grove: var(--color-grove);
+  --color-grove-text: var(--color-grove-text);
+  --color-grove-soft: var(--color-grove-soft);
+  --color-grove-soft-border: var(--color-grove-soft-border);
+  --color-on-grove: var(--color-on-grove);
+  --color-success: var(--color-success);
+  --color-success-text: var(--color-success-text);
+  --color-success-soft: var(--color-success-soft);
+  --color-success-border: var(--color-success-border);
+  --color-warning: var(--color-warning);
+  --color-warning-text: var(--color-warning-text);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-warning-border: var(--color-warning-border);
+  --color-on-warning: var(--color-on-warning);
+  --color-danger: var(--color-danger);
+  --color-danger-hover: var(--color-danger-hover);
+  --color-danger-text: var(--color-danger-text);
+  --color-danger-soft: var(--color-danger-soft);
+  --color-danger-border: var(--color-danger-border);
+  --color-on-danger: var(--color-on-danger);
+  --color-info: var(--color-info);
+  --color-info-text: var(--color-info-text);
+  --color-info-soft: var(--color-info-soft);
+  --color-info-border: var(--color-info-border);
+  --color-verified: var(--color-verified);
+
+  /* Pod hue hooks (set data-pod-hue / data-pod-type on a surface) */
+  --color-pod: var(--pod);
+  --color-pod-text: var(--pod-text);
+  --color-pod-soft: var(--pod-soft);
+  --color-pod-soft-border: var(--pod-soft-border);
+  --color-pod-on: var(--pod-on);
+  --color-pod-soft-bg: var(--pod-soft);
+
+  /* Ramps (illustrations and rare accents only) */
+  --color-ember-50: var(--ember-50);
+  --color-ember-100: var(--ember-100);
+  --color-ember-200: var(--ember-200);
+  --color-ember-300: var(--ember-300);
+  --color-ember-400: var(--ember-400);
+  --color-ember-500: var(--ember-500);
+  --color-ember-600: var(--ember-600);
+  --color-ember-700: var(--ember-700);
+  --color-ember-800: var(--ember-800);
+  --color-ember-900: var(--ember-900);
+  --color-ember-950: var(--ember-950);
+  --color-signal-50: var(--signal-50);
+  --color-signal-100: var(--signal-100);
+  --color-signal-200: var(--signal-200);
+  --color-signal-300: var(--signal-300);
+  --color-signal-400: var(--signal-400);
+  --color-signal-500: var(--signal-500);
+  --color-signal-600: var(--signal-600);
+  --color-signal-700: var(--signal-700);
+  --color-signal-800: var(--signal-800);
+  --color-signal-900: var(--signal-900);
+  --color-signal-950: var(--signal-950);
+  --color-grove-50: var(--grove-50);
+  --color-grove-100: var(--grove-100);
+  --color-grove-200: var(--grove-200);
+  --color-grove-300: var(--grove-300);
+  --color-grove-400: var(--grove-400);
+  --color-grove-500: var(--grove-500);
+  --color-grove-600: var(--grove-600);
+  --color-grove-700: var(--grove-700);
+  --color-grove-800: var(--grove-800);
+  --color-grove-900: var(--grove-900);
+  --color-grove-950: var(--grove-950);
+  --color-teal-50: var(--teal-50);
+  --color-teal-100: var(--teal-100);
+  --color-teal-200: var(--teal-200);
+  --color-teal-300: var(--teal-300);
+  --color-teal-400: var(--teal-400);
+  --color-teal-500: var(--teal-500);
+  --color-teal-600: var(--teal-600);
+  --color-teal-700: var(--teal-700);
+  --color-teal-800: var(--teal-800);
+  --color-teal-900: var(--teal-900);
+  --color-teal-950: var(--teal-950);
+  --color-amber-50: var(--amber-50);
+  --color-amber-100: var(--amber-100);
+  --color-amber-200: var(--amber-200);
+  --color-amber-300: var(--amber-300);
+  --color-amber-400: var(--amber-400);
+  --color-amber-500: var(--amber-500);
+  --color-amber-600: var(--amber-600);
+  --color-amber-700: var(--amber-700);
+  --color-amber-800: var(--amber-800);
+  --color-amber-900: var(--amber-900);
+  --color-amber-950: var(--amber-950);
+  --color-red-50: var(--red-50);
+  --color-red-100: var(--red-100);
+  --color-red-200: var(--red-200);
+  --color-red-300: var(--red-300);
+  --color-red-400: var(--red-400);
+  --color-red-500: var(--red-500);
+  --color-red-600: var(--red-600);
+  --color-red-700: var(--red-700);
+  --color-red-800: var(--red-800);
+  --color-red-900: var(--red-900);
+  --color-red-950: var(--red-950);
+  --color-neutral-0: var(--neutral-0);
+  --color-neutral-25: var(--neutral-25);
+  --color-neutral-50: var(--neutral-50);
+  --color-neutral-100: var(--neutral-100);
+  --color-neutral-200: var(--neutral-200);
+  --color-neutral-300: var(--neutral-300);
+  --color-neutral-400: var(--neutral-400);
+  --color-neutral-500: var(--neutral-500);
+  --color-neutral-600: var(--neutral-600);
+  --color-neutral-700: var(--neutral-700);
+  --color-neutral-800: var(--neutral-800);
+  --color-neutral-900: var(--neutral-900);
+  --color-neutral-950: var(--neutral-950);
+
+  /* Type families (one family: Archivo, the wordmark's font) */
+  --font-sans: var(--font-ui);
+  --font-serif: var(--font-serif);
+  --font-display: var(--font-display);
+  --font-ui: var(--font-ui);
+  --font-mono: var(--font-mono);
+
+  /* Radii */
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-pill: var(--radius-pill);
+  --radius-icon: var(--radius-icon);
+  --radius-card: var(--radius-lg);
+  --radius-button: var(--radius-pill);
+  --radius-input: var(--radius-xl);
+  --radius-sheet: var(--radius-xl);
+
+  /* Shadows */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-primary: var(--shadow-primary);
+  --shadow-spark: var(--shadow-spark);
+  --shadow-glow-signal: var(--shadow-glow-signal);
+  --shadow-glow-ember: var(--shadow-glow-ember);
+  --shadow-glow-grove: var(--shadow-glow-grove);
+  --shadow-glow-pod: var(--pod-glow);
+  --shadow-inset-gloss: var(--shadow-inset-gloss);
+  --shadow-disc: var(--shadow-disc);
+  --shadow-float: var(--shadow-float);
+
+  /* Easings (ease-standard, ease-enter, ease-exit, ease-spring, ease-snap) */
+  --ease-standard: var(--ease-standard);
+  --ease-enter: var(--ease-enter);
+  --ease-exit: var(--ease-exit);
+  --ease-spring: var(--ease-spring);
+  --ease-snap: var(--ease-snap);
+
+  /* Named spacing (one job each; DESIGN.md §4): p-gutter, gap-s8, mt-s6 ... */
+  --spacing-s1: 4px;
+  --spacing-s2: 8px;
+  --spacing-s3: 12px;
+  --spacing-s4: 16px;
+  --spacing-gutter: 20px;
+  --spacing-s6: 24px;
+  --spacing-s8: 32px;
+  --spacing-s12: 48px;
+  --spacing-s16: 64px;
+  --spacing-s24: 96px;
+
+  /* Breakpoints from tokens.json */
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* Animations */
+  --animate-shimmer: pods-shimmer 1.4s linear infinite;
+  --animate-shake: pods-shake 300ms var(--ease-standard) 1;
+  --animate-fade-in: pods-fade-in var(--dur-base) var(--ease-enter) both;
+  --animate-rise-in: pods-rise-in var(--dur-base) var(--ease-enter) both;
+  --animate-typing: pods-typing 1.2s var(--ease-standard) infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* The stage (DESIGN.md §2; COLOR_LIFE §5.1). Crisp cool white lit by the logo's three circles, 3.5% cool grain.
+   The light is a STATE, set by <Stage> on <html data-light>; each one is a moment of the journey:
+   paper  (default)            the three circles rest at the top-right, overlapping
+   dawn   (planning, choosing) the blue circle rises: the plan is forming
+   clear  (locked, settled)    daylight: blue sky at the top, green ground at the foot (public, daytime, safe)
+   rain   (moved indoors)      cool mist
+   dusk   (after a hangout)    a low ember lamp and plum: warm and private for "Everything okay?" and "Run it back?"
+   night  (the moment)         the centre: the three circles converge on a deep field */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    background: var(--paper);
+    --stage: var(--paper);
+    --stage-light: var(--mesh-page);
+    --stage-fg: var(--ink);
+    --grain-blend: multiply;
+    --grain-opacity: 0.035;
+  }
+  html[data-light="dawn"] {
+    --stage: #F5F9FF;
+    --stage-light: radial-gradient(circle 280px at 18% -40px, rgba(27, 120, 254, 0.24) 0 60%, rgba(27, 120, 254, 0) 100%), radial-gradient(circle 220px at calc(100% + 40px) 120px, rgba(25, 193, 133, 0.18) 0 60%, rgba(25, 193, 133, 0) 100%), radial-gradient(circle 160px at calc(100% + 30px) -30px, rgba(253, 97, 35, 0.12) 0 60%, rgba(253, 97, 35, 0) 100%);
+  }
+  html[data-light="clear"] {
+    --stage: #F6FAFE;
+    --stage-light: linear-gradient(180deg, rgba(27, 120, 254, 0.16) 0%, rgba(27, 120, 254, 0) 34%, rgba(25, 193, 133, 0) 70%, rgba(25, 193, 133, 0.16) 100%);
+  }
+  html[data-light="rain"] {
+    --stage: #EEF3F7;
+    --stage-light: radial-gradient(100% 60% at 70% 0%, rgba(27, 120, 254, 0.12) 0%, rgba(27, 120, 254, 0) 70%), linear-gradient(180deg, rgba(1, 98, 126, 0.05), rgba(1, 98, 126, 0));
+  }
+  html[data-light="dusk"] {
+    --stage: #FBF8F8;
+    --stage-light: radial-gradient(70% 42% at 80% 100%, rgba(253, 97, 35, 0.16) 0%, rgba(253, 97, 35, 0) 70%), radial-gradient(60% 40% at 10% 100%, rgba(64, 49, 63, 0.10) 0%, rgba(64, 49, 63, 0) 70%), radial-gradient(60% 40% at 0% 0%, rgba(27, 120, 254, 0.08) 0%, rgba(27, 120, 254, 0) 70%);
+  }
+  html[data-light="night"] {
+    --stage: var(--night);
+    --stage-light: var(--moment);
+    --stage-fg: var(--lamp);
+    --grain-blend: screen;
+    --grain-opacity: 0.04;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--stage);
+    color: var(--stage-fg);
+    font-family: var(--font-ui);
+    font-size: var(--text-body-size);
+    line-height: var(--text-body-line);
+    letter-spacing: var(--text-body-tracking);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    font-variant-numeric: lining-nums;
+    transition: background-color var(--dur-light) var(--ease-paper), color var(--dur-light) var(--ease-paper);
+    /* body is its own stacking context, so the light (::before, z -1) paints ABOVE the body's background instead of
+       under it. Without this the page light was never visible. */
+    isolation: isolate;
+  }
+  /* the logo light */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--stage-light);
+  }
+  /* the grain (SVG turbulence, cool, 3.5%): keeps the light from banding */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: var(--grain-blend);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .05 0 0 0 0 .1 0 0 0 0 .14 0 0 0 .55 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
+  }
+
+  ::selection {
+    background: var(--color-signal-soft-border);
+    color: var(--ink);
+  }
+
+  /* The moment: anything painted bg-night gets the centre field, the three circles converging (lock, #2 is on, Director). */
+  .bg-night {
+    background-image: var(--moment);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 3px;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em); /* no iOS zoom */
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body { transition: none; }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── The two voices ─────────────────────────────────────────────────────── */
+/* .line = the serif line that carries a screen (one per screen). Sizes come from the --text-display-* / heading tokens. */
+@utility font-serif {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-stretch: 108%;
+  letter-spacing: -0.025em;
 }
+@utility line {
+  font-family: var(--font-display);
+  font-weight: 850;
+  font-stretch: 108%;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+/* digit runs inside a serif line, re-set in Figtree (Instrument Serif's 1 reads as l). <Line> applies it. */
+@utility fig {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+/* the edge-cropped day word at the lock (PB 1.3; TS 9) */
+@utility crop {
+  white-space: nowrap;
+  letter-spacing: -0.045em;
+}
+/* underlined words as quiet controls (call graft): visible at rest, 2px, ink at 30% */
+@utility u {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.14em;
+  text-decoration-color: var(--line-2);
+  &:hover { text-decoration-color: currentColor; }
+}
+
+/* ── Utilities that Tailwind's theme can't express ─────────────────────── */
+@utility bg-aurora {
+  background-image: var(--gradient-aurora);
+}
+@utility bg-signal-gloss {
+  background-image: var(--gradient-signal-gloss);
+}
+@utility bg-ember-gloss {
+  background-image: var(--gradient-ember-gloss);
+}
+@utility bg-grove-gloss {
+  background-image: var(--gradient-grove-gloss);
+}
+@utility bg-pod-gloss {
+  background-image: var(--pod-gloss);
+}
+@utility bg-glass {
+  background-image: var(--gradient-glass);
+}
+@utility bg-logo {
+  background-image: var(--grad-logo);
+}
+@utility bg-moment {
+  background-color: var(--night);
+  background-image: var(--moment);
+}
+@utility bg-pod-grad {
+  background-image: var(--pod-grad);
+}
+@utility bg-pod-wash {
+  background-image: var(--pod-wash);
+}
+@utility bg-mesh {
+  background-image: var(--mesh-page);
+}
+/* the three circles at full strength (splash, share image, empty "your pod is filling") */
+@utility bg-venn {
+  background-image: var(--grad-venn);
+}
+/* gradient text for one word at a moment ("again."), never body copy */
+@utility text-logo {
+  background-image: var(--grad-logo);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* Glass (COLOR_LIFE §12.4): only for things that float over colour (sheets, the condensed header, the toast).
+   Translucent white over the light, blurred and saturated, with a crisp 1px edge. Falls back to solid white. */
+@utility glass {
+  background-color: var(--glass-strong);
+  box-shadow: var(--glass-edge), var(--shadow-float);
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    background-color: var(--glass);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+}
+/* Sheen: the specular top light on filled buttons (layered over their background-color). */
+@utility sheen {
+  background-image: var(--sheen);
+  &:disabled { background-image: none; }
+  &:active:not(:disabled) { background-image: var(--sheen-press); }
+}
+/* Gloss recipe: pod gloss + inset highlight (buttons, covers, own bubbles) */
+@utility gloss {
+  background-color: var(--pod);
+  color: var(--pod-on);
+}
+@utility gloss-signal {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+/* AI card hairline: 1px ember→signal→grove gradient border */
+@utility ai-hairline {
+  /* v3: Claude is not a gradient. A hairline like any other. */
+  border: 1px solid var(--line);
+}
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+@utility font-stretch-display {
+  font-stretch: 112%;
+}
+@utility font-stretch-hero {
+  font-stretch: 125%;
+}
+@utility duration-instant {
+  transition-duration: var(--dur-instant);
+}
+@utility duration-fast {
+  transition-duration: var(--dur-fast);
+}
+@utility duration-base {
+  transition-duration: var(--dur-base);
+}
+@utility duration-slow {
+  transition-duration: var(--dur-slow);
+}
+@utility duration-slower {
+  transition-duration: var(--dur-slower);
+}
+@utility z-sticky {
+  z-index: var(--z-sticky);
+}
+@utility z-header {
+  z-index: var(--z-header);
+}
+@utility z-overlay {
+  z-index: var(--z-overlay);
+}
+@utility z-sheet {
+  z-index: var(--z-sheet);
+}
+@utility z-toast {
+  z-index: var(--z-toast);
+}
+@utility z-tooltip {
+  z-index: var(--z-tooltip);
+}
+/* Press feedback on every tappable: down in 80 ms, back with the spring (it lands, it doesn't bounce). */
+@utility pressable {
+  transition: transform var(--dur-settle) var(--ease-spring), box-shadow var(--dur-tap) var(--ease-out), background-color var(--dur-tap) var(--ease-out), opacity var(--dur-tap) var(--ease-out);
+  &:active:not(:disabled) {
+    transform: scale(0.96);
+    transition-duration: var(--dur-instant);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &:active:not(:disabled) {
+      transform: none;
+      opacity: 0.9;
+    }
+  }
+}
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@utility dot-grain {
+  /* v3: the stage grain is global (body::after); nothing extra here. */
+  background-image: none;
+}
+
+/* ── Life: scroll, view transitions, time of day (COLOR_LIFE §12) ────────── */
+
+/* Sections settle into place as they enter (CSS scroll-driven; static where unsupported or reduced). Never hides
+   content: the start state is 0.001 opacity only while the element is below the fold, and only where supported. */
+@keyframes pods-settle {
+  from { opacity: 0; transform: translateY(24px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+@utility settle {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: pods-settle linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+  }
+}
+
+/* A colour field that recedes as the page scrolls (the pod's wash behind a scrolling page): it lifts and softens so
+   the content takes over, then holds. Compositor-only; static where unsupported or reduced. MOTION_SYSTEM §4. */
+@keyframes pods-field-recede {
+  to { opacity: .55; transform: translateY(-6%) scale(1.06); }
+}
+@utility scroll-field {
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: pods-field-recede linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 60vh;
+    }
+  }
+}
+
+/* Shared-element continuity (React <ViewTransition>, see brand/shared.tsx). The pod's circle travels from the Room
+   into the table; the plan card becomes the lock. The root cross-fade is short so the travelling object leads. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-move);
+  animation-timing-function: var(--ease-out);
+}
+::view-transition-group(.pod-morph) {
+  animation-duration: var(--dur-settle);
+  animation-timing-function: var(--ease-out);
+}
+::view-transition-image-pair(.pod-morph) {
+  isolation: isolate;
+}
+::view-transition-old(.pod-morph),
+::view-transition-new(.pod-morph) {
+  animation-duration: var(--dur-settle);
+  mix-blend-mode: normal;
+  height: 100%;
+  object-fit: cover;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 160ms !important;
+  }
+}
+
+/* Time of day (shell/daypart.tsx writes html[data-daypart]). The paper light warms in the evening and the ember circle
+   grows: your evening plans feel like evening. Only the default (paper) light changes; journey lights win. */
+html[data-light="paper"][data-daypart="evening"],
+html:not([data-light])[data-daypart="evening"] {
+  --stage: var(--paper-evening);
+}
+html[data-daypart="evening"] {
+  --mesh-page: radial-gradient(circle 240px at calc(100% - 30px) 40px, rgba(253,97,35,.22) 0 62%, rgba(253,97,35,0) 100%), radial-gradient(circle 230px at calc(100% - 170px) 190px, rgba(27,120,254,.15) 0 62%, rgba(27,120,254,0) 100%), radial-gradient(circle 230px at calc(100% + 50px) 230px, rgba(64,49,63,.12) 0 62%, rgba(64,49,63,0) 100%);
+}
+
+/* The Director sits on the moment stage (wireframe K05): every role inside it reads lamp on the deep field. */
+[data-director-panel] {
+  --color-text: var(--lamp);
+  --color-text-muted: rgba(242, 255, 250, 0.74);
+  --color-text-subtle: rgba(242, 255, 250, 0.62);
+  --color-border: rgba(242, 255, 250, 0.14);
+  --color-border-strong: rgba(242, 255, 250, 0.3);
+  --color-sunken: rgba(242, 255, 250, 0.08);
+  --color-surface: transparent;
+  --color-success-text: var(--lamp);
+  --color-danger-text: #FFAFB0;
+  --color-danger: var(--lamp);
+  --color-on-danger: var(--night);
+  --line-2: rgba(242, 255, 250, 0.3);
+  --ink: var(--lamp);
+  --lit: var(--night);
+}
+
+/* One voice: no italics in display lines; the emphasised word is upright (colour carries emphasis instead). */
+.line em, .line i, .font-serif em, .font-serif i, [class*="text-display"] em, [class*="text-heading"] em, .italic { font-style: normal; }
+
+/* Headlines speak in the wordmark's voice: Archivo, slightly wide. */
+[class*="text-display"], [class*="text-heading-xl"], [class*="text-heading-lg"] { font-stretch: 108%; }

@@ -1,0 +1,23 @@
+/* [U1] Brand surfaces: aurora drift, grain, orbit ring helper. Keyframes only run where motion is allowed. */
+.pods-aurora{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none;isolation:isolate;contain:paint}
+.pods-aurora__blob{position:absolute;inset:-25%;background:var(--gradient-aurora);filter:blur(48px) saturate(1.15);opacity:var(--aurora-opacity,.7);will-change:transform}
+.pods-aurora__blob--b{inset:-35%;opacity:calc(var(--aurora-opacity,.7) * .55);transform:rotate(180deg) scale(1.1);mix-blend-mode:screen}
+.pods-aurora__grain{position:absolute;inset:0;background-image:radial-gradient(rgb(255 255 255 / .06) 1px,transparent 1px);background-size:4px 4px;mix-blend-mode:overlay}
+.pods-aurora__vignette{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,transparent 40%,rgb(15 16 21 / .55) 100%)}
+.pods-aurora--animated .pods-aurora__blob{animation:pods-aurora-a 18s var(--ease-standard) infinite alternate}
+.pods-aurora--animated .pods-aurora__blob--b{animation:pods-aurora-b 24s var(--ease-standard) infinite alternate}
+@keyframes pods-aurora-a{0%{transform:translate3d(-3%,-2%,0) scale(1)}50%{transform:translate3d(3%,2%,0) scale(1.06)}100%{transform:translate3d(-1%,4%,0) scale(1.02)}}
+@keyframes pods-aurora-b{0%{transform:rotate(180deg) scale(1.1) translate3d(2%,0,0)}100%{transform:rotate(200deg) scale(1.18) translate3d(-3%,3%,0)}}
+@media (prefers-reduced-motion: reduce){.pods-aurora--animated .pods-aurora__blob{animation:none}}
+@media (prefers-reduced-transparency: reduce){.pods-aurora__blob{filter:none}}
+
+/* M7 orbit ring: a conic highlight travels once around a card's border, then fades to the static hairline.
+   Put .pods-orbit-ring on a positioned element with a border radius; it draws on ::after. */
+.pods-orbit-ring{position:relative}
+.pods-orbit-ring::after{content:"";position:absolute;inset:-4px;border-radius:calc(var(--orbit-radius,20px) + 4px);padding:2px;pointer-events:none;
+  background:conic-gradient(from var(--pods-orbit-angle),transparent 0 52%,rgb(253 97 35 / .95) 68%,rgb(27 120 254 / .95) 84%,rgb(25 193 133 / .95) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+  filter:drop-shadow(0 0 6px rgb(27 120 254 / .45));
+  animation:pods-orbit 1.6s cubic-bezier(.65,0,.35,1) 1 both,pods-orbit-fade .5s ease-out 1.5s both}
+@keyframes pods-orbit-fade{to{opacity:0}}
+@media (prefers-reduced-motion: reduce){.pods-orbit-ring::after{display:none}}

@@ -1,0 +1,262 @@
+/* CANOPY concept surface, type and spacing. No raw hex: every colour is a brand token or a color-mix of tokens.
+   Spacing (4pt, one job per step):
+     --s1 4   lines inside one caption
+     --s2 8   items inside a group (label + value, glyph + word)
+     --s4 24  between groups (always >= 2x --s2)
+     --cz 32  clear zone around the one primary action
+     --m      outer margin: 20 phone / 56 desktop (L03: 16-20 holds better than the benchmark)
+   Type: --t-day (serif, 96-200), --t-big (serif 44-64), --t-cap (mono 12.5), --t-act (mono 15). */
+
+.cnp {
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 16px;
+  --s4: 24px;
+  --cz: 32px;
+  --m: 20px;
+  --serif: var(--cn-serif), Georgia, serif;
+  --mono: var(--cn-mono), ui-monospace, monospace;
+
+  /* paper + ink built from brand ramps */
+  --paper: color-mix(in oklab, var(--amber-50) 70%, var(--neutral-0));
+  --ink: var(--pods-ink);
+  --ink-2: color-mix(in oklab, var(--pods-ink) 62%, var(--paper));
+  --ink-3: color-mix(in oklab, var(--pods-ink) 38%, var(--paper));
+  --hue: var(--pods-ember);
+  --hue-soft: var(--ember-200);
+  --hue-deep: var(--ember-800);
+
+  /* light (set per state below) */
+  --sky: color-mix(in oklab, var(--amber-100) 55%, var(--neutral-0));
+  --sun: color-mix(in oklab, var(--ember-200) 80%, transparent);
+  --sun-at: 16% 86%;
+  --ground: color-mix(in oklab, var(--amber-100) 70%, var(--ember-100));
+  --line: color-mix(in oklab, var(--pods-ink) 22%, transparent);
+  --fg: var(--ink);
+  --fg-2: var(--ink-2);
+  --fg-3: var(--ink-3);
+
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: var(--fg);
+  background: var(--sky);
+  font-family: var(--mono);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 900ms cubic-bezier(.2, 0, 0, 1), color 600ms;
+}
+@media (min-width: 1024px) {
+  .cnp { --m: 56px; }
+}
+
+.cnp[data-hue="signal"] { --hue: var(--pods-signal); --hue-soft: var(--signal-200); --hue-deep: var(--signal-800); }
+.cnp[data-hue="grove"] { --hue: var(--pods-grove); --hue-soft: var(--grove-200); --hue-deep: var(--grove-900); }
+
+/* dawn: planning, warm low light from the lower left (IL 30, TS 11/45) */
+.cnp[data-light="dawn"] {
+  --sky: color-mix(in oklab, var(--amber-100) 50%, var(--neutral-0));
+  --sun: color-mix(in oklab, var(--hue-soft) 75%, transparent);
+  --sun-at: 12% 92%;
+  --ground: color-mix(in oklab, var(--amber-200) 34%, var(--paper));
+}
+/* still: locked, clear and quiet; the light comes through the canopy instead (SF 09/02, TS 33) */
+.cnp[data-light="still"] {
+  --sky: color-mix(in oklab, var(--signal-50) 70%, var(--neutral-0));
+  --sun: color-mix(in oklab, var(--neutral-0) 90%, transparent);
+  --sun-at: 50% 0%;
+  --ground: color-mix(in oklab, var(--amber-100) 45%, var(--paper));
+}
+/* dusk: after the hangout. The sky is the logo's own overlap colour (ember x signal). */
+.cnp[data-light="dusk"] {
+  --sky: color-mix(in oklab, var(--pods-overlap-ember-signal) 88%, var(--ember-700));
+  --sun: color-mix(in oklab, var(--hue) 58%, transparent);
+  --sun-at: 50% 68%;
+  --ground: color-mix(in oklab, var(--pods-overlap-ember-signal) 70%, var(--neutral-950));
+  --line: color-mix(in oklab, var(--neutral-0) 22%, transparent);
+  --fg: var(--paper);
+  --fg-2: color-mix(in oklab, var(--paper) 72%, transparent);
+  --fg-3: color-mix(in oklab, var(--paper) 46%, transparent);
+}
+.cnp[data-light="rest"] {
+  --sky: color-mix(in oklab, var(--neutral-100) 50%, var(--paper));
+  --sun: color-mix(in oklab, var(--neutral-0) 70%, transparent);
+  --ground: color-mix(in oklab, var(--neutral-200) 55%, var(--paper));
+}
+
+/* The surface: flat sky, one off-axis light, a ground plane, fine grain. Not a gradient wallpaper: the light is a
+   single source whose position and colour are the state (PB 4.4, 4.7). */
+.cn-light {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(70% 55% at var(--sun-at), var(--sun), transparent 70%);
+  transition: background 900ms;
+}
+.cn-ground {
+  position: absolute; left: 0; right: 0; bottom: 0; top: var(--horizon, 64%);
+  background: var(--ground);
+  border-top: 1px solid var(--line);
+  transition: background-color 900ms, top 700ms cubic-bezier(.2, 0, 0, 1);
+}
+.cn-grain {
+  position: absolute; inset: 0; pointer-events: none; opacity: .32; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .45  0 0 0 0 .4  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.cnp[data-light="dusk"] .cn-grain { mix-blend-mode: screen; opacity: .18; }
+
+/* ---------- type ---------- */
+.cn-day {
+  font-family: var(--serif); font-weight: 400; line-height: .86; letter-spacing: -0.02em;
+  font-size: clamp(88px, 25vw, 200px);
+}
+.cn-big { font-family: var(--serif); font-weight: 400; line-height: .95; letter-spacing: -0.01em; font-size: clamp(44px, 12vw, 72px); }
+.cn-mid { font-family: var(--serif); font-size: 28px; line-height: 1.05; }
+.cn-cap { font-family: var(--mono); font-size: 12.5px; line-height: 1.45; letter-spacing: .01em; color: var(--fg-2); }
+.cn-cap b { font-weight: 500; color: var(--fg); }
+.cn-tag { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--fg-3); }
+.cn-it { font-style: italic; }
+
+/* ---------- frame ---------- */
+.cn-top {
+  position: absolute; z-index: 5; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(14px + env(safe-area-inset-top)) var(--m) 0;
+  height: 60px;
+}
+.cn-logo { display: inline-flex; align-items: center; gap: var(--s2); background: none; border: 0; padding: 6px 0; color: var(--fg); cursor: pointer; min-height: 44px; -webkit-touch-callout: none; user-select: none; }
+.cn-logo svg { display: block; }
+
+.cn-stage { position: absolute; left: 0; right: 0; top: 56px; bottom: calc(100% - var(--horizon, 64%) - 72px); display: flex; justify-content: center; pointer-events: none; }
+.cn-stage > svg { height: 100%; width: auto; max-width: 100%; overflow: visible; }
+@media (min-width: 1024px) {
+  .cn-stage { left: 38%; right: 0; top: 40px; }
+}
+
+.cn-foot {
+  position: absolute; z-index: 4; left: var(--m); right: var(--m);
+  bottom: calc(var(--s4) + env(safe-area-inset-bottom));
+}
+@media (min-width: 1024px) {
+  .cn-foot { bottom: 48px; }
+}
+.cn-row { display: flex; align-items: center; gap: var(--s2); }
+.cn-split { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s4); }
+
+/* ---------- controls ---------- */
+.cn-act {
+  --bg: var(--fg); --fgc: var(--sky);
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+  min-height: 56px; padding: 0 26px; border-radius: 999px; border: 0; cursor: pointer;
+  background: var(--bg); color: var(--fgc);
+  font: 500 15px/1 var(--mono); letter-spacing: .01em;
+  transition: transform 140ms cubic-bezier(.2, 0, 0, 1), opacity 200ms;
+  -webkit-tap-highlight-color: transparent;
+}
+.cn-act:active { transform: scale(.96); }
+.cn-act:disabled { opacity: .35; cursor: default; }
+.cn-act[data-hue] { --bg: var(--hue); --fgc: var(--ink); }
+.cnp[data-light="dusk"] .cn-act { --fgc: var(--pods-overlap-ember-signal); }
+.cn-link {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 2px;
+  background: none; border: 0; cursor: pointer; color: var(--fg-2);
+  font: 400 13px/1 var(--mono); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 5px;
+}
+.cn-link:hover { color: var(--fg); }
+.cn-act:focus-visible, .cn-link:focus-visible, .cn-logo:focus-visible, .cn-dot:focus-visible, .cn-word:focus-visible, .cn-band:focus-visible, .cn-spot:focus-visible, .cn-fold:focus-visible {
+  outline: 2px solid var(--hue); outline-offset: 3px;
+}
+
+/* pager: one dot per pod, the current one a ring in its hue (no tab bar, PB 3) */
+.cn-dots { display: flex; align-items: center; gap: 2px; }
+.cn-dot { width: 32px; height: 44px; display: grid; place-items: center; background: none; border: 0; cursor: pointer; padding: 0; }
+.cn-dot i { width: 8px; height: 8px; border-radius: 50%; background: var(--fg-3); transition: all 300ms cubic-bezier(.2, 0, 0, 1); }
+.cn-dot[aria-current="true"] i { width: 14px; height: 14px; background: var(--dot); box-shadow: 0 0 0 1.5px var(--fg); }
+
+/* sheets (the only popups: why, people) */
+.cn-scrim { position: fixed; inset: 0; z-index: 40; background: color-mix(in oklab, var(--pods-ink) 34%, transparent); }
+.cn-sheet {
+  position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 520px;
+  background: var(--paper); color: var(--ink);
+  border-radius: 28px 28px 0 0; padding: var(--s4) var(--m) calc(var(--s4) + env(safe-area-inset-bottom));
+  box-shadow: 0 -1px 0 var(--line);
+}
+@media (min-width: 1024px) {
+  .cn-sheet { left: auto; right: 56px; bottom: 48px; border-radius: 28px; width: 420px; }
+}
+.cn-sheet .cn-cap { color: var(--ink-2); }
+.cn-sheet .cn-cap b { color: var(--ink); }
+.cn-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.cn-lines li { display: grid; grid-template-columns: 22px 1fr; gap: var(--s2); align-items: start; }
+
+/* onboarding words-as-interface (PB 1.6, AW 06/58): words, not chips */
+.cn-words { font-family: var(--serif); font-size: clamp(30px, 8.6vw, 48px); line-height: 1.12; letter-spacing: -.005em; }
+.cn-word {
+  background: none; border: 0; padding: 0 .08em; margin: 0; cursor: pointer; font: inherit; color: var(--fg-3);
+  position: relative; min-height: 44px; transition: color 220ms;
+}
+.cn-word[aria-pressed="true"] { color: var(--fg); }
+.cn-word[aria-pressed="true"]::before {
+  content: ""; position: absolute; left: -.16em; top: .32em; width: .26em; height: .26em; border-radius: 50%; background: var(--hue);
+}
+.cn-sep { color: var(--fg-3); font-family: var(--mono); font-size: 14px; padding: 0 .3em; vertical-align: .35em; }
+
+.cn-input {
+  width: 100%; background: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; color: var(--fg);
+  font: 400 clamp(44px, 13vw, 72px)/1.1 var(--serif); padding: 0 0 6px; outline: none; caret-color: var(--hue);
+}
+.cn-input::placeholder { color: var(--fg-3); }
+.cn-input.mono { font: 400 30px/1.2 var(--mono); letter-spacing: .04em; }
+
+/* availability: seven bands of light across the week (the Score's sweep as sunlight) */
+.cn-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 100%; }
+.cn-band {
+  position: relative; border: 0; border-radius: 999px; cursor: pointer; padding: 0;
+  background: color-mix(in oklab, var(--fg) 6%, transparent);
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 12px;
+  transition: background 300ms;
+  min-width: 44px;
+}
+.cn-band[aria-pressed="true"] { background: linear-gradient(to bottom, color-mix(in oklab, var(--hue-soft) 30%, transparent), var(--hue-soft)); }
+.cn-band span { font: 500 11px/1.25 var(--mono); color: var(--fg-2); text-align: center; }
+
+.cn-spot {
+  position: absolute; border: 1.5px dashed var(--fg-2); border-radius: 50%; background: none; cursor: pointer; color: var(--fg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+}
+.cn-spot[aria-pressed="true"] { border-style: solid; border-color: var(--hue); background: color-mix(in oklab, var(--hue) 16%, transparent); }
+
+.cn-fold { background: none; border: 0; padding: 0; cursor: pointer; color: var(--fg); display: grid; justify-items: start; gap: var(--s2); text-align: left; min-height: 44px; }
+
+.cn-whisper { font: 400 12.5px/1.3 var(--mono); color: var(--fg-2); display: inline-flex; align-items: center; gap: var(--s2); min-height: 20px; }
+
+.cn-legal { display: flex; gap: var(--s3); }
+.cn-legal a { font: 400 11px/1 var(--mono); color: var(--fg-3); text-decoration: none; padding: 14px 0; }
+.cn-legal a:hover { color: var(--fg-2); }
+
+.cn-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (min-width: 1024px) {
+  .cn-cap { font-size: 14px; }
+  .cn-tag { font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cnp, .cn-light, .cn-ground { transition: none; }
+}
+
+/* age: your disc slid along a horizon line */
+.cn-range { -webkit-appearance: none; appearance: none; width: 100%; height: 44px; background: none; margin: 0; cursor: pointer; }
+.cn-range::-webkit-slider-runnable-track { height: 1.5px; background: var(--fg-2); }
+.cn-range::-moz-range-track { height: 1.5px; background: var(--fg-2); }
+.cn-range::-webkit-slider-thumb { -webkit-appearance: none; width: 32px; height: 32px; border-radius: 50%; background: var(--fg); margin-top: -15px; box-shadow: 0 0 0 6px color-mix(in oklab, var(--hue) 30%, transparent); }
+.cn-range::-moz-range-thumb { width: 32px; height: 32px; border: 0; border-radius: 50%; background: var(--fg); }
+.cn-range:focus-visible { outline: 2px solid var(--hue); outline-offset: 4px; }
+
+/* vote spots sit over the stage: full width on a phone, the right-hand stage on a laptop */
+.cn-spots { left: var(--m); right: var(--m); }
+@media (min-width: 1024px) {
+  .cn-spots { left: 38%; right: 0; }
+  .cn-fold svg { width: 240px; height: 64px; }
+  .cn-fold .cn-mid { font-size: 40px; }
+}
+@media (min-width: 1024px) {
+  .cnp[data-light="dusk"] { --sun-at: 69% 68%; }
+}

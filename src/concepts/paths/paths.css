@@ -1,0 +1,175 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   PATHS concept. A quiet field of grain paper seen from above (PB 4.1, 4.6, 4.7; TS 11, 45; IL 30, 73, 27).
+   Material: oat paper + fine grain + long fibres, one warm off-axis light. Never flat cream, never a gradient stage.
+   Hues are ground (clearings), ink does the talking. State is told by surface (PB 4.4; SF 09, 02).
+   Spacing: 4pt, one job per step (CONCEPT.md §Spacing).
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.pth {
+  --paper: #eee9dd;
+  --paper-2: #e6dfd0;
+  --ink: #1e1915;
+  --ink-2: rgb(30 25 21 / 0.62);
+  --ink-3: rgb(30 25 21 / 0.36);
+  --ink-4: rgb(30 25 21 / 0.14);
+  --ink-5: rgb(30 25 21 / 0.07);
+  --ember: #fd6123;
+  --signal: #1b78fe;
+  --grove: #19c185;
+  --hue: var(--ember);
+
+  /* spacing scale: each step has one job */
+  --s1: 4px;   /* glyph ↔ label */
+  --s2: 8px;   /* inside a group */
+  --s4: 16px;  /* paired items */
+  --s6: 24px;  /* between groups (phone) */
+  --s8: 32px;  /* clear zone around the primary */
+  --s18: 72px; /* silence above display */
+  --m: 20px;   /* outer margin, phone */
+
+  /* type scale: 13 / 15 / 22 | 40 / 64 / 120 / 200 */
+  --t-cap: 13px;
+  --t-label: 15px;
+  --t-small: 22px;
+  --t-head: clamp(40px, 10.6vw, 64px);
+  --t-big: clamp(64px, 17vw, 120px);
+  --t-huge: clamp(96px, 26vw, 200px);
+
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12  0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --fibre: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='520'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='3' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0.32 -0.1'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
+  --light: radial-gradient(120% 90% at 8% -10%, rgb(255 246 226 / 0.85) 0%, rgb(255 246 226 / 0) 55%);
+
+  position: relative;
+  min-height: 100dvh;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: var(--light), var(--fibre), var(--grain);
+  background-size: 100% 100%, 520px 520px, 240px 240px;
+  background-attachment: fixed, scroll, scroll;
+  font-family: var(--p-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--t-label);
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  transition: background-color 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (min-width: 1024px) {
+  .pth { --m: 48px; --s6: 32px; }
+}
+.pth[data-mood="dusk"] {
+  --paper: #ddd2c0;
+  --light: radial-gradient(110% 70% at 92% 110%, rgb(255 196 150 / 0.55) 0%, rgb(255 196 150 / 0) 60%);
+}
+.pth [data-hue="ember"], .pth[data-hue="ember"] { --hue: var(--ember); }
+.pth [data-hue="signal"], .pth[data-hue="signal"] { --hue: var(--signal); }
+.pth [data-hue="grove"], .pth[data-hue="grove"] { --hue: var(--grove); }
+
+.pth-serif { font-family: var(--p-serif), Georgia, serif; font-weight: 400; letter-spacing: -0.01em; line-height: 0.95; }
+.pth-serif-i { font-family: var(--p-serif), Georgia, serif; font-style: italic; }
+.pth-head { font-size: var(--t-head); letter-spacing: -0.02em; line-height: 0.95; }
+.pth-big { font-size: var(--t-big); letter-spacing: -0.035em; line-height: 0.86; }
+.pth-huge { font-size: var(--t-huge); letter-spacing: -0.04em; line-height: 0.82; }
+.pth-small { font-size: var(--t-small); line-height: 1.1; }
+.pth-cap { font-size: var(--t-cap); line-height: 1.35; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.pth-label { font-size: var(--t-label); font-weight: 500; font-variant-numeric: tabular-nums; }
+.pth-tab { font-variant-numeric: tabular-nums; }
+
+/* The one primary action: an ink capsule with a 32px clear zone (bottom-right, PB 1.2). */
+.pth-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  height: 52px; padding: 0 22px 0 24px; border-radius: 999px;
+  background: var(--ink); color: var(--paper);
+  font: 600 var(--t-label) / 1 var(--p-sans), sans-serif; letter-spacing: 0.005em;
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.12) inset, 0 10px 24px -14px rgb(30 25 21 / 0.55);
+  transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms, background-color 200ms;
+  cursor: pointer; user-select: none; border: 0;
+}
+.pth-cta:active { transform: scale(0.97); }
+.pth-cta:disabled { opacity: 0.28; cursor: default; }
+.pth-cta:focus-visible, .pth-ghost:focus-visible, .pth-icon:focus-visible, .pth-stone:focus-visible, .pth-hit:focus-visible {
+  outline: 2px solid var(--ink); outline-offset: 3px;
+}
+.pth-ghost {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px;
+  font: 500 var(--t-label) / 1 var(--p-sans), sans-serif; color: var(--ink-2);
+  background: none; border: 0; cursor: pointer; text-underline-offset: 4px;
+}
+.pth-ghost:hover { color: var(--ink); text-decoration: underline; }
+.pth-icon {
+  display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 999px;
+  background: none; border: 0; color: var(--ink); cursor: pointer;
+}
+.pth-icon:hover { background: var(--ink-5); }
+
+/* Text input on the ground: a hand-ruled line, no box. */
+.pth-input {
+  width: 100%; background: transparent; border: 0; border-bottom: 1.5px solid var(--ink-3);
+  font: 400 var(--t-head) / 1.1 var(--p-serif), Georgia, serif; letter-spacing: -0.02em;
+  color: var(--ink); padding: 6px 0 10px; border-radius: 0; outline: none;
+}
+.pth-input::placeholder { color: var(--ink-3); }
+.pth-input:focus { border-bottom-color: var(--ink); }
+
+/* Stepping stones (interest picker): serif words lying in the field. */
+.pth-stone {
+  position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 6px;
+  font: 400 var(--t-small) / 1 var(--p-serif), Georgia, serif; color: var(--ink-2);
+  background: none; border: 0; cursor: pointer; transition: color 200ms;
+}
+.pth-stone::before {
+  content: ""; width: 10px; height: 10px; border-radius: 999px; border: 1.5px solid var(--ink-3);
+  transition: background-color 220ms, border-color 220ms, transform 260ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.pth-stone[aria-pressed="true"] { color: var(--ink); }
+.pth-stone[aria-pressed="true"]::before { background: var(--hue); border-color: var(--hue); transform: scale(1.5); }
+
+/* Pressed print: the locked clearing sets like ink pressed into paper (PB 4.6; AW 62, 60). */
+.pth-print {
+  background-color: var(--hue);
+  background-image: var(--grain), var(--fibre);
+  background-size: 240px 240px, 520px 520px;
+  background-blend-mode: multiply;
+  box-shadow: inset 0 3px 10px rgb(0 0 0 / 0.22), inset 0 -2px 0 rgb(255 255 255 / 0.18);
+}
+.pth-ground {
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--hue) 30%, transparent) 0%, color-mix(in srgb, var(--hue) 22%, transparent) 70%, color-mix(in srgb, var(--hue) 0%, transparent) 100%);
+}
+
+.pth-sheet {
+  background-color: var(--paper);
+  background-image: var(--grain);
+  background-size: 240px 240px;
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -18px 40px -24px rgb(30 25 21 / 0.4);
+}
+@media (min-width: 1024px) {
+  .pth-sheet { border-radius: 28px; }
+}
+
+.pth-hit { cursor: pointer; }
+.pth-hit:focus { outline: none; }
+
+/* path drawing */
+.pth-draw { stroke-dasharray: var(--len, 1200); stroke-dashoffset: var(--len, 1200); animation: pth-draw 1.6s cubic-bezier(0.6, 0, 0.2, 1) forwards; animation-delay: var(--delay, 0ms); }
+@keyframes pth-draw { to { stroke-dashoffset: 0; } }
+.pth-fade { opacity: 0; animation: pth-fade 900ms ease forwards; animation-delay: var(--delay, 0ms); }
+@keyframes pth-fade { to { opacity: 1; } }
+.pth-breathe { animation: pth-breathe 3.2s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes pth-breathe { 50% { transform: scale(1.06); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pth-draw { animation: none; stroke-dashoffset: 0; }
+  .pth-fade { animation: none; opacity: 1; }
+  .pth-breathe { animation: none; }
+  .pth * { transition-duration: 1ms !important; }
+}
+
+.pth-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Desktop: the field is wider, so the words lying in it are bigger (stones 30px; the scale's 22 step reads as 30 at 1440). */
+@media (min-width: 1024px) {
+  .pth { --t-small: 28px; }
+  .pth-stone { font-size: 30px; }
+}

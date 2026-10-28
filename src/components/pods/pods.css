@@ -1,0 +1,15 @@
+/* Core pods pages (V3_SPEC §6.3). On a laptop the margin card opens at the right edge, so the table slides left to
+   stay visible beside it (DESIGN §10: "the table stays visible beside it"; TS 2, 7, 12). */
+.pods-pg-obj {
+  transition: transform 420ms var(--ease-paper);
+}
+@media (min-width: 1024px) {
+  [data-sheet-open] .pods-pg-obj {
+    transform: translateX(-200px) scale(0.92);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pods-pg-obj {
+    transition: none;
+  }
+}

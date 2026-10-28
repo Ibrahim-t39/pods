@@ -1,0 +1,142 @@
+/* Pods motion keyframes [U0]. Durations and easings are tokens (--dur-*, --ease-*). BLUEPRINT §2.9. */
+
+@keyframes pods-shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+@keyframes pods-shake {
+  0%, 100% { transform: translateX(0); }
+  16%, 50%, 83% { transform: translateX(-8px); }
+  33%, 66% { transform: translateX(8px); }
+}
+
+@keyframes pods-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pods-rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes pods-typing {
+  0%, 60%, 100% { transform: translateY(0); opacity: .5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+@keyframes pods-orbit {
+  to { --pods-orbit-angle: 360deg; }
+}
+
+@property --pods-orbit-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--color-sunken) 0%, var(--color-border) 50%, var(--color-sunken) 100%);
+  background-size: 200% 100%;
+  animation: pods-shimmer 1.4s linear infinite;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* ── Life (COLOR_LIFE §12) ──────────────────────────────────────────────── */
+
+/* Loading as the logo: three circles breathe in (fit) and out, multiply where they meet, a sheen passes over. */
+.pods-circles-loader {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+}
+.pods-circles-loader i {
+  position: absolute;
+  width: 56%;
+  height: 56%;
+  border-radius: 999px;
+  mix-blend-mode: multiply;
+  background-image: var(--disc-sheen);
+  animation: pods-breathe 1600ms var(--ease-in-out) infinite alternate;
+}
+.pods-circles-loader i[data-c="ember"] { left: 22%; top: 4%; background-color: var(--pods-ember); --bx: 0%; --by: -14%; }
+.pods-circles-loader i[data-c="signal"] { left: 4%; top: 38%; background-color: var(--pods-signal); --bx: -14%; --by: 8%; animation-delay: 120ms; }
+.pods-circles-loader i[data-c="grove"] { left: 40%; top: 38%; background-color: var(--pods-grove); --bx: 14%; --by: 8%; animation-delay: 240ms; }
+@keyframes pods-breathe {
+  from { transform: translate(var(--bx), var(--by)) scale(.9); opacity: .8; }
+  to { transform: none; opacity: 1; }
+}
+
+/* A count that ticks (3 in → 4 in): the old figure leaves up, the new one arrives from below. Use on a keyed span. */
+@keyframes pods-tick-in {
+  from { transform: translateY(60%); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.pods-tick {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  animation: pods-tick-in var(--dur-move) var(--ease-out) both;
+}
+
+/* A disc popping in (a person arriving). */
+@keyframes pods-pop {
+  from { transform: scale(.4); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.pods-pop-in {
+  animation: pods-pop var(--dur-settle) var(--ease-spring) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pods-circles-loader i { animation: none; }
+  .pods-tick, .pods-pop-in { animation: pods-fade-in 160ms both; }
+}
+
+/* ── The plan halo (MOTION_SYSTEM §5.4, video beat 4) ─────────────────────────────────────────────────────────────
+   The planned hangout card at the top of a pod wears the logo's three hues as a ring. On arrival the colour runs one
+   lap (1.6 s, TRAVEL curve: "Claude just planned this"), then keeps drifting very slowly (14 s a lap) while the plan
+   waits on "I'm in", so it still reads on camera without pulling focus. Locked: the ring stops and settles to the
+   commit blue. A 2 px crisp line, no glow (COLOR_LIFE §12.4). Reduced motion: the three hues, still.
+   Markup: <PlanHalo> (components/brand/plan-halo.tsx). */
+.pods-halo { position: relative; isolation: isolate; }
+.pods-halo__ring,
+.pods-halo__comet {
+  position: absolute;
+  inset: -4px;
+  border-radius: calc(var(--halo-r, 24px) + 4px);
+  padding: 2px;
+  pointer-events: none;
+  -webkit-mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(black 0 0) content-box exclude, linear-gradient(black 0 0);
+  transition: opacity var(--dur-settle) var(--ease-out), background var(--dur-settle) var(--ease-out);
+}
+/* the resting ring: the three hues, quiet */
+.pods-halo__ring {
+  background: conic-gradient(from 200deg, var(--pods-signal), var(--pods-grove), var(--pods-ember), var(--pods-signal));
+  opacity: .38;
+}
+/* the travelling light: a bright arc in the three hues with a soft tail */
+.pods-halo__comet {
+  background: conic-gradient(from var(--pods-orbit-angle), transparent 0 62%, var(--pods-signal) 76%, var(--pods-grove) 88%, var(--pods-ember) 99%, transparent 100%);
+  inset: -5px;
+  padding: 3px;
+  border-radius: calc(var(--halo-r, 24px) + 5px);
+  animation:
+    pods-orbit 1600ms var(--ease-in-out) 1 both,
+    pods-orbit 9s linear 1600ms infinite;
+}
+.pods-halo[data-state="locked"] .pods-halo__ring { background: var(--select); opacity: 1; }
+.pods-halo[data-state="locked"] .pods-halo__comet { opacity: 0; animation: none; }
+.pods-halo[data-state="off"] .pods-halo__ring,
+.pods-halo[data-state="off"] .pods-halo__comet { opacity: 0; animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .pods-halo__comet { animation: none; opacity: 0; }
+  .pods-halo__ring { opacity: .9; }
+}

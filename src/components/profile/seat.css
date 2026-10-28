@@ -1,0 +1,157 @@
+/* Your seat (wireframe Y01, anatomy F). Spacing on the 4pt scale only (DESIGN.md §9):
+   phone   gutter 20 · head 24 under the chrome (CondensingHead) · name to rows 24 (s6) · rows 56 min · rows to the
+           quiet row 32 (s8) · quiet row to the table 48 (s12)
+   laptop  margin 64 · text column 520 · gap 96 · head 116 below the chrome row (the same offset LegalPage uses) ·
+           the table rises beside the head, centred in the rest */
+
+.seat-pg {
+  min-height: 100dvh;
+  padding-bottom: var(--s16);
+}
+.seat-body {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1440px;
+  padding: 0 var(--gutter);
+}
+.seat-head .line {
+  max-width: 14ch;
+}
+.seat-rows {
+  margin-top: var(--s6);
+  border-bottom: 1px solid var(--line);
+}
+.seat-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: var(--s2) 0;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  color: var(--ink);
+  font-size: 28px;
+  outline-offset: -2px;
+  transform-origin: 0% 50%;
+}
+/* the sentences sit one step under the name: same voice, lighter, so the name stays the one line (DESIGN T1) */
+.seat-row .line {
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+@media (hover: hover) {
+  .seat-row:hover .line {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.14em;
+    text-decoration-color: color-mix(in srgb, var(--select) 45%, transparent);
+  }
+}
+.seat-row[aria-expanded="true"] .line {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.14em;
+  text-decoration-color: var(--select);
+}
+.seat-more {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  width: 100%;
+  min-height: 56px;
+  margin-top: var(--s8);
+  font-size: 16px;
+  color: var(--ink);
+  text-align: left;
+  outline-offset: -2px;
+}
+.seat-more > svg:first-child {
+  color: var(--select);
+}
+.seat-obj {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--s12);
+}
+/* the logo's light behind your seat (COLOR_LIFE §6.4): a blue and a green circle meeting through teal; the ember
+   spark is your own disc. Circles keep an edge (solid to 58%, then a fade), no blur, nothing loops (rule 5). */
+.seat-obj {
+  position: relative;
+  isolation: isolate;
+}
+.seat-obj::before {
+  content: "";
+  position: absolute;
+  inset: -14% -4%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(closest-side circle, color-mix(in srgb, var(--pods-signal) 16%, transparent) 0 58%, transparent 100%),
+    radial-gradient(closest-side circle, color-mix(in srgb, var(--pods-grove) 18%, transparent) 0 58%, transparent 100%);
+  background-size: 64% 64%, 64% 64%;
+  background-position: 22% 26%, 78% 40%;
+  background-repeat: no-repeat;
+  mix-blend-mode: multiply;
+}
+
+@media (min-width: 1024px) {
+  .seat-head {
+    padding-top: 116px;
+    max-width: calc(520px + 2 * var(--s16));
+  }
+  .seat-body {
+    display: grid;
+    grid-template-columns: 520px minmax(0, 1fr);
+    column-gap: var(--s24);
+    padding: 0 var(--s16);
+  }
+  .seat-row {
+    font-size: 36px;
+  }
+  .seat-obj {
+    align-items: flex-start;
+    margin-top: -128px;
+  }
+}
+
+/* A person (S06): the table you share sits under the head; the sheet rises over its lower half on phones. */
+.person-obj {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--s6);
+}
+@media (min-width: 1024px) {
+  .person-obj {
+    justify-content: flex-start;
+    margin-top: 0;
+  }
+}
+
+/* Texts (inbox N01-N04): one line per text, a pod disc, the time on the right. */
+.texts-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  min-height: 64px;
+  padding: var(--s2) 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  outline-offset: -2px;
+}
+@media (hover: hover) {
+  .texts-row:hover .texts-line {
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.2em;
+    text-decoration-color: color-mix(in srgb, var(--select) 45%, transparent);
+  }
+}
+
+/* Texts on laptop: the list sits under the head in a reading column (no second object to show). */
+@media (min-width: 1024px) {
+  .texts-body {
+    grid-template-columns: minmax(0, 640px);
+  }
+}

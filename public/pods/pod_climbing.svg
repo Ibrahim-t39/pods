@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Pod cover art">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FEE7E0"/><stop offset="1" stop-color="#FD6123" stop-opacity=".35"/></linearGradient></defs>
+<rect width="256" height="256" fill="url(#bg)"/>
+<g style="mix-blend-mode:multiply"><circle cx="76.1" cy="126.0" r="76.4" fill="#FD6123" fill-opacity=".72"/>
+<circle cx="155.7" cy="84.1" r="76.4" fill="#FF8D66" fill-opacity=".7"/>
+<circle cx="152.2" cy="173.9" r="76.4" fill="#F2AB37" fill-opacity=".62"/></g>
+<circle cx="128" cy="128" r="26.0" fill="#DF4B01" fill-opacity=".18"/>
+</svg>

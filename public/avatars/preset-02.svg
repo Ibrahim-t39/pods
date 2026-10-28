@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Illustrated avatar">
+<defs><linearGradient id="gljqu8xb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF8D66"/><stop offset="1" stop-color="#DF4B01"/></linearGradient>
+<radialGradient id="gljqu8xs" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#6B3F29"/><stop offset="1" stop-color="#552F1D"/></radialGradient>
+<clipPath id="gljqu8xc"><rect width="256" height="256"/></clipPath></defs>
+<g clip-path="url(#gljqu8xc)">
+<rect width="256" height="256" fill="url(#gljqu8xb)"/>
+<circle cx="214" cy="40" r="52" fill="#fff" opacity=".14"/><circle cx="30" cy="230" r="70" fill="#000" opacity=".06"/>
+
+<path d="M30 270 C30 206 74 182 128 182 C182 182 226 206 226 270 Z" fill="#F2AB37"/>
+<path d="M104 176 L152 176 L150 200 Q128 214 106 200 Z" fill="#552F1D"/>
+<rect x="108" y="146" width="40" height="46" rx="18" fill="#552F1D"/>
+<ellipse cx="128" cy="112" rx="46" ry="52" fill="url(#gljqu8xs)"/>
+<ellipse cx="82" cy="116" rx="8" ry="12" fill="#552F1D"/><ellipse cx="174" cy="116" rx="8" ry="12" fill="#552F1D"/>
+<path d="M82 92 C82 56 174 56 174 92 C160 78 96 78 82 92 Z" fill="#17120F"/>
+<g fill="#1B1210"><ellipse cx="110" cy="114" rx="4.2" ry="5.2"/><ellipse cx="146" cy="114" rx="4.2" ry="5.2"/></g>
+<path d="M116.57188205830752 138 Q128 149.42811794169248 139.42811794169248 138" fill="none" stroke="#1B1210" stroke-width="3.4" stroke-linecap="round"/>
+
+</g></svg>
