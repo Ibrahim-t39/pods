@@ -102,7 +102,7 @@
   --neutral-ink: #0E1A22;
 
   /* One voice: Archivo, the typeface the "pods." wordmark is drawn from (PODS/brand/BRAND.md §2; founder 2026-10-28: "use the same font as the logo").
-     Headlines: 800-850, font-stretch ~108%, tight tracking, so they read as the logo speaking. UI and body: 400-600 at normal width.
+     Headlines: 600 at normal width, tight tracking (founder: 800+ wide was "way too thick"; PODS/v3/type/weights/). UI and body: 400-600 at normal width.
      --font-serif / --font-display are kept as names so every screen picks up the change. */
   --font-display: var(--font-archivo), 'Archivo', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-serif: var(--font-display);
@@ -110,27 +110,27 @@
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
   --text-display-2xl-size: clamp(4rem, 2.2rem + 7.4vw, 10.5rem);
   --text-display-2xl-line: 0.95;
-  --text-display-2xl-weight: 850;
+  --text-display-2xl-weight: 600;
   --text-display-2xl-tracking: -0.035em;
   --text-display-2xl-family: var(--font-serif);
   --text-display-xl-size: clamp(3.5rem, 2.4rem + 4.6vw, 7rem);
   --text-display-xl-line: 1;
-  --text-display-xl-weight: 850;
+  --text-display-xl-weight: 600;
   --text-display-xl-tracking: -0.03em;
   --text-display-xl-family: var(--font-serif);
   --text-display-lg-size: clamp(3rem, 2.4rem + 2.4vw, 4.5rem);
   --text-display-lg-line: 1.04;
-  --text-display-lg-weight: 800;
+  --text-display-lg-weight: 600;
   --text-display-lg-tracking: -0.025em;
   --text-display-lg-family: var(--font-serif);
   --text-heading-xl-size: clamp(2.5rem, 2.2rem + 1.2vw, 3.5rem);
   --text-heading-xl-line: 1.08;
-  --text-heading-xl-weight: 800;
+  --text-heading-xl-weight: 600;
   --text-heading-xl-tracking: -0.02em;
   --text-heading-xl-family: var(--font-serif);
   --text-heading-lg-size: 2rem;
   --text-heading-lg-line: 1.125;
-  --text-heading-lg-weight: 700;
+  --text-heading-lg-weight: 600;
   --text-heading-lg-tracking: -0.015em;
   --text-heading-lg-family: var(--font-serif);
   --text-heading-md-size: 1.125rem;
@@ -251,8 +251,17 @@
   --sheen: linear-gradient(180deg, rgb(255 255 255 / .30) 0%, rgb(255 255 255 / .08) 46%, rgb(255 255 255 / 0) 52%, rgb(0 0 0 / .05) 100%);
   --sheen-press: linear-gradient(180deg, rgb(255 255 255 / .12) 0%, rgb(255 255 255 / 0) 50%, rgb(0 0 0 / .08) 100%);
   --edge-gloss: inset 0 1px 0 rgb(255 255 255 / .38), inset 0 -1px 0 rgb(0 0 0 / .10);
-  /* a disc is lit from the top-left like the logo's circles: a soft specular spot, then the solid hue */
-  --disc-sheen: radial-gradient(circle at 34% 26%, rgb(255 255 255 / .46) 0, rgb(255 255 255 / .10) 34%, rgb(255 255 255 / 0) 52%);
+  /* BUBBLES (founder idea 8, won the bubble round: COLOR_LIFE §15). People and pods are glass orbs: clear in the middle,
+     denser at the rim (Fresnel), one specular window top-left, a thin lit rim. Overlaps blend NORMAL (light through two
+     layers of glass), so where worlds meet it turns brighter and richer, never muddy. Only circles that are people,
+     pods or the moment are bubbles; cards, buttons, chips, sheets and text never are.
+     A person is a BEAD: a solid hue body (so the initial keeps AA) with the bubble's window, rim and under-light. */
+  --bead: radial-gradient(ellipse 30% 18% at 34% 20%, rgb(255 255 255 / .72) 0, rgb(255 255 255 / .18) 58%, rgb(255 255 255 / 0) 74%), radial-gradient(closest-side, rgb(255 255 255 / 0) 74%, rgb(255 255 255 / .30) 94%, rgb(255 255 255 / 0) 100%), radial-gradient(circle at 50% 118%, rgb(255 255 255 / .30), rgb(255 255 255 / 0) 52%);
+  --disc-sheen: var(--bead); /* v1 name */
+  --shadow-bead: inset 0 -3px 6px rgb(0 0 0 / .12), 0 6px 14px -7px rgb(14 26 34 / .38);
+  /* an orb's specular window and its small kick light (shared by .orb, the table top and the moment) */
+  --orb-window: radial-gradient(ellipse 34% 20% at 34% 20%, rgb(255 255 255 / .92) 0, rgb(255 255 255 / .30) 55%, rgb(255 255 255 / 0) 72%);
+  --orb-kick: radial-gradient(circle at 70% 80%, rgb(255 255 255 / .55) 0 2.4%, rgb(255 255 255 / 0) 4.6%);
   --glass: rgb(255 255 255 / .74);
   --glass-strong: rgb(255 255 255 / .86);
   --glass-edge: inset 0 0 0 1px rgb(255 255 255 / .65), 0 0 0 1px rgb(14 26 34 / .06);
@@ -264,15 +273,17 @@
   --grad-logo: linear-gradient(135deg, #1B78FE 0%, #01627E 50%, #19C185 100%);             /* blue into green through their overlap */
   --grad-tide: linear-gradient(135deg, #1B78FE 0%, #01627E 55%, #19C185 100%);             /* pod family: tide (blue x green) */
   --grad-grove: linear-gradient(in oklch 135deg, #19C185 0%, #FD6123 100%);                 /* pod family: grove (green x ember) */
-  --grad-dusk: linear-gradient(135deg, #FD6123 0%, #40313F 55%, #1B78FE 100%);              /* pod family: dusk (ember x blue) */
+  --grad-dusk: linear-gradient(135deg, #FD6123 0%, #40313F 55%, #1B78FE 100%);              /* v1 (no pod uses it now: plum read muddy) */
+  --grad-glow: linear-gradient(in oklch 135deg, #FD6123 0%, #FF8D66 52%, #68A3FF 100%);     /* pod family: glow (ember-led, a little blue light) */
   /* the three circles at full strength, meeting at the centre (the logo, as a field): splash, OG, the lock */
   --grad-venn: radial-gradient(circle at 50% 30%, rgba(253,97,35,.85) 0 22%, rgba(253,97,35,0) 40%), radial-gradient(circle at 30% 64%, rgba(27,120,254,.9) 0 24%, rgba(27,120,254,0) 42%), radial-gradient(circle at 70% 64%, rgba(25,193,133,.85) 0 24%, rgba(25,193,133,0) 42%);
   /* the page light: the logo's three circles as soft coloured light at the top-right corner, overlapping (darker
      where more meet). Sits behind the object, never behind body text. */
   --mesh-page: radial-gradient(circle 210px at calc(100% - 30px) 40px, rgba(253,97,35,.20) 0 62%, rgba(253,97,35,0) 100%), radial-gradient(circle 230px at calc(100% - 170px) 190px, rgba(27,120,254,.22) 0 62%, rgba(27,120,254,0) 100%), radial-gradient(circle 230px at calc(100% + 50px) 230px, rgba(25,193,133,.24) 0 62%, rgba(25,193,133,0) 100%);
   /* the moment (lock, #2 is on): the centre of the logo. A deep field (the all-three overlap) with the three circles
-     converging on the table: blue and green below, the ember spark above where they meet. */
-  --moment: radial-gradient(circle 150px at 50% 27%, rgba(253,97,35,.82) 0 64%, rgba(253,97,35,0) 100%), radial-gradient(circle 160px at 27% 50%, rgba(27,120,254,.90) 0 64%, rgba(27,120,254,0) 100%), radial-gradient(circle 160px at 73% 50%, rgba(25,193,133,.82) 0 64%, rgba(25,193,133,0) 100%), linear-gradient(170deg, #0B2F26 0%, #022634 100%);
+     converging on the table as GLASS ORBS (bubble round, COLOR_LIFE §15): clear bodies, lit rims, a window each, so the
+     overlaps are luminous instead of muddy (founder: "muddy brown/olive overlaps look dirty"). */
+  --moment: radial-gradient(ellipse 52px 30px at calc(50% - 46px) calc(27% - 92px), rgb(255 255 255 / .70) 0, rgb(255 255 255 / 0) 100%), radial-gradient(ellipse 52px 30px at calc(27% - 50px) calc(50% - 98px), rgb(255 255 255 / .60) 0, rgb(255 255 255 / 0) 100%), radial-gradient(ellipse 52px 30px at calc(73% - 50px) calc(50% - 98px), rgb(255 255 255 / .55) 0, rgb(255 255 255 / 0) 100%), radial-gradient(circle 150px at 50% 27%, rgb(255 150 110 / .34) 0 52%, rgb(253 97 35 / .62) 88%, rgb(255 200 176 / .95) 97.5%, rgb(253 97 35 / 0) 100%), radial-gradient(circle 160px at 27% 50%, rgb(110 170 255 / .34) 0 52%, rgb(27 120 254 / .66) 88%, rgb(190 220 255 / .95) 97.5%, rgb(27 120 254 / 0) 100%), radial-gradient(circle 160px at 73% 50%, rgb(110 230 185 / .30) 0 52%, rgb(25 193 133 / .62) 88%, rgb(190 255 228 / .95) 97.5%, rgb(25 193 133 / 0) 100%), linear-gradient(170deg, #0B2F26 0%, #022634 100%);
   /* v1 names */
   --gradient-aurora: var(--mesh-page);
   --gradient-signal-gloss: var(--grad-tide);
@@ -289,14 +300,16 @@
   --table: #FFFFFF;
   --ink: #0E1A22;      /* text: cool near-black (16.6:1 on paper) */
   --ink-2: #475563;    /* secondary text (7.2:1) */
-  --ink-3: #8A97A4;    /* rules and dashes only (2.8:1, never text) */
+  --ink-3: #627080;    /* quiet text and rules (4.9:1 on paper: AA, QA r1 "muted text at least 4.5:1") */
   --line: rgba(14,26,34,.12);
   --line-2: rgba(14,26,34,.26);
   --night: #06262B;    /* the moment field (the all-three overlap, deepened), under --moment */
   --lamp: #F2FFFA;     /* text and pills on the moment (10:1) */
   --teal: #01627E;
   --plum: #40313F;
-  --spark: #FD6123;    /* ember: you, I'm in, the lock spark. Never a field. */
+  --spark: #FD6123;    /* ember: I'm in, the warm yes, the lock spark. Never a field. */
+  --you: #0E1A22;      /* you: one ink bead among the logo colours (wireframes R3; QA r1 people take the three hues) */
+  --on-you: #FFFFFF;   /* 16.6:1 */
   --on-spark: #0E1A22; /* 5.8:1 */
   --scrim: rgba(1,72,92,.22); /* a calm teal veil (safety colour), frosted by .pods-scrim */
   --color-bg: #F7F9FB;
@@ -386,7 +399,7 @@
 @media (min-width: 1024px) {
   :root {
     --mesh-page: radial-gradient(circle 320px at calc(100% - 60px) 30px, rgba(253,97,35,.14) 0 62%, rgba(253,97,35,0) 100%), radial-gradient(circle 360px at calc(100% - 280px) 250px, rgba(27,120,254,.15) 0 62%, rgba(27,120,254,0) 100%), radial-gradient(circle 360px at calc(100% + 40px) 330px, rgba(25,193,133,.17) 0 62%, rgba(25,193,133,0) 100%);
-    --moment: radial-gradient(circle 230px at 73% 30%, rgba(253,97,35,.80) 0 64%, rgba(253,97,35,0) 100%), radial-gradient(circle 250px at 63% 64%, rgba(27,120,254,.88) 0 64%, rgba(27,120,254,0) 100%), radial-gradient(circle 250px at 83% 64%, rgba(25,193,133,.80) 0 64%, rgba(25,193,133,0) 100%), linear-gradient(170deg, #0B2F26 0%, #022634 100%);
+    --moment: radial-gradient(ellipse 80px 44px at calc(70% - 70px) calc(30% - 140px), rgb(255 255 255 / .70) 0, rgb(255 255 255 / 0) 100%), radial-gradient(ellipse 80px 44px at calc(60% - 80px) calc(64% - 150px), rgb(255 255 255 / .60) 0, rgb(255 255 255 / 0) 100%), radial-gradient(ellipse 80px 44px at calc(80% - 80px) calc(64% - 150px), rgb(255 255 255 / .55) 0, rgb(255 255 255 / 0) 100%), radial-gradient(circle 230px at 70% 30%, rgb(255 150 110 / .34) 0 52%, rgb(253 97 35 / .62) 88%, rgb(255 200 176 / .95) 97.5%, rgb(253 97 35 / 0) 100%), radial-gradient(circle 250px at 60% 64%, rgb(110 170 255 / .34) 0 52%, rgb(27 120 254 / .66) 88%, rgb(190 220 255 / .95) 97.5%, rgb(27 120 254 / 0) 100%), radial-gradient(circle 250px at 80% 64%, rgb(110 230 185 / .30) 0 52%, rgb(25 193 133 / .62) 88%, rgb(190 255 228 / .95) 97.5%, rgb(25 193 133 / 0) 100%), linear-gradient(170deg, #0B2F26 0%, #022634 100%);
   }
 }
 
@@ -396,6 +409,7 @@
 :root, [data-depth] {
   --grad-tide-soft: radial-gradient(52% 52% at 34% 36%, rgb(27 120 254 / calc(.30 * var(--depth, 1))) 0 58%, rgb(27 120 254 / 0) 100%), radial-gradient(52% 52% at 66% 64%, rgb(25 193 133 / calc(.32 * var(--depth, 1))) 0 58%, rgb(25 193 133 / 0) 100%);
   --grad-grove-soft: radial-gradient(52% 52% at 34% 36%, rgb(25 193 133 / calc(.32 * var(--depth, 1))) 0 58%, rgb(25 193 133 / 0) 100%), radial-gradient(52% 52% at 66% 64%, rgb(253 97 35 / calc(.22 * var(--depth, 1))) 0 58%, rgb(253 97 35 / 0) 100%);
+  --grad-glow-soft: radial-gradient(52% 52% at 34% 36%, rgb(253 97 35 / calc(.30 * var(--depth, 1))) 0 58%, rgb(253 97 35 / 0) 100%), radial-gradient(52% 52% at 66% 64%, rgb(27 120 254 / calc(.14 * var(--depth, 1))) 0 58%, rgb(27 120 254 / 0) 100%);
   --grad-dusk-soft: radial-gradient(52% 52% at 34% 36%, rgb(253 97 35 / calc(.24 * var(--depth, 1))) 0 58%, rgb(253 97 35 / 0) 100%), radial-gradient(52% 52% at 66% 64%, rgb(27 120 254 / calc(.28 * var(--depth, 1))) 0 58%, rgb(27 120 254 / 0) 100%);
 }
 [data-depth="1"] { --depth: 1; }
@@ -406,7 +420,13 @@
    key "ember" (first interest pod) = TIDE (blue x green), "grove" (community) = GROVE (green x ember),
    "signal" (second interest) = DUSK (ember x blue). --pod is the pod's solid (rings, room circles), --pod-grad its
    gradient, --pod-wash the soft two-circle wash. */
-:root, [data-pod-hue="signal"] { --pod: var(--color-signal); --pod-text: var(--color-signal-text); --pod-soft: var(--color-signal-soft); --pod-soft-border: var(--color-signal-soft-border); --pod-on: var(--color-on-signal); --pod-gloss: var(--grad-dusk); --pod-grad: var(--grad-dusk); --pod-wash: var(--grad-dusk-soft); --pod-glow: none; }
+/* Pod families (QA r1 foundation: "each pod a distinct hue"). Each pod LEADS with one logo circle, so three pods read
+   as the logo's three circles: key "ember" (first interest pod) = BLUE-led tide (blue x green), "signal" (second interest)
+   = EMBER-led glow (ember with a little blue light, luminous, no plum), "grove" (community) = GREEN-led grove (green x
+   ember). --pod is the pod's solid (rings, room circles), --pod-grad its gradient, --pod-wash the soft two-circle wash.
+   :root stays the plan's blue (outside any pod). */
+:root { --pod: var(--color-signal); --pod-text: var(--color-signal-text); --pod-soft: var(--color-signal-soft); --pod-soft-border: var(--color-signal-soft-border); --pod-on: var(--color-on-signal); --pod-gloss: var(--grad-tide); --pod-grad: var(--grad-tide); --pod-wash: var(--grad-tide-soft); --pod-glow: none; }
+[data-pod-hue="signal"] { --pod: var(--color-ember); --pod-text: var(--color-ember-text); --pod-soft: var(--color-ember-soft); --pod-soft-border: var(--color-ember-soft-border); --pod-on: var(--color-on-ember); --pod-gloss: var(--grad-glow); --pod-grad: var(--grad-glow); --pod-wash: var(--grad-glow-soft); --pod-glow: none; }
 [data-pod-hue="ember"], [data-pod-type="interest"] { --pod: var(--color-signal); --pod-text: var(--color-signal-text); --pod-soft: var(--color-signal-soft); --pod-soft-border: var(--color-signal-soft-border); --pod-on: var(--color-on-signal); --pod-gloss: var(--grad-tide); --pod-grad: var(--grad-tide); --pod-wash: var(--grad-tide-soft); --pod-glow: none; }
 [data-pod-hue="grove"], [data-pod-type="community"] { --pod: var(--color-grove); --pod-text: var(--color-grove-text); --pod-soft: var(--color-grove-soft); --pod-soft-border: var(--color-grove-soft-border); --pod-on: var(--color-on-grove); --pod-gloss: var(--grad-grove); --pod-grad: var(--grad-grove); --pod-wash: var(--grad-grove-soft); --pod-glow: none; }
 

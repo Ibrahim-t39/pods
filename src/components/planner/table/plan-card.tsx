@@ -1,7 +1,7 @@
 // planner_loop · <PlanCard>: hangout #N, already planned, at the top of the pod (video Scene 5 beats 4 and 6;
 // COLOR_LIFE §13; MOTION_SYSTEM §5.4, §5.6). One card, one hero motion (the three-hue halo), one filled primary.
 //
-//   ◐ Claude planned it                       #1
+//   ◐ Planned by AI                           #1
 //   Saturday pickup run                         (the activity + the day, display 700)
 //   10am · Brahan Spring Park · Free            (time, a public place, the cost)
 //   ● ● ● ○ │ ○ ○ ○ ○        3 of 8 in          (8 seats; the first 4 are the lock arc, it closes blue)
@@ -19,7 +19,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Disc, InCount, PlanHalo, POP, STAGGER, useCalmMotion } from "@/components/brand";
 import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import { hm, placeWord, weekday, type TableModel } from "./model";
+import { hm, placeWord, sourceLine, weekday, type TableModel } from "./model";
 
 /** "Saturday pickup run" from the plan: the day from the time (never trusted from the text), the noun from the summary. */
 export function planTitle(m: TableModel, iso: string | null): string {
@@ -32,10 +32,10 @@ export function planTitle(m: TableModel, iso: string | null): string {
   return [day, noun || m.pod.topic.toLowerCase()].filter(Boolean).join(" ");
 }
 
-/** "Free" / "$5" / "Cost to confirm" as one word or two. */
+/** "Free" / "$5" as one word or two. An unknown cost is left out, never shown as "to confirm" (QA planner_loop). */
 export function costWord(m: TableModel): string {
   const c = m.plan?.plan_json.cost?.trim();
-  if (!c) return "";
+  if (!c || /to confirm|unconfirmed|tbd/i.test(c)) return "";
   return /^free\b/i.test(c) ? "Free" : c.replace(/\.$/, "");
 }
 
@@ -63,7 +63,7 @@ export function seatDots(m: TableModel, opts: { all?: boolean } = {}): SeatDot[]
  *  the lock (the count is the form). Discs pop in one after another (POP + STAGGER). */
 export function SeatRow({ dots, lockAt, locked, size = 24 }: { dots: SeatDot[]; lockAt: number; locked: boolean; size?: number }) {
   const calm = useCalmMotion();
-  const ov = Math.round(size * 0.3);
+  const ov = Math.round(size * 0.22);
   const filled = dots.filter((d) => !d.open).length;
   return (
     <span className="pc-seats" aria-hidden data-nc>
@@ -110,7 +110,6 @@ export function PlanCard({ m, href, onImIn, onCalendar, busy, lap, className }: 
   const locked = v.locked;
   const going = v.going.length;
   const of = Math.max(m.people.length, v.threshold);
-  const byClaude = m.plan?.source === "claude" || m.plan?.source === "seed";
   const place = placeWord(m.venue);
   const cost = costWord(m);
   const facts = [iso ? hm(iso) : null, place].filter(Boolean) as string[];
@@ -125,7 +124,7 @@ export function PlanCard({ m, href, onImIn, onCalendar, busy, lap, className }: 
           )}
           <p className="pc-over">
             <Icon name="why" size={16} className="pc-why" />
-            <span>{byClaude ? "Claude planned it" : "Planned from free times"}</span>
+            <span>{sourceLine(m.plan)}</span>
             {cost && <span className="pc-cost" data-free={cost === "Free" ? "" : undefined}>{cost}</span>}
           </p>
           <h2 className="pc-title">{title}</h2>

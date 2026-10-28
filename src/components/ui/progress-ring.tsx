@@ -63,8 +63,8 @@ export function ProgressRing({ value, max, size = 88, stroke = 8, tone = "signal
         />
       </svg>
       <div aria-hidden className="absolute inset-0 grid place-content-center text-center">
-        {label != null && <span className="font-display text-[clamp(14px,calc(var(--s)*0.24),30px)] leading-none font-extrabold tabular [font-stretch:112%]" style={{ ["--s" as string]: `${size}px` }}>{label}</span>}
-        {sublabel != null && <span className="mt-1 text-[11px] font-medium text-fg-muted">{sublabel}</span>}
+        {label != null && <span className="font-display text-[clamp(14px,calc(var(--s)*0.24),30px)] leading-none font-semibold tabular" style={{ ["--s" as string]: `${size}px` }}>{label}</span>}
+        {sublabel != null && <span className="mt-1 text-[12px] font-medium text-fg-muted">{sublabel}</span>}
       </div>
     </div>
   );

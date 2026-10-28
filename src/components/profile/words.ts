@@ -64,3 +64,16 @@ export function textsLine(sms: boolean, kinds: Record<TextKind, boolean>) {
   if (on.length === 1) return on[0].line;
   return `${on[0].line.slice(0, -1)}, +${on.length - 1}.`;
 }
+
+/** The value half of a line, for labelled fields: "Into basketball, guitar." → "basketball, guitar". */
+export function valueOf(line: string, prefix: string) {
+  const v = line.startsWith(prefix) ? line.slice(prefix.length) : line;
+  return v.replace(/[.?]$/, "");
+}
+
+/** "When it's on" · "When it's on, +1" · "Off" */
+export function textsValue(sms: boolean, kinds: Record<TextKind, boolean>) {
+  const on = TEXT_KINDS.filter((k) => kinds[k.key]);
+  if (!sms || !on.length) return "Off";
+  return on.length === 1 ? on[0].label : `${on[0].label}, +${on.length - 1}`;
+}

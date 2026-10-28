@@ -1,32 +1,34 @@
-// B04 Free (3 of 4). "Free weekends, afternoons." The week sits around the table's rim (PB 6.2 clock arc; IL 40;
-// E #7 tapped availability): tap a day and it takes the pod hue. Weekdays move together (Pods plans weeknights as
-// one slot, BLUEPRINT D3). When a weekend day is on, the parts of the day appear on the table top. The line writes
-// itself. At least one (D3).
+// B04 Free (3 of 6). "Free weeknights, Saturdays." The week reads as a line of named days (QA round 1: a ring of
+// single letters had two Ts and two Ss). Mon to Fri are one joined pill because Pods plans weeknights as one slot
+// (BLUEPRINT D3): tapping any of them lights all five, so what you see is what is saved. Sat and Sun stand alone.
+// The parts of the day are real chips, always shown, live once a weekend day is on. The line writes itself from the
+// same value. At least one day (D3); the hint says so while Next is off.
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "motion/react";
 import { Line } from "@/components/brand/line";
 import { Button } from "@/components/ui/button";
 import { useDb, useRepo } from "@/lib/db/hooks";
 import type { User } from "@/lib/types";
-import { FlowStep, Sub, useTableSize } from "../flow";
-import { RingTable } from "../objects";
+import { FlowStep, Sub } from "../flow";
 import { useDraft } from "../draft";
 import { Guarded } from "../guard";
 import { BACK, DOT, STEP_ROUTE, commitDraft } from "../steps";
 import { PARTS, freeWords, fromSlots, toSlots, type Free as FreeValue, type Part } from "../words";
 
-const WEEK = [
-  { k: "mon", l: "M", d: "weeknights", name: "Monday" },
-  { k: "tue", l: "T", d: "weeknights", name: "Tuesday" },
-  { k: "wed", l: "W", d: "weeknights", name: "Wednesday" },
-  { k: "thu", l: "T", d: "weeknights", name: "Thursday" },
-  { k: "fri", l: "F", d: "weeknights", name: "Friday" },
-  { k: "sat", l: "S", d: "saturday", name: "Saturday" },
-  { k: "sun", l: "S", d: "sunday", name: "Sunday" },
+const WEEKNIGHTS = [
+  { k: "mon", l: "Mon", name: "Monday" },
+  { k: "tue", l: "Tue", name: "Tuesday" },
+  { k: "wed", l: "Wed", name: "Wednesday" },
+  { k: "thu", l: "Thu", name: "Thursday" },
+  { k: "fri", l: "Fri", name: "Friday" },
 ] as const;
+const WEEKEND = [
+  { k: "saturday", l: "Sat", name: "Saturday" },
+  { k: "sunday", l: "Sun", name: "Sunday" },
+] as const;
+const PART_LABEL: Record<Part, string> = { morning: "Mornings", afternoon: "Afternoons", evening: "Evenings" };
 
 export function FreeScreen() {
   return <Guarded need="none">{(me) => <Free me={me} />}</Guarded>;
@@ -35,7 +37,6 @@ export function FreeScreen() {
 function Free({ me }: { me: User | null }) {
   const router = useRouter();
   const repo = useRepo();
-  const { size } = useTableSize();
   const draft = useDraft();
   const metro = useDb((db) => db.config.placement.metro);
   const [v, setV] = useState<FreeValue>(() => fromSlots(draft.free.length ? draft.free : (me?.availability ?? [])));
@@ -95,48 +96,59 @@ function Free({ me }: { me: User | null }) {
         </>
       }
       object={
-        <RingTable
-          size={size}
-          on={slots.length > 0}
-          label="Days"
-          items={WEEK.map((d) => ({
-            key: d.k,
-            node: (
-              <button
-                type="button"
-                aria-label={d.name}
-                aria-pressed={v[d.d]}
-                onClick={() => setV((x) => ({ ...x, [d.d]: !x[d.d] }))}
-                className="pods-ob-day pressable"
-              >
-                <span aria-hidden>{d.l}</span>
-              </button>
-            ),
-          }))}
-          center={
-            <AnimatePresence>
-              {weekend && (
-                <motion.div
-                  role="group"
-                  aria-label="Weekend times"
-                  className="flex flex-col items-center"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                  transition={{ duration: 0.24 }}
+        <div className="pods-ob-week">
+          <div className="pods-ob-week-group" role="group" aria-label="Days">
+            <p>Days</p>
+            <div className="pods-ob-week-row" data-days="">
+              <span className="pods-ob-joined" data-on={v.weeknights ? "" : undefined} title="Weeknights">
+                {WEEKNIGHTS.map((d) => (
+                  <button
+                    key={d.k}
+                    type="button"
+                    aria-label={d.name}
+                    aria-pressed={v.weeknights}
+                    onClick={() => setV((x) => ({ ...x, weeknights: !x.weeknights }))}
+                    className="pressable"
+                  >
+                    {d.l}
+                  </button>
+                ))}
+              </span>
+              {WEEKEND.map((d) => (
+                <button
+                  key={d.k}
+                  type="button"
+                  aria-label={d.name}
+                  aria-pressed={v[d.k]}
+                  onClick={() => setV((x) => ({ ...x, [d.k]: !x[d.k] }))}
+                  className="pods-ob-like pressable"
                 >
-                  {PARTS.map((p) => (
-                    <button key={p} type="button" aria-pressed={v.parts.includes(p)} onClick={() => togglePart(p)} className="pods-ob-part pressable">
-                      {p}s
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          }
-        />
+                  {d.l}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="pods-ob-week-group" role="group" aria-label="Weekend times">
+            <p>Weekend times</p>
+            <div className="pods-ob-week-row">
+              {PARTS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  disabled={!weekend}
+                  aria-pressed={weekend && v.parts.includes(p)}
+                  onClick={() => togglePart(p)}
+                  className="pods-ob-like pressable"
+                >
+                  {PART_LABEL[p]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       }
       dot={DOT.free}
+      hint={slots.length ? undefined : "Pick at least one day."}
       action={
         <Button size="xl" disabled={!slots.length} loading={busy} onClick={next}>
           Next

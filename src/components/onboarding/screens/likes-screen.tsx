@@ -42,7 +42,7 @@ export function LikesScreen({ openCommunity = false }: { openCommunity?: boolean
 function Likes({ openCommunity }: { openCommunity: boolean }) {
   const router = useRouter();
   const reduce = useReducedMotion();
-  const { size, wide } = useTableSize();
+  const { size } = useTableSize();
   const draft = useDraft();
   const { list, max } = useDb((db) => ({
     list: Object.values(db.interests).filter((i) => i.active),
@@ -56,7 +56,8 @@ function Likes({ openCommunity }: { openCommunity: boolean }) {
   const picks = draft.interests;
   const shown = ids.slice(page * PAGE, page * PAGE + PAGE);
   const community = !!(draft.heritage || draft.faith);
-  const chosen = [draft.heritage && heritageNode(draft.heritage)?.label, draft.faith && faithNode(draft.faith)?.label].filter(Boolean) as string[];
+  const from = draft.heritage ? (heritageNode(draft.heritage)?.label ?? null) : null;
+  const faith = draft.faith ? (FAITHS.find((x) => x.code === draft.faith)?.label ?? faithNode(draft.faith)?.label ?? null) : null;
 
   const toggle = (id: string) => {
     if (picks.includes(id)) return draft.set({ interests: picks.filter((x) => x !== id) });
@@ -128,34 +129,39 @@ function Likes({ openCommunity }: { openCommunity: boolean }) {
                 type="button"
                 aria-label="More likes"
                 onClick={() => setPage((p) => (p + 1) % pages)}
-                className="pressable grid size-11 place-items-center rounded-full text-ink outline-offset-2 hover:bg-[color-mix(in_srgb,var(--ink)_6%,transparent)]"
+                className="pods-ob-like pressable gap-s1"
               >
-                <motion.span key={page} initial={reduce ? false : { rotate: -120 }} animate={{ rotate: 0 }} transition={{ type: "spring", stiffness: 170, damping: 26 }}>
-                  <Icon name="turn" />
+                <motion.span key={page} className="inline-grid" initial={reduce ? false : { rotate: -120 }} animate={{ rotate: 0 }} transition={{ type: "spring", stiffness: 170, damping: 26 }}>
+                  <Icon name="turn" size={18} />
                 </motion.span>
+                <span aria-hidden>More</span>
               </button>
             ) : null
           }
           below={
-            community ? (
-              <div className="flex flex-wrap justify-center gap-s2" style={wide ? undefined : { marginTop: -8 }}>
-                {chosen.map((c) => (
-                  <button key={c} type="button" className="pods-ob-like pressable" data-community="" onClick={() => setSheet(true)}>
-                    <span aria-hidden className="pods-ob-like-dot pods-pop-in" />
-                    {c}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <button type="button" data-dashed="" className="pods-ob-like pressable" onClick={() => setSheet(true)} style={wide ? undefined : { marginTop: -8 }}>
-                <Icon name="room" size={18} />
-                Community pods
-              </button>
-            )
+            <button
+              type="button"
+              aria-label="Community pods"
+              aria-haspopup="dialog"
+              data-on={community ? "" : undefined}
+              className="pods-ob-community pressable"
+              onClick={() => setSheet(true)}
+            >
+              <span className="pods-ob-community-title">
+                Community pods <small>{community ? "Edit" : "Optional"}</small>
+              </span>
+              <dl className="contents">
+                <dt>From</dt>
+                <dd data-empty={from ? undefined : ""}>{from ?? "Add"}</dd>
+                <dt>Faith</dt>
+                <dd data-empty={faith ? undefined : ""}>{faith ?? "Add"}</dd>
+              </dl>
+            </button>
           }
         />
       }
       dot={DOT.likes}
+      hint={picks.length ? undefined : "Pick at least one."}
       action={
         <Button size="xl" disabled={!picks.length} onClick={() => router.push(STEP_ROUTE.free)}>
           Next
@@ -167,6 +173,7 @@ function Likes({ openCommunity }: { openCommunity: boolean }) {
   );
 }
 
+const FAITH_SHOWN = 5;
 const REGIONS = HERITAGE_NODES.filter((n) => n.level === "region");
 const COUNTRIES = HERITAGE_NODES.filter((n) => n.level === "country");
 const FAITHS = FAITH_NODES.filter((n) => n.level === "denomination").map((n) => ({
@@ -198,6 +205,7 @@ function CommunitySheet({ open, onOpenChange }: { open: boolean; onOpenChange: (
     }
     onOpenChange(o);
   };
+  const [allFaiths, setAllFaiths] = useState(false);
   const region = regionOf(h);
   const countries = region ? COUNTRIES.filter((c) => c.parent === region) : [];
   return (
@@ -232,7 +240,7 @@ function CommunitySheet({ open, onOpenChange }: { open: boolean; onOpenChange: (
         </>
       }
     >
-      <div className="flex flex-col gap-s8">
+      <div className="flex flex-col gap-s8 pb-s6">
         <Field label="From">
           {(region ? REGIONS.filter((r) => r.code === region) : REGIONS).map((r) => (
             <Chip key={r.code} on={h === r.code} near={region === r.code && h !== r.code} onClick={() => setH(h === r.code || region === r.code ? null : r.code)}>
@@ -246,11 +254,16 @@ function CommunitySheet({ open, onOpenChange }: { open: boolean; onOpenChange: (
           ))}
         </Field>
         <Field label="Faith">
-          {FAITHS.map((o) => (
+          {(allFaiths || (f && FAITHS.findIndex((o) => o.code === f) >= FAITH_SHOWN) ? FAITHS : FAITHS.slice(0, FAITH_SHOWN)).map((o) => (
             <Chip key={o.code} on={f === o.code} onClick={() => setF(f === o.code ? null : o.code)}>
               {o.label}
             </Chip>
           ))}
+          {!allFaiths && FAITHS.length > FAITH_SHOWN && !(f && FAITHS.findIndex((o) => o.code === f) >= FAITH_SHOWN) && (
+            <button type="button" className="pods-ob-like pressable" data-dashed="" onClick={() => setAllFaiths(true)}>
+              More
+            </button>
+          )}
         </Field>
       </div>
     </ResponsiveSheet>

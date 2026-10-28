@@ -1,21 +1,21 @@
 // People are flat discs (DESIGN.md §6; PB 6.4; IL 41, 24, 71; COLOR_LIFE §4). Never photos in a ring, never stock faces.
 // Colour (founder 2026-10-28, "Overlap", COLOR_LIFE §5.3):
-// - Every person has their own logo colour, stable everywhere: signal blue, grove green or teal (the overlap), picked
-//   from their name. A table of people reads as the logo's circles; the people ARE the circles.
-// - You are always the ember spark (ink initial), so you find yourself at once.
+// - Every person has their own logo colour, stable everywhere: signal blue, ember or grove green, picked from their
+//   name. A table of people reads as the logo's circles; the people ARE the circles.
+// - You are always ink (white initial), so you find yourself at once among the colours.
 // - An open seat is a dashed ring (PB 6.6: the empty state is a seat).
 // - Pod families (the table, the room circle) are separate: see POD_SOLID / POD_WASH.
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-/** A pod's slot key. The key names the slot; the colour family it renders is POD_SOLID / POD_WASH. A pod is two logo
- *  circles meeting: "ember" (first interest pod) = tide (blue x green), "grove" (community) = grove (green x ember),
- *  "signal" (second interest) = dusk (ember x blue). */
+/** A pod's slot key. The key names the slot; the colour family it renders is POD_SOLID / POD_WASH. Each pod leads with
+ *  one logo circle so your pods read as the logo: "ember" (first interest pod) = blue-led tide, "signal" (second
+ *  interest) = ember-led glow, "grove" (community) = green-led grove. */
 export type PodHueKey = "ember" | "signal" | "grove";
 /** The pod's solid colour: rings that are not a person's, room circles, worn rings. */
 export const POD_SOLID: Record<PodHueKey, string> = {
   ember: "var(--color-signal)",
-  signal: "var(--plum)",
+  signal: "var(--color-ember)",
   grove: "var(--color-grove)",
 };
 /** v1 name: same as POD_SOLID. */
@@ -23,29 +23,31 @@ export const HUE_VAR = POD_SOLID;
 /** Text on a pod solid. */
 export const ON_HUE: Record<PodHueKey, string> = {
   ember: "#FFFFFF",
-  signal: "#FFFFFF",
+  signal: "var(--ink)",
   grove: "var(--ink)",
 };
 /** The pod's soft two-circle wash: table tops, hero objects, room circle fills. Deepens under data-depth (repeat). */
 export const POD_WASH: Record<PodHueKey, string> = {
   ember: "var(--grad-tide-soft)",
-  signal: "var(--grad-dusk-soft)",
+  signal: "var(--grad-glow-soft)",
   grove: "var(--grad-grove-soft)",
 };
 /** The pod's full gradient (identity: the moment, round two, covers). */
 export const POD_GRAD: Record<PodHueKey, string> = {
   ember: "var(--grad-tide)",
-  signal: "var(--grad-dusk)",
+  signal: "var(--grad-glow)",
   grove: "var(--grad-grove)",
 };
 
-/** Person colours: AA with their text (blue 5.6:1 white, green 7.6:1 ink, teal 6.9:1 white). */
+/** Person colours: the logo's three circles, so any table of people reads as the logo (QA r1: "blue, orange and green
+ *  people"). AA with their text: blue 5.6:1 white, ember 5.8:1 ink, green 7.6:1 ink. */
 export const PERSON_COLORS = [
   { bg: "var(--color-signal-text)", fg: "#FFFFFF" },
+  { bg: "var(--color-ember)", fg: "var(--ink)" },
   { bg: "var(--color-grove)", fg: "var(--ink)" },
-  { bg: "var(--teal)", fg: "#FFFFFF" },
 ] as const;
-export const YOU_COLOR = { bg: "var(--spark)", fg: "var(--on-spark)" } as const;
+/** You are ink (wireframes R3: "you are always black"): one dark bead among the logo colours, found at a glance. */
+export const YOU_COLOR = { bg: "var(--you)", fg: "var(--on-you)" } as const;
 
 /** Stable colour for a person from any seed (id, name or initial). */
 export function personColor(seed: string | undefined, fallback = 0) {
@@ -58,7 +60,7 @@ export function personColor(seed: string | undefined, fallback = 0) {
 export interface DiscProps {
   /** One letter. Initials inside discs are data, not copy (word counts skip them). */
   initial?: string;
-  /** "you" = the ember spark; "open" = dashed empty seat; a pod key = a person in that pod (their own colour from
+  /** "you" = the ink bead; "open" = dashed empty seat; a pod key = a person in that pod (their own colour from
    *  `seed` / `label` / `initial`); "pod" = the pod's solid (use with `hue`). */
   tone?: PodHueKey | "you" | "open";
   /** stable colour seed for a person (user id or name). Defaults to label, then initial. */
@@ -88,12 +90,12 @@ export function Disc({ initial, tone = "you", size = 40, ring, label, seed, clas
         width: size,
         height: size,
         backgroundColor: bg,
-        /* gloss: lit from the top-left like the logo's circles (COLOR_LIFE §12.4); flat when open or tiny */
-        backgroundImage: open || size < 20 ? undefined : "var(--disc-sheen)",
+        /* a bead (COLOR_LIFE §15): solid hue body (AA initial) with the bubble's window, rim and under-light; flat when open or tiny */
+        backgroundImage: open || size < 20 ? undefined : "var(--bead)",
         color: fg,
         fontSize: Math.round(size * 0.5),
         border: open ? "1.5px dashed var(--line-2)" : undefined,
-        boxShadow: open ? undefined : ring ? "0 0 0 2px var(--stage), var(--shadow-disc)" : size >= 28 ? "var(--shadow-disc)" : undefined,
+        boxShadow: open ? undefined : ring ? "0 0 0 2px var(--stage), var(--shadow-bead)" : size >= 20 ? "var(--shadow-bead)" : undefined,
         ...style,
       }}
     >

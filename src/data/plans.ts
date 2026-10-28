@@ -25,9 +25,9 @@ export interface Topic {
 
 export const TOPICS: Record<string, Topic> = {
   basketball: {
-    noun: "pickup run", event: "Pickup basketball, rotating 5-on-5 games", venue: "venue_brahan_rec", rainVenue: null,
-    bring: ["Water", "Indoor court shoes", "A ball if you have one"], dur: 120, fits: "basketball",
-    sched: [[0, "Meet at the entrance"], [15, "Shootaround, pick teams"], [30, "Games, winners stay on"], [105, "Cool down, plan the next run"]],
+    noun: "pickup", event: "Pickup basketball, rotating 5-on-5 games", venue: "venue_brahan_spring_park", rainVenue: "venue_brahan_rec",
+    bring: ["Water", "Court shoes", "A ball if you have one"], dur: 120, fits: "basketball",
+    sched: [[0, "Meet at the courts"], [15, "Shootaround, pick teams"], [30, "Games, winners stay on"], [105, "Cool down, plan the next run"]],
     icebreaker: "What's your go-to position, and the worst shot you're weirdly proud of?",
   },
   pickleball: {

@@ -1,4 +1,5 @@
-// Navigation model v3 (DESIGN.md §5, V3_SPEC.md §2). No tab bar, no rail. Depth is distance:
+// Depth model (DESIGN.md §5). The visible navigation (capsule, rail, ⌘K) is nav-bar.tsx over lib/platform/nav.ts
+// (MOTION_SYSTEM §12). Depth is distance:
 //   Your pods (/app/pods, the room of overlapping tables)  ⇄  one table (/app/pods/[podId])  ⇄  its sheets
 // Moving deeper zooms in, moving out zooms out, moving sideways (pod to pod) slides. Pure functions of the pathname,
 // so server and client agree on first paint.
@@ -35,11 +36,15 @@ export function depthOf(pathname: string): number {
   return transitionKey(pathname).split("/").filter(Boolean).length;
 }
 
-/** in = zoom in (deeper), out = zoom out (shallower), side = same depth (pod to pod, step to step). */
-export type Direction = "in" | "out" | "side";
+/** in = zoom in (deeper), out = zoom out (shallower), side = same depth (pod to pod, step to step),
+ *  fade = between destinations (Home, Pods, Plans…: siblings, a 160ms cross-fade, MOTION_SYSTEM §12). */
+export type Direction = "in" | "out" | "side" | "fade";
+
+const section = (p: string) => p.match(/^\/app\/([^/]+)/)?.[1] ?? "";
 
 export function directionBetween(from: string | null, to: string): Direction | "none" {
   if (!from) return "none";
+  if (section(from) !== section(to)) return depthOf(to) <= 2 && depthOf(from) <= 2 ? "fade" : depthOf(to) > depthOf(from) ? "in" : "out";
   const a = depthOf(from);
   const b = depthOf(to);
   return b > a ? "in" : b < a ? "out" : "side";

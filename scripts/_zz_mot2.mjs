@@ -1,0 +1,18 @@
+import { chromium } from "playwright";
+import {mkdirSync} from "node:fs";
+const CHROME = `${process.env.HOME}/Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
+const vp = process.argv[2]||"m";
+const VP = vp==="m"?{viewport:{width:390,height:844},isMobile:true,hasTouch:true}:{viewport:{width:1440,height:900}};
+const b = await chromium.launch({executablePath:CHROME});
+const page = await (await b.newContext({...VP})).newPage(); page.setDefaultTimeout(30000);
+const errs=[]; page.on("pageerror",e=>errs.push(e.message));
+const out="/tmp/qa3/m_"+vp; mkdirSync(out,{recursive:true}); let n=0;
+const shot=async(name)=>{n++;await page.waitForTimeout(1500);await page.screenshot({path:`${out}/${String(n).padStart(2,"0")}-${name}.png`});console.log(name,page.url().replace("http://localhost:3000",""),"|",(await page.evaluate(()=>document.body.innerText)).replace(/\s+/g," ").slice(0,300));};
+const T=async(t,o={})=>{try{await page.getByText(t,{exact:o.exact??false}).first().click({timeout:8000});await page.waitForTimeout(700);}catch(e){console.log("NOCLICK",t)}};
+await page.goto("http://localhost:3000/app/welcome?director=1"); await page.waitForTimeout(2000);
+await T("Skip to placed"); await page.waitForTimeout(4000); await shot("afterskip");
+await page.keyboard.press("Escape");
+await page.goto("http://localhost:3000/app/pods/pod_hoopers"); await page.waitForTimeout(3000); await shot("room");
+await page.goto("http://localhost:3000/"); await page.waitForTimeout(3000); await shot("land");
+await page.mouse.wheel(0,1800); await shot("land3");
+console.log(errs); await b.close();

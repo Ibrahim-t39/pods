@@ -20,7 +20,7 @@ describe("U0 slice", () => {
     expect(Object.keys(db.interests)).toHaveLength(14);
     expect(SLOTS).toContain("sunday-afternoon");
     const s = db.suggestions[DEMO.hoopers.suggestionId];
-    expect(s.plan_json.starts_at).toBe("2026-11-08T13:00:00-06:00");
+    expect(s.plan_json.starts_at).toBe("2026-11-07T10:00:00-06:00");
     expect(goingUserIds(db, s.id)).toHaveLength(3);
   });
 

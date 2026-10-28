@@ -11,7 +11,8 @@
 import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { TableRing, tableBox, type Seat } from "@/components/brand/table-ring";
-import { HUE_VAR, POD_WASH, YOU_COLOR, type PodHueKey } from "@/components/brand/disc";
+import { Disc, HUE_VAR, POD_SOLID, POD_WASH, YOU_COLOR, type PodHueKey } from "@/components/brand/disc";
+import { ARRIVE, DUR, GENTLE, POP, SNAPPY, STAGGER } from "@/components/brand/motion";
 import { Shared, sharedName } from "@/components/brand/shared";
 import { cn } from "@/lib/cn";
 
@@ -58,11 +59,17 @@ export function RingTable({
   return (
     <div className="flex flex-col items-center gap-s6" role="group" aria-label={label}>
       <div className="pods-ob-ring" style={{ width: W, height: W }}>
-        <span className="pods-ob-shadow" style={{ left: c - R + 6, top: c - R + 10, width: size, height: size }} aria-hidden />
         <span
-          className="pods-ob-top"
+          className="pods-ob-top orb-solid"
           data-on={on ? "" : undefined}
-          style={{ left: c - R, top: c - R, width: size, height: size, ["--rim" as string]: `${Math.round(size * 0.04)}px`, ["--wash" as string]: POD_WASH[hue] }}
+          style={{
+            left: c - R,
+            top: c - R,
+            width: size,
+            height: size,
+            ["--orb" as string]: on ? HUE_VAR[hue] : "var(--ink-3)",
+            ["--orb-wash" as string]: on ? POD_WASH[hue] : "linear-gradient(transparent, transparent)",
+          }}
           aria-hidden
         />
         <svg width={W} height={W} className="absolute inset-0 overflow-visible" aria-hidden>
@@ -123,15 +130,19 @@ export function CheckSeat({ size, initial, state, children }: { size: number; in
           />
         )}
       </svg>
-      {/* soft shadow (DESIGN S3) */}
-      <span className="absolute rounded-full" style={{ width: D, height: D, transform: "translate(6px, 10px)", background: "rgba(14,26,34,.06)" }} />
+      {/* the seat is a glass orb (COLOR_LIFE §15); it fills your colour when the check closes */}
+      <span
+        className="orb-solid absolute"
+        style={{ width: D, height: D, ["--orb" as string]: state === "idle" ? "var(--ink-3)" : "var(--select)", ["--orb-wash" as string]: "linear-gradient(transparent, transparent)" }}
+      />
       <motion.span
         className="relative grid place-items-center overflow-hidden rounded-full"
-        style={{ width: D, height: D, boxShadow: `inset 0 0 0 ${Math.round(D * 0.04)}px rgba(255,255,255,.55)` }}
+        style={{ width: D, height: D, backgroundColor: YOU_COLOR.bg, backgroundImage: "var(--bead)" }}
         initial={false}
-        animate={{ backgroundColor: state === "done" ? YOU_COLOR.bg : "var(--table)" }}
-        transition={{ duration: 0.5 }}
-      >
+        animate={{ opacity: state === "done" ? 1 : 0.0001, scale: state === "done" ? 1 : 0.6 }}
+        transition={reduce ? { duration: 0.16 } : { type: "spring", stiffness: 170, damping: 26 }}
+      />
+      <span className="absolute grid place-items-center overflow-hidden rounded-full" style={{ width: D, height: D }}>
         {children}
         {state === "done" ? (
           <motion.span
@@ -139,7 +150,7 @@ export function CheckSeat({ size, initial, state, children }: { size: number; in
             initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", stiffness: 420, damping: 32 }}
-            className="absolute inset-0 grid place-items-center font-display font-bold leading-none tracking-[-0.03em]"
+            className="absolute inset-0 grid place-items-center font-display font-semibold leading-none tracking-[-0.03em]"
             style={{ fontSize: Math.round(D * 0.42), color: YOU_COLOR.fg }}
           >
             {initial}
@@ -148,35 +159,45 @@ export function CheckSeat({ size, initial, state, children }: { size: number; in
           !children && (
             <span
               data-nc
-              className={cn("grid place-items-center rounded-full font-display font-bold leading-none text-ink-2", state === "checking" && "pods-ob-breathe")}
+              className={cn("grid place-items-center rounded-full font-display font-semibold leading-none text-ink-2", state === "checking" && "pods-ob-breathe")}
               style={{ width: D * 0.42, height: D * 0.42, border: "1.5px dashed var(--line-2)", fontSize: Math.round(D * 0.2) }}
             >
               {initial}
             </span>
           )
         )}
-      </motion.span>
+      </span>
     </div>
   );
 }
 
-/** Each table's rim blends the two logo circles of its pod family (COLOR_LIFE §6.3, "a pod is two circles meeting"):
- *  tide blue into green, grove green into ember, dusk ember into blue. Two stops, solid hues, so the rims stay crisp. */
-const RIM: Record<PodHueKey, string[]> = {
-  ember: ["var(--color-signal)", "var(--color-grove)"],
-  grove: ["var(--color-grove)", "var(--spark)"],
-  signal: ["var(--spark)", "var(--color-signal)"],
-};
-
+/** Where the circles sit: the mark's own arrangement (top, lower left, lower right; mark.svg (0,-38), (-32,15), (32,15)). */
 const SPLIT: { hue: PodHueKey; x: number; y: number }[] = [
   { hue: "ember", x: 0, y: -0.36 },
   { hue: "signal", x: -0.34, y: 0.22 },
   { hue: "grove", x: 0.34, y: 0.22 },
 ];
 
+/** You: a bead with a lamp ring, where the circles meet. */
+function YouBead({ initial, delay, lift = 0 }: { initial: string; delay: number; lift?: number }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.span
+      aria-hidden
+      className="absolute"
+      style={{ left: "50%", top: "50%", marginLeft: -20, marginTop: -20 + lift }}
+      initial={reduce ? { opacity: 0 } : POP.initial}
+      animate={POP.animate}
+      transition={reduce ? { duration: DUR.tap } : { ...SNAPPY, delay }}
+    >
+      <Disc tone="you" initial={initial} size={40} style={{ boxShadow: "0 0 0 3px var(--lit), var(--shadow-bead)" }} />
+    </motion.span>
+  );
+}
+
 /**
- * The empty table splits into `n` tables that drift apart to overlap like the logo, your disc at the centre.
- * `settled` = placed: the rims turn solid and each table takes its pod's soft wash, so the three read as the logo.
+ * B09 filling / B10 failed: the empty table splits into `n` glass orbs that drift apart to overlap like the logo,
+ * your bead at the centre. Ghost orbs until settled; `failed` pulls them back together and greys them.
  */
 export function SplitTables({ size, n = 3, initial, settled, failed }: { size: number; n?: number; initial: string; settled?: boolean; failed?: boolean }) {
   const reduce = useReducedMotion();
@@ -188,58 +209,21 @@ export function SplitTables({ size, n = 3, initial, settled, failed }: { size: n
       {hues.map((h, i) => (
         <motion.span
           key={h.hue}
-          className="absolute rounded-full"
-          style={{ left: W / 2 - d / 2, top: W / 2 - d / 2, width: d, height: d }}
-          initial={reduce ? false : { x: 0, y: 0, opacity: 0.5 }}
-          animate={failed ? { x: 0, y: 0, opacity: 0.6 } : { x: h.x * size, y: h.y * size, opacity: 1 }}
-          transition={reduce ? { duration: 0.16 } : { type: "spring", stiffness: 60, damping: 16, delay: 0.25 + i * 0.18 }}
-        >
-          <motion.span
-            className="absolute inset-0 rounded-full"
-            style={{ background: POD_WASH[h.hue] }}
-            initial={false}
-            animate={{ opacity: settled ? 1 : failed ? 0 : 0.35 }}
-            transition={{ duration: reduce ? 0.16 : 0.7, delay: settled && !reduce ? i * 0.12 : 0 }}
-          />
-          <svg width={d} height={d} className={cn("relative", !settled && !failed && !reduce && "pods-ob-sweep")} style={{ animationDuration: `${14 + i * 3}s`, overflow: "visible" }}>
-            <defs>
-              <linearGradient id={`ob-rim-${h.hue}`} x1="0" y1="0" x2="1" y2="1">
-                {RIM[h.hue].map((c, k, all) => (
-                  <stop key={k} offset={k / (all.length - 1)} style={{ stopColor: c }} />
-                ))}
-              </linearGradient>
-            </defs>
-            <circle
-              cx={d / 2}
-              cy={d / 2}
-              r={d / 2 - 1.5}
-              fill="none"
-              stroke={failed ? "var(--ink-3)" : `url(#ob-rim-${h.hue})`}
-              strokeWidth={settled ? 2.5 : 1.5}
-              strokeDasharray={settled ? undefined : "4 6"}
-            />
-          </svg>
-        </motion.span>
+          className={settled ? "orb absolute" : "orb-ghost absolute"}
+          style={{
+            left: W / 2 - d / 2,
+            top: W / 2 - d / 2,
+            width: d,
+            height: d,
+            ["--orb" as string]: failed ? "var(--ink-3)" : POD_SOLID[h.hue],
+            ["--orb-wash" as string]: POD_WASH[h.hue],
+          }}
+          initial={reduce ? false : { x: 0, y: 0, opacity: 0, scale: 0.6 }}
+          animate={failed || hues.length === 1 ? { x: 0, y: 0, opacity: failed ? 0.7 : 1, scale: 1 } : { x: h.x * size, y: h.y * size, opacity: 1, scale: 1 }}
+          transition={reduce ? { duration: DUR.tap } : { ...GENTLE, delay: 0.15 + i * STAGGER * 3 }}
+        />
       ))}
-      <motion.span
-        data-nc
-        className="absolute grid place-items-center rounded-full font-display font-bold leading-none"
-        style={{
-          left: W / 2 - 18,
-          top: W / 2 - 18 + (hues.length > 1 ? size * 0.02 : 0),
-          width: 36,
-          height: 36,
-          fontSize: 17,
-          background: YOU_COLOR.bg,
-          color: YOU_COLOR.fg,
-          boxShadow: "0 0 0 3px var(--lit), var(--shadow-spark)",
-        }}
-        initial={reduce ? false : { scale: 0.6, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 420, damping: 32, delay: 0.1 }}
-      >
-        {initial}
-      </motion.span>
+      <YouBead initial={initial} delay={0.1} />
     </div>
   );
 }
@@ -248,10 +232,13 @@ export interface FoundPod {
   id: string;
   name: string;
   type: "interest" | "community";
+  hue: PodHueKey;
+  /** beat 3: the widened pod's one line ("Only 3 Zambians nearby.") */
+  note?: string;
 }
 
-/** Seats for the found pods. Three: the mark's own arrangement (top, lower left, lower right). Four: two rows that
- *  overlap at the centre, interest pods on top and community pods below, the same order Your pods uses. */
+/** Seats for the found pods. Three: the mark's own arrangement. Four: two rows that overlap at the centre, interest
+ *  pods on top and community pods below, the same order Your pods uses. lx/ly place the name toward the outer edge. */
 const FOUND_4 = [
   { x: -0.29, y: -0.29, lx: -0.12, ly: -0.12 },
   { x: 0.29, y: -0.29, lx: 0.12, ly: -0.12 },
@@ -265,10 +252,11 @@ const FOUND_AT = [
 ];
 
 /**
- * B08 placed (beat 2): the loader's three circles grow into your pods. Up to four. Interest pods come first, community pods after
- * (MOTION 5.2). Each circle is the pod's two-circle wash (`data-pod-type`: interest = tide, community = grove;
- * COLOR_LIFE §13) with its name set toward its outer edge, and is wrapped in `Shared pod-<id>` so Your pods picks the
- * same circle up on the hand-off. Your disc sits in the centre, where all of them meet.
+ * B08 placed (video beat 2): the loader's circles grow into your pods as glass orbs (COLOR_LIFE §15: wash inside,
+ * denser rim in the pod's hue, one window; normal blend, so where pods share you the overlap gets brighter). Interest
+ * pods first, community pods after (MOTION 5.2), floating in on GENTLE with STAGGER. Each orb is `Shared pod-<id>`
+ * so the next screen picks the same circle up. Your bead sits where they all meet. The widened pod carries its
+ * one line under its name (beat 3).
  */
 export function FoundPods({ size, pods, initial }: { size: number; pods: FoundPod[]; initial: string }) {
   const reduce = useReducedMotion();
@@ -288,30 +276,32 @@ export function FoundPods({ size, pods, initial }: { size: number; pods: FoundPo
           style={{ left: W / 2 - d / 2, top: W / 2 - d / 2, width: d, height: d }}
           initial={reduce ? { opacity: 0 } : { x: 0, y: 0, scale: 0.3, opacity: 0 }}
           animate={{ x: at[i].x * size, y: at[i].y * size, scale: 1, opacity: 1 }}
-          transition={reduce ? { duration: 0.16 } : { type: "spring", stiffness: 170, damping: 26, delay: i * 0.06 }}
+          transition={reduce ? { duration: DUR.tap } : { ...GENTLE, delay: i * STAGGER * 2 }}
         >
           <Shared name={sharedName.pod(p.id)}>
-            <span data-pod-type={p.type} className="pods-ob-found" />
+            <span
+              data-pod-type={p.type}
+              className="pods-ob-found orb"
+              style={{ ["--orb" as string]: POD_SOLID[p.hue], ["--orb-wash" as string]: POD_WASH[p.hue] }}
+            />
           </Shared>
-          <span
-            className="pods-ob-found-name"
-            style={{ left: `${50 + (at[i].lx / k) * 100}%`, top: `${50 + (at[i].ly / k) * 100}%` }}
-          >
+          <span className="pods-ob-found-name" style={{ left: `${50 + (at[i].lx / k) * 100}%`, top: `${50 + (at[i].ly / k) * 100}%` }}>
             {p.name}
+            {p.note && (
+              <motion.span
+                data-widened-note
+                className="pods-ob-found-note"
+                initial={reduce ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={reduce ? { duration: DUR.tap } : { ...ARRIVE, delay: 0.9 }}
+              >
+                {p.note}
+              </motion.span>
+            )}
           </span>
         </motion.div>
       ))}
-      <motion.span
-        data-nc
-        aria-hidden
-        className="absolute grid place-items-center rounded-full font-display font-bold leading-none"
-        style={{ left: W / 2 - 18, top: W / 2 - 18 + (shown.length === 3 ? size * 0.02 : 0), width: 36, height: 36, fontSize: 17, background: YOU_COLOR.bg, color: YOU_COLOR.fg, boxShadow: "0 0 0 3px var(--lit), var(--shadow-spark)" }}
-        initial={reduce ? false : { scale: 0.6, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 420, damping: 32, delay: 0.3 }}
-      >
-        {initial}
-      </motion.span>
+      <YouBead initial={initial} delay={0.3} lift={shown.length === 3 ? Math.round(size * 0.02) : 0} />
     </div>
   );
 }

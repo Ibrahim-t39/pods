@@ -6,7 +6,7 @@
 // touching the page around them (pod-table.tsx). The repeat loop already renders planner_loop's components.
 //
 // D03  the plan card at the top, in the halo (beat 4): "Hoopers #1" / "Saturday, 10am." / activity / place · cost /
-//      "◐ Claude planned it". One target: it opens the plan (beat 5).
+//      "◐ Planned by AI". One target: it opens the plan (beat 5).
 //      table: every seat in the pod (8); the first 4 are the lock arc; your disc waits outside; the Talk cue in the centre
 //      foot <InCount> "3 of 8 in" → "4 of 8 in" + "Locked" (beat 6)   [I'm in]
 // D05  the 4th yes: the room goes dark, one lamp, the day word as large as fits; stays until "See you there".
@@ -41,6 +41,11 @@ export interface Stagecraft {
   /** overline for Talk and the menu title: "Hoopers #1" */
   title: string;
   view: CardView | null;
+}
+
+/** Who made the plan, in one label (the AI is named here and nowhere else on the card; founder: "AI", not "Claude"). */
+export function sourceLine(source: string | null | undefined): string {
+  return source === "fallback" ? "Planned from free times" : source === "member" ? "Proposed in the pod" : "Planned by AI";
 }
 
 const LOOP = new Set(["check_in", "ballot", "waiting_reveal", "planning_next", "vote", "missed"]);
@@ -123,7 +128,7 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
     else if (view.phase === "check_in" && h) card = <CheckInCard hangout={h} podName={name} ended={now.getTime() >= Date.parse(h.ends_at)} onWent={() => setSheetFor(h.id)} />;
     else if (view.phase === "ballot" && h) card = <BallotCard hangout={h} />;
     else if (view.phase === "waiting_reveal") card = <RunItBackCard revealed={null} />;
-    else if (view.phase === "missed") card = <p className="font-display text-[32px] leading-[1.05] font-bold tracking-[-0.03em] text-ink">See you at the next one.</p>;
+    else if (view.phase === "missed") card = <p className="font-display text-[32px] leading-[1.05] font-semibold tracking-[-0.03em] text-ink">See you at the next one.</p>;
     else card = <HangoutCard podId={podId} />;
     const after = view.phase === "check_in" || view.phase === "ballot" || view.phase === "waiting_reveal";
     return {
@@ -222,7 +227,7 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
 
   // Beat 4: the plan is a card at the top of the table, wearing the halo (logo hues, one lap, then a slow drift;
   // still and blue once locked). The whole card is one target: it opens the plan (beat 5). Facts only:
-  // activity · day, time · place · cost. Claude is named once, on the card's last line.
+  // activity · day, time · place · cost. The AI is named once, on the card's last line.
   const activity = activityWord(s.plan_json.event || s.summary);
   const placeName = venue ? (venue.short_name ?? venue.name) : null;
   const cost = (s.plan_json.cost ?? "").trim();
@@ -235,7 +240,7 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
           className="pressable glass block rounded-[24px] px-s6 pt-s4 pb-s4 outline-offset-4"
         >
           <span className="block text-overline text-ink-2">{live ? `${title} · now` : title}</span>
-          <span className="mt-s2 block font-display text-[clamp(34px,10vw,44px)] leading-[1] font-bold tracking-[-0.03em] text-ink tabular">
+          <span className="mt-s2 block font-display text-[clamp(34px,10vw,44px)] leading-[1] font-semibold tracking-[-0.03em] text-ink tabular">
             {day}, {shortTime(startsAt)}.
           </span>
           <span className="mt-s3 block text-[17px] leading-[1.35] font-semibold text-ink">{activity}</span>
@@ -244,7 +249,7 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
           </span>
           <span className="mt-s3 flex items-center gap-s2 text-label text-ink-2">
             <Icon name="why" size={18} className="text-select" />
-            <span className="flex-1">{s.source === "fallback" ? "Planned from free times" : "Claude planned it"}</span>
+            <span className="flex-1">{sourceLine(s.source)}</span>
             <Icon name="arrow" size={20} className="text-ink" />
           </span>
         </Link>
@@ -363,7 +368,7 @@ function LockMoment({ day, when, seats, n, hue, worn, onDone }: { day: string; w
       >
         <Stage light="night" />
         <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto_auto] px-gutter pt-[calc(env(safe-area-inset-top)+76px)] lg:grid-cols-[520px_minmax(0,1fr)] lg:grid-rows-[auto_1fr_auto] lg:gap-x-s24 lg:px-s16 lg:pt-[160px] lg:pb-s16">
-          <p className="font-display text-[32px] leading-none font-bold tracking-[-0.03em] lg:col-start-1 lg:row-start-1">It&apos;s on.</p>
+          <p className="font-display text-[32px] leading-none font-semibold tracking-[-0.03em] lg:col-start-1 lg:row-start-1">It&apos;s on.</p>
           <motion.div
             className="relative grid place-items-center lg:col-start-2 lg:row-span-3 lg:row-start-1"
             initial={reduce ? false : { scale: 0.92, opacity: 0 }}
@@ -380,7 +385,7 @@ function LockMoment({ day, when, seats, n, hue, worn, onDone }: { day: string; w
           </motion.div>
           <motion.p
             aria-hidden
-            className="font-display self-end text-[16vw] leading-[0.9] font-bold tracking-[-0.035em] whitespace-nowrap text-lamp lg:col-start-1 lg:row-start-2 lg:text-[min(6.2vw,88px)]"
+            className="font-display self-end text-[16vw] leading-[0.9] font-semibold tracking-[-0.035em] whitespace-nowrap text-lamp lg:col-start-1 lg:row-start-2 lg:text-[min(6.2vw,88px)]"
             initial={reduce ? false : { x: 160, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ ...GENTLE, delay: reduce ? 0 : 0.45 }}

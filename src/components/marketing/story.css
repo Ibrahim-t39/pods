@@ -1,0 +1,284 @@
+/* The landing scroll story (components/marketing/story.tsx). Normal scroll; scenes rise in as they enter and are
+   FINISHED by the time they are a fifth of the way up the screen (QA r1: no ghosted stills). One short pin (the lock).
+   Spacing on the 4pt scale (DESIGN §4): 8 kicker to line, 16 line to sub, 32 copy to object (phone), 64 (laptop),
+   48 above and below each scene = 96 between scenes. Gutter 20 phone / 64 laptop. Headlines never sit under the
+   fixed 64px header: every scene has >= 48px of its own top padding and the page sets scroll-padding (landing.css). */
+
+.ls {
+  --gut: 20px;
+  position: relative;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--gut);
+  color: var(--ink);
+}
+@media (min-width: 1024px) { .ls { --gut: 64px; } }
+
+.ls-scene {
+  display: grid;
+  gap: 32px;
+  padding-block: 48px;
+  align-items: center;
+}
+@media (min-width: 1024px) {
+  .ls-scene { grid-template-columns: 5fr 7fr; gap: 64px; padding-block: 96px; min-height: 0; }
+  /* the plan scene mirrors: object left, copy right, so the page does not read as one repeated template */
+  .ls-plan > .ls-copy { order: 2; }
+}
+
+.ls-copy { display: grid; gap: 16px; align-content: start; }
+.ls-kicker {
+  margin: 0 0 -8px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--color-signal-text);
+}
+.ls-line {
+  margin: 0;
+  max-width: 12ch;
+  font-size: var(--text-heading-xl-size);
+  line-height: 1.06;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+@media (min-width: 1024px) { .ls-line { font-size: var(--text-display-lg-size); } }
+.ls-sub { margin: 0; max-width: 28ch; font-size: 18px; line-height: 1.45; color: var(--ink-2); text-wrap: pretty; }
+@media (min-width: 1024px) { .ls-sub { font-size: 20px; } }
+
+/* ── reveal: one rise per group, done by cover 22% (so any still frame with it on screen is finished) ──────── */
+@keyframes ls-rise { from { opacity: 0; transform: translate3d(0, 24px, 0); } to { opacity: 1; transform: none; } }
+@keyframes ls-grow { from { opacity: .4; transform: scale(.3); } to { opacity: 1; transform: none; } }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ls-in {
+      animation: ls-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+    .ls-grow {
+      animation: ls-grow linear both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--i, 0) * 12%) cover calc(18% + var(--i, 0) * 4%);
+    }
+  }
+}
+
+/* ── 1 People ─────────────────────────────────────────────────────────────────────────────────────────────── */
+.ls-trio {
+  --b: clamp(84px, 24vw, 200px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 640px;
+  justify-self: center;
+  padding-bottom: 28px;
+}
+.ls-trio > :nth-child(2) { translate: 0 28%; }
+.ls-trio > :nth-child(3) { translate: 0 -12%; }
+.ls-grow { display: inline-block; }
+
+/* ── 2 Fit: the logo's geometry, in bubble diameters (mark.svg: r 97, centres 404/355, 332/469, 476/469) ───── */
+.ls-fitobj { display: grid; gap: 32px; justify-items: center; }
+.ls-venn {
+  --v: clamp(150px, 46vw, 280px);
+  position: relative;
+  width: calc(var(--v) * 1.742);
+  height: calc(var(--v) * 1.588);
+  view-timeline-name: --lsvenn;
+}
+.ls-drift { position: absolute; }
+.ls-drift[data-h="ember"] { left: calc(var(--v) * .371); top: 0; --fx: 0; --fy: -30%; }
+.ls-drift[data-h="signal"] { left: 0; top: calc(var(--v) * .588); --fx: -26%; --fy: 16%; }
+.ls-drift[data-h="grove"] { left: calc(var(--v) * .742); top: calc(var(--v) * .588); --fx: 26%; --fy: 16%; }
+@keyframes ls-drift { from { transform: translate3d(var(--fx), var(--fy), 0) scale(.88); } to { transform: none; } }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ls-drift { animation: ls-drift linear both; animation-timeline: --lsvenn; animation-range: entry 10% cover 40%; }
+  }
+}
+.ls-pods { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0; padding: 0; list-style: none; max-width: 460px; }
+.ls-pod {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 16px 8px 8px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  box-shadow: var(--glass-edge);
+  backdrop-filter: var(--glass-blur);
+  font-size: 15px;
+  font-weight: 500;
+}
+.ls-pod i { width: 24px; height: 24px; border-radius: 999px; background: var(--disc-sheen), var(--pods-ember); }
+.ls-pod[data-hue="signal"] i { background: var(--disc-sheen), var(--pods-signal); }
+.ls-pod[data-hue="grove"] i { background: var(--disc-sheen), var(--pods-grove); }
+
+/* ── 3 Plan card (looks like the app; not a control). Content is static: the card rises whole. ──────────────── */
+.ls-plan .ls-obj { display: grid; justify-items: center; }
+.ls-card-wrap { width: min(100%, 380px); }
+.ls-card {
+  display: grid;
+  gap: 4px;
+  padding: 24px;
+  border-radius: 28px;
+  background: var(--lit);
+  box-shadow: var(--shadow-float);
+}
+.ls-card-over { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 12px; font-size: 14px; font-weight: 500; color: var(--ink-2); }
+.ls-ai { color: var(--color-signal-text); }
+.ls-card-when { margin: 0; font-size: 34px; line-height: 1.05; font-weight: 600; letter-spacing: -0.025em; }
+.ls-card-what { margin: 8px 0 0; font-size: 17px; font-weight: 500; }
+.ls-card-where { margin: 0; font-size: 15px; color: var(--ink-2); }
+.ls-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.ls-seats { display: inline-flex; }
+.ls-seats i {
+  width: 24px;
+  height: 24px;
+  margin-left: -6px;
+  border-radius: 999px;
+  border: 1.5px dashed var(--ink-3);
+  background: var(--lit);
+}
+.ls-seats i:first-child { margin-left: 0; }
+.ls-seats i[data-on] { border: 2px solid var(--lit); background: var(--disc-sheen), var(--pods-signal); }
+
+/* ── 4 Lock: the one pin (short: 1.9 screens) ──────────────────────────────────────────────────────────────── */
+.ls-lock { position: relative; height: 190svh; }
+.ls-lock-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: grid;
+  align-content: center;
+  gap: 32px;
+  padding-top: 64px; /* the fixed header's height: the copy never sits under it */
+}
+@media (min-width: 1024px) {
+  .ls-lock-stage { grid-template-columns: 5fr 7fr; align-items: center; gap: 64px; }
+}
+.ls-lock[data-calm] { height: auto; }
+.ls-lock[data-calm] .ls-lock-stage { position: static; height: auto; padding-block: 112px 48px; }
+.ls-lock-copy { min-height: 150px; }
+.ls-lock-count { font-size: 17px; }
+
+.ls-table {
+  --t: min(78vw, 48svh, 420px);
+  --rr: .46;
+  --s: calc(var(--t) * .2);
+  position: relative;
+  width: var(--t);
+  height: var(--t);
+  justify-self: center;
+}
+@media (min-width: 1024px) { .ls-table { --t: min(64svh, 560px); } }
+.ls-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-112.5deg); overflow: visible; }
+.ls-ring circle { fill: none; }
+.ls-ring-base { stroke: var(--line); stroke-width: 1; }
+.ls-ring-close { stroke: var(--spark); stroke-width: 1.6; stroke-linecap: round; transition: stroke var(--dur-settle) var(--ease-out); }
+.ls-table[data-locked] .ls-ring-close { stroke: var(--select); }
+.ls-seat {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--s);
+  height: var(--s);
+  margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+  transform: rotate(var(--a)) translateX(calc(var(--t) * var(--rr))) rotate(calc(-1 * var(--a)));
+  transition: transform var(--dur-light) var(--ease-out), opacity var(--dur-settle) var(--ease-out);
+}
+.ls-table[data-locked] { --rr: .4; }
+.ls-table[data-locked] .ls-seat:has(.ls-empty) { --rr: .46; opacity: .35; }
+.ls-you { display: block; }
+.ls-empty {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  border: 1.5px dashed var(--ink-3);
+  opacity: .55;
+  background: var(--paper);
+}
+.ls-table-mid {
+  position: absolute;
+  inset: 31%;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--lit);
+  box-shadow: var(--glass-edge), 0 18px 40px -24px rgb(14 26 34 / .3);
+  font-size: clamp(17px, calc(var(--t) * .06), 24px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  transition: background-color var(--dur-settle) var(--ease-out), color var(--dur-settle) var(--ease-out);
+}
+.ls-table[data-locked] .ls-table-mid { background-color: var(--select); color: var(--on-select); background-image: var(--sheen); }
+
+/* ── 5 Repeat: the vote card, compact (no empty padding) ───────────────────────────────────────────────────── */
+.ls-repeat .ls-obj { display: grid; justify-items: center; }
+.ls-vote {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 340px);
+  padding: 20px 24px;
+  border-radius: 24px 24px 24px 8px;
+  background: var(--lit);
+  box-shadow: var(--shadow-float);
+}
+.ls-vote-q { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.ls-vote-row { display: flex; align-items: center; gap: 12px; }
+.ls-vote-discs { display: inline-flex; }
+/* each slot shows its empty seat until the yes pops in, so the card never reads blank */
+.ls-vote-slot {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  margin-left: -8px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+  background: var(--lit);
+}
+.ls-vote-slot:first-child { margin-left: 0; }
+.ls-vote-slot > span { grid-area: 1 / 1; display: block; }
+.ls-vote-n { font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.ls-vote-next {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-signal-text);
+  opacity: 0;
+  transform: translate3d(0, 6px, 0);
+  transition: opacity var(--dur-settle) var(--ease-out) .9s, transform var(--dur-settle) var(--ease-out) .9s;
+}
+.ls-vote-next[data-on] { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ls-vote-next { transition-duration: 160ms; transition-delay: 0s; }
+}
+
+/* laptop sizes (after the base rules so they win) */
+@media (min-width: 1024px) {
+  .ls-card-wrap { width: 460px; }
+  .ls-card { padding: 32px; }
+  .ls-card-when { font-size: 44px; }
+  .ls-card-over { font-size: 15px; }
+  .ls-card-what { font-size: 19px; }
+  .ls-card-where { font-size: 17px; }
+  .ls-vote { width: 420px; padding: 28px 32px; }
+  .ls-vote-q { font-size: 28px; }
+  .ls-pods { max-width: 520px; }
+  .ls-pod { font-size: 17px; min-height: 48px; }
+  .ls-kicker { font-size: 17px; }
+}

@@ -13,6 +13,9 @@
 // Light is set separately with <Stage>. `scroll` lets content pages (legal, settings, Talk) grow past the fold.
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+// the anatomy's CSS travels with the component: system pages (404, offline, error) render outside the app shell
+// (QA r1: /offline and /nope sat flush left with no gutter because shell.css was never loaded there)
+import "./shell.css";
 
 export interface PageProps {
   chrome?: ReactNode;

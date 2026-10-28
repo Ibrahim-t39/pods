@@ -20,6 +20,9 @@ import "./onboarding.css";
 
 export const EASE = [0.2, 0, 0, 1] as const;
 
+/** Every first-run step that shows progress: You, Likes, Free, Keep your seat (number + code), Promise, Check. */
+export const TOTAL_STEPS = 6;
+
 export interface FlowStepProps {
   /** key for the head's slide (sub-screens inside one route change it) */
   screen: string;
@@ -27,15 +30,29 @@ export interface FlowStepProps {
   back?: string | false;
   head: ReactNode;
   object?: ReactNode;
-  /** "n of 4" dots on the left of the foot */
+  /** "n of 6" dots on the left of the foot */
   dot?: number;
   /** extra quiet thing on the left of the foot (a go link, a status label) */
   status?: ReactNode;
+  /** one short line under the dots that says what unlocks the primary (shown while it is off) */
+  hint?: ReactNode;
   action?: ReactNode;
   label?: string;
 }
 
-export function FlowStep({ screen, light = "dawn", back, head, object, dot, status, action, label }: FlowStepProps) {
+/** The back control: a plain arrow in a 44px target on the gutter (the ring-and-dot glyph read as a spinner). */
+function BackArrow({ href }: { href: string }) {
+  return (
+    <Link href={href} aria-label="Back" className="pods-ob-back pressable">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M19.5 12H5" />
+        <path d="M11 5.5 4.5 12l6.5 6.5" />
+      </svg>
+    </Link>
+  );
+}
+
+export function FlowStep({ screen, light = "dawn", back, head, object, dot, status, hint, action, label }: FlowStepProps) {
   const reduce = useReducedMotion();
   return (
     <>
@@ -43,7 +60,7 @@ export function FlowStep({ screen, light = "dawn", back, head, object, dot, stat
       <Page
         label={label}
         className="pods-ob"
-        chrome={<Chrome left={back === false ? "none" : "back"} backHref={back || undefined} />}
+        chrome={<Chrome left="none" />}
         head={
           <motion.div
             key={screen}
@@ -69,15 +86,21 @@ export function FlowStep({ screen, light = "dawn", back, head, object, dot, stat
         foot={
           dot || status || action ? (
             <>
-              <div className="flex min-h-11 min-w-0 items-center gap-s4">
-                {dot ? <ProgressDots step={dot} total={4} /> : null}
+              <div className="pods-ob-foot-left">
+                {dot ? <ProgressDots step={dot} total={TOTAL_STEPS} className="pods-ob-dots-progress" /> : null}
                 {status}
+                {hint ? (
+                  <p className="pods-ob-hint" aria-live="polite">
+                    {hint}
+                  </p>
+                ) : null}
               </div>
               {action}
             </>
           ) : undefined
         }
       />
+      {back ? <BackArrow href={back} /> : null}
     </>
   );
 }

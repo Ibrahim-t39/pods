@@ -3,6 +3,7 @@
 //
 // FAIL (exit 1):
 //   rule 4  any disclaimer: demo, sample, simulated, pilot, prototype, synthetic, placeholder, launching, opening in...
+//           (one exception: the bare word "Demo" on the Mode row / Mode screen, gates.config.mjs MODE_OK)
 //   rule 5  a city word (Huntsville, Alabama, Madison, Decatur, AAMU...) outside [data-allow-city]
 //   proof   an invented count, testimonial, press line or star rating
 //   copy    an em dash in visible copy
@@ -13,7 +14,7 @@
 // Usage: node scripts/check-product-gates.mjs [baseUrl] [--only=phone|laptop] [--route=/path]
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { BANNED, CHROME, CITY, EM_DASH, INVENTED, NOT_COPY, ROUTES, VIEWPORTS, readCopy, resolve, signIn } from "./gates.config.mjs";
+import { BANNED, CHROME, CITY, EM_DASH, INVENTED, MODE_OK, MODE_WORD, NOT_COPY, ROUTES, VIEWPORTS, readCopy, resolve, signIn } from "./gates.config.mjs";
 
 const argv = process.argv.slice(2);
 const base = argv.find((a) => a.startsWith("http")) ?? "http://localhost:3000";
@@ -38,6 +39,8 @@ const pass = (where, msg) => {
   results.push({ level: "PASS", where, msg });
   console.log(`PASS  ${where}  ${msg}`);
 };
+// readCopy takes several arguments, so it is sent as source (page.evaluate passes one argument to a function)
+const readCopySrc = readCopy.toString();
 const words = (s) => s.split(/\s+/).filter((w) => /[A-Za-z]/.test(w) && !/^\[.*\]$/.test(w)).length;
 
 for (const [vpName, vp] of Object.entries(VIEWPORTS)) {
@@ -58,7 +61,8 @@ for (const [vpName, vp] of Object.entries(VIEWPORTS)) {
         await page.waitForTimeout(1400);
         // hidden Director: never visible without a trigger
         if (await page.locator("[data-director-panel]").isVisible().catch(() => false)) fail(where, "Director visible without a trigger");
-        const { copy, fold, allowed } = await page.evaluate(readCopy, NOT_COPY);
+        const args = [NOT_COPY, MODE_OK, MODE_WORD.source, !!r.allowMode].map((a) => JSON.stringify(a)).join(", ");
+        const { copy, fold, allowed } = await page.evaluate(`(${readCopySrc})(${args})`);
         const bad = copy.match(BANNED);
         if (bad) fail(where, `disclaimer word "${bad[0]}" in: …${around(copy, bad.index)}…`);
         const city = r.allowCity ? null : copy.match(CITY);
@@ -89,7 +93,8 @@ for (const [vpName, vp] of Object.entries(VIEWPORTS)) {
     try {
       await page.goto(`${base}/app/welcome?director=1`, { waitUntil: "load" });
       await page.locator("[data-director-panel]").waitFor({ timeout: 30_000 });
-      const t = await page.locator("[data-director-panel]").innerText();
+      // the Director's mode button ("Switch to Demo", shown in Live) is the switch, not a disclaimer
+      const t = (await page.locator("[data-director-panel]").innerText()).replace(/\bSwitch to Demo\b/g, "");
       const bad = t.match(BANNED);
       if (bad) fail(where, `disclaimer word "${bad[0]}" inside the Director`);
       else pass(where, "opens with ?director=1, no disclaimer words");

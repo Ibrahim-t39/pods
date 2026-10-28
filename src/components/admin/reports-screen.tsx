@@ -1,5 +1,6 @@
 // Reports, the admin's landing view (wireframes K01, K02; library J #10 "queue first"). Open reports, urgent first
-// then oldest first. One filter link (Open / Closed). Phone: a report replaces the queue. Laptop: the report takes
+// then oldest first; each row says who it is about and the reporter's words (QA admin r1: the queue carries its
+// detail), and the last three closed sit under the queue. One filter link (Open / Closed). Phone: a report replaces the queue. Laptop: the report takes
 // the left column and the queue stays beside it, the open row lit. Actions are optimistic with an 8 s Undo before
 // the Repo write; leaving the page flushes them (a moderation decision is never dropped). j / k walk the queue.
 "use client";
@@ -17,6 +18,7 @@ import { DONE, REASON, age, hueOf } from "./facts";
 import { usePodLabel } from "./reveal";
 import { ReportDetail } from "./report-detail";
 import { useAdminNow } from "./use-admin-now";
+import { displayName } from "@/lib/utils";
 
 const UNDO_MS = 8000;
 
@@ -107,6 +109,13 @@ export function ReportsScreen() {
   // phone: the report replaces the queue (depth: it grows in from 0.97)
   if (detail && !wide) return <AnimatePresence mode="wait">{detail}</AnimatePresence>;
 
+  const recent = closed.slice(0, 3);
+  /** "About Kei · “made me uneasy…”": who the report is about and the reporter's words, never the reporter. */
+  const about = (r: Report) => {
+    const who = r.reported_id && db.users[r.reported_id] ? `About ${displayName(db.users[r.reported_id])}` : null;
+    const words = r.details?.trim();
+    return [who, words ? `“${words.length > 40 ? `${words.slice(0, 40).trimEnd()}…` : words}”` : null].filter(Boolean).join(" · ") || undefined;
+  };
   const urgentFirst = !closedView && open.some((r) => r.urgent);
   const sub = closedView ? `${closed.length} closed` : open.length ? `${open.length} open · ${urgentFirst ? "urgent first" : "oldest first"}` : "Nothing open";
 
@@ -138,6 +147,7 @@ export function ReportsScreen() {
                   hue={status === "open" ? hueOf(pod) : "ink"}
                   title={REASON[r.reason]}
                   meta={`${label(pod)} · ${age(r.created_at, t)}`}
+                  under={about(r)}
                   chip={done ? <StatusChip tone={done === "ban" ? "removed" : "done"}>{DONE[done]}</StatusChip> : r.urgent ? <StatusChip tone="open">urgent</StatusChip> : undefined}
                   lit={!sel && i === 0 && !closedView}
                   selected={sel?.id === r.id}
@@ -147,6 +157,29 @@ export function ReportsScreen() {
             })}
           </AnimatePresence>
         </motion.ul>
+      )}
+      {!closedView && recent.length > 0 && (
+        <section aria-labelledby="rep-recent" className="mt-s4 border-t border-line pt-s4">
+          <h2 id="rep-recent" className="text-[13px] font-semibold text-ink-2">Recently closed</h2>
+          <ul className="mt-s1">
+            {recent.map((r, i) => {
+              const pod = r.pod_id ? db.pods[r.pod_id] : undefined;
+              const done = pending[r.id] ?? db.adminActions.filter((a) => a.report_id === r.id).at(-1)?.action ?? (eff(r) === "dismissed" ? "dismiss" : "warn");
+              return (
+                <AdminRow
+                  key={r.id}
+                  index={rows.length + i}
+                  hue="ink"
+                  title={REASON[r.reason]}
+                  meta={`${label(pod)} · ${age(r.created_at, t)}`}
+                  chip={<StatusChip tone={done === "ban" ? "removed" : "done"}>{DONE[done]}</StatusChip>}
+                  selected={sel?.id === r.id}
+                  onClick={() => select(r.id)}
+                />
+              );
+            })}
+          </ul>
+        </section>
       )}
     </AdminPage>
   );

@@ -24,12 +24,12 @@ describe("clock arithmetic", () => {
   it("never runs backwards on skew", () => {
     expect(virtualNowMs({ virtual_at: DEMO.anchor!, real_at: 5000 }, true, 1000)).toBe(anchor);
   });
-  it("anchor is Wed Nov 4 09:00 CT and the Director jump is Sun Nov 8 3:15 PM", () => {
+  it("anchor is Wed Nov 4 09:00 CT and the Director jump is Sat Nov 7 12:15 PM", () => {
     expect(toChicagoISO(anchor)).toBe("2026-11-04T09:00:00-06:00");
     const j = jumpedClock(DEMO.directorJump.at, 42);
-    expect(j).toEqual({ virtual_at: "2026-11-08T15:15:00-06:00", real_at: 42 });
-    expect(toChicagoISO(virtualNowMs(j, true, 42 + 60_000))).toBe("2026-11-08T15:16:00-06:00");
-    expect(chicagoWeekday(DEMO.directorJump.at)).toBe(0);
+    expect(j).toEqual({ virtual_at: "2026-11-07T12:15:00-06:00", real_at: 42 });
+    expect(toChicagoISO(virtualNowMs(j, true, 42 + 60_000))).toBe("2026-11-07T12:16:00-06:00");
+    expect(chicagoWeekday(DEMO.directorJump.at)).toBe(6);
     expect(chicagoWeekday(anchor)).toBe(3);
   });
   it("rejects a bad jump", () => {

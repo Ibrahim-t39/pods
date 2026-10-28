@@ -1,7 +1,8 @@
 // A pod's table: the page (V3_SPEC §6.3; template anatomy B; wireframes D03, M01, S03).
 //   chrome   the mark (back to Your pods) · dots for your place among your tables · the menu (M01)
 //   body     what sits on the table now (table-stage.tsx: the plan, the lock, the repeat loop)
-//   sheets   Talk (S03), the menu (M01), the place (S02), give up your seat (D08), report, leave. One at a time.
+//   sheets   Talk (S03), the menu (M01), members, memories, the place (S02), give up your seat (D08), report, leave.
+//            One at a time. Deep links: /chat, /members, /memories, /settings, /details.
 // Walk to the next table: swipe sideways on a phone, arrow keys on a laptop (a 24px slide, nav.ts "side").
 // It lives in the [podId] layout, so /details (the menu) and /plan/[id] (Why this plan) open over it without a re-mount.
 "use client";
@@ -24,11 +25,23 @@ import { useClock } from "@/lib/time/clock";
 import { LeavePodSheet } from "./leave-pod-sheet";
 import { roomTables } from "./model";
 import { GiveUpSheet, PlaceSheet, PodMenuSheet, type PodSheet } from "./pod-menu";
+import { MembersSheet, MemoriesSheet } from "./pod-sheets";
+import { notify } from "@/components/ui/toast";
+import { useRepo } from "@/lib/db/hooks";
 import { GO } from "./room";
 import { PodTableContext, type PodTableApi } from "./table-context";
 import { useTableStage } from "./table-stage";
-import { TalkSheet } from "./talk-sheet";
+import { TalkPanel, TalkSheet } from "./talk-sheet";
+import { useMediaQuery } from "@/components/ui/use-media-query";
 import { useLastRead } from "./use-last-read";
+
+/** The sheet a deep link opens over the table. */
+function sheetForPath(p: string): PodSheet {
+  const m = p.match(/^\/app\/pods\/[^/]+\/(details|settings|chat|members|memories)\/?$/);
+  if (!m) return null;
+  if (m[1] === "details") return null; // the plan's details (below), or the menu when there is no plan yet
+  return m[1] === "chat" ? "talk" : m[1] === "members" ? "members" : m[1] === "memories" ? "memories" : "menu";
+}
 
 export function PodTable() {
   const { podId } = useParams<{ podId: string }>();
@@ -59,29 +72,56 @@ function PodTableInner({ podId }: { podId: string }) {
   const walk = useMemo(() => tables.filter((t) => t.open).map((t) => t.row.pod.id), [tables]);
   const at = walk.indexOf(podId);
 
-  const isDetails = /\/details\/?$/.test(pathname);
-  const [sheet, setSheet] = useState<PodSheet | "talk">(isDetails ? "menu" : null);
+  // deep links open their sheet over the table: /details and /settings the menu, /chat Talk, /members, /memories
+  const deep = sheetForPath(pathname);
+  const [sheet, setSheet] = useState<PodSheet>(deep);
   const [giving, setGiving] = useState(false);
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- /details opens the menu over the table
-    if (isDetails) setSheet("menu");
-  }, [isDetails]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a deep link opens its sheet over the table
+    if (deep) setSheet(deep);
+  }, [deep]);
   const actions = usePlanActions(podId);
-
+  const repo = useRepo();
+  const muted = useDb((db) => membership(db, podId)?.muted ?? false);
+  const toggleMute = useCallback(async () => {
+    const next = !muted;
+    const r = await repo.setMuted(podId, next);
+    if (!r.ok) return notify.error("Not saved.");
+    notify(next ? "Muted." : "Unmuted.", { undo: () => void repo.setMuted(podId, !next) });
+  }, [muted, podId, repo]);
 
   const close = useCallback(() => {
     setSheet(null);
-    if (/\/details\/?$/.test(window.location.pathname)) router.replace(`/app/pods/${podId}`, { scroll: false });
+    if (sheetForPath(window.location.pathname)) router.replace(`/app/pods/${podId}`, { scroll: false });
   }, [podId, router]);
 
+  // wide laptops: Talk docks beside the table (split view); "open Talk" focuses its input instead of opening a sheet
+  const docked = useMediaQuery("(min-width: 1280px)");
+  const [focusTalk, setFocusTalk] = useState(0);
+  useEffect(() => {
+    if (docked && sheet === "talk") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- the docked panel replaces the sheet
+      setSheet(null);
+      setFocusTalk((k) => k + 1);
+    }
+  }, [docked, sheet]);
   const api: PodTableApi = useMemo(
-    () => ({ podId, unread, openTalk: () => setSheet("talk"), openMenu: () => setSheet("menu") }),
-    [podId, unread],
+    () => ({ podId, unread: docked ? 0 : unread, openTalk: () => (docked ? setFocusTalk((k) => k + 1) : setSheet("talk")), openMenu: () => setSheet("menu") }),
+    [podId, unread, docked],
   );
   const name = here?.row.name ?? "";
   const hue = here?.hue ?? "ember";
   const stage = useTableStage(podId, name, hue, api);
   const view = stage.view;
+  // /details is the plan's details (QA core r1: the plan, what to bring, the rain backup), not the pod menu.
+  // With no plan on the table yet it falls back to the menu; /settings is always the menu.
+  const detailsTarget = pathname.endsWith("/details") && view?.suggestion ? `/app/pods/${podId}/plan/${view.suggestion.id}` : null;
+  const detailsNoPlan = pathname.endsWith("/details") && !!view && !view.suggestion;
+  useEffect(() => {
+    if (detailsTarget) router.replace(detailsTarget, { scroll: false });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- /details without a plan opens the menu
+    else if (detailsNoPlan) setSheet("menu");
+  }, [detailsTarget, detailsNoPlan, router]);
 
   // walk sideways between tables: arrow keys (laptop) and a horizontal swipe (phone)
   const go = useCallback(
@@ -137,6 +177,7 @@ function PodTableInner({ podId }: { podId: string }) {
       <div
         className="contents"
         data-sheet-open={sheet ? "" : undefined}
+        data-docked={docked ? "" : undefined}
         onTouchStart={(e) => {
           const p = e.touches[0];
           touch.current = { x: p.clientX, y: p.clientY, t: Date.now() };
@@ -161,7 +202,8 @@ function PodTableInner({ podId }: { podId: string }) {
       </div>
       {stage.overlay}
 
-      <TalkSheet open={sheet === "talk"} onOpenChange={(o) => (o ? setSheet("talk") : close())} podId={podId} podName={name} hue={hue} />
+      {docked && <TalkPanel podId={podId} podName={name} hue={hue} focusKey={focusTalk} />}
+      <TalkSheet open={!docked && sheet === "talk"} onOpenChange={(o) => (o ? setSheet("talk") : close())} podId={podId} podName={name} hue={hue} />
       <PodMenuSheet
         open={sheet === "menu"}
         onOpenChange={(o) => (o ? setSheet("menu") : close())}
@@ -171,7 +213,13 @@ function PodTableInner({ podId }: { podId: string }) {
         venue={view?.venue ?? null}
         canGiveUp={canGiveUp}
         onSheet={(s) => setSheet(s)}
+        podId={podId}
+        muted={muted}
+        onMute={() => void toggleMute()}
+        unread={unread}
       />
+      <MembersSheet open={sheet === "members"} onOpenChange={(o) => (o ? setSheet("members") : close())} podId={podId} podName={name} hue={hue} />
+      <MemoriesSheet open={sheet === "memories"} onOpenChange={(o) => (o ? setSheet("memories") : close())} podId={podId} podName={name} hue={hue} />
       {view?.venue && <PlaceSheet open={sheet === "place"} onOpenChange={(o) => (o ? setSheet("place") : close())} venue={view.venue} />}
       <GiveUpSheet
         open={sheet === "giveup"}

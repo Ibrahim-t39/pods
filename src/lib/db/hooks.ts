@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { bootStore, useStore } from "./store";
 import { localRepo } from "./local";
 import type { Repo } from "./repo";
-import type { DbState, User } from "@/lib/types";
+import type { AppMode, DbState, User } from "@/lib/types";
 
 /** Structural equality up to `depth` levels (arrays + plain objects); leaves by Object.is. */
 function sameShape(a: unknown, b: unknown, depth = 4): boolean {
@@ -60,4 +60,14 @@ export function useRepo(): Repo {
 /** "local" or "memory" (localStorage blocked/full). */
 export function useStorageMode() {
   return useStore((s) => s.storageMode);
+}
+
+/** Platform §M: "demo" or "live". Server and first paint say "demo"; the saved mode applies after boot. */
+export function useMode(): AppMode {
+  return useStore((s) => s.mode);
+}
+
+/** Switch worlds (keeps both). Resolves once the other world is loaded. */
+export function useSetMode(): (m: AppMode) => Promise<void> {
+  return useStore((s) => s.setMode);
 }

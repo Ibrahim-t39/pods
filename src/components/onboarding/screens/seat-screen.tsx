@@ -16,7 +16,7 @@ import { FlowStep, GoLink, Sub, useTableSize } from "../flow";
 import { SeatTable } from "../objects";
 import { useDraft } from "../draft";
 import { Guarded } from "../guard";
-import { BACK, STEP_ROUTE, commitDraft, firstOpenDraftStep, resumeRoute } from "../steps";
+import { BACK, DOT, STEP_ROUTE, commitDraft, firstOpenDraftStep, resumeRoute } from "../steps";
 
 export function SeatScreen({ signin }: { signin?: boolean }) {
   const params = useSearchParams();
@@ -43,6 +43,7 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
   const [wrong, setWrong] = useState(0);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [ok, setOk] = useState(false);
   const phoneRef = useRef<HTMLInputElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
 
@@ -102,6 +103,7 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
       requestAnimationFrame(() => codeRef.current?.focus());
       return;
     }
+    setOk(true);
     await finish(r.data);
   };
 
@@ -120,6 +122,7 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
 
   if (stage === "code") {
     const bad = wrong > 0;
+    const state = ok ? "Confirmed." : busy ? "Checking…" : msg;
     return (
       <FlowStep
         screen="code"
@@ -128,7 +131,7 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
         head={
           <>
             <Line size="lg">{bad ? "Not that one." : "Code sent."}</Line>
-            <Sub>
+            <Sub className="text-[17px]">
               {bad ? (
                 "Try again, or get a new code."
               ) : (
@@ -161,10 +164,15 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
                 ))}
               </span>
             </label>
-            <p id="ob-code-msg" aria-live="polite" className="mt-s4 min-h-6 text-label text-ink-2">
-              {msg}
+            <p id="ob-code-msg" aria-live="polite" className="mt-s4 flex min-h-6 items-center gap-s2 text-[15px] font-medium text-ink-2">
+              {ok && (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-grove)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M5 12.5 10 17.5 19 7" />
+                </svg>
+              )}
+              {state}
             </p>
-            <div className="flex gap-s6">
+            <div className="mt-s4 flex gap-s6">
               <GoLink onClick={again}>Send again</GoLink>
               <GoLink
                 onClick={() => {
@@ -177,7 +185,13 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
             </div>
           </>
         }
-        object={object}
+        dot={DOT.seat}
+        hint={code.length < 6 && !busy ? "Six digits, sent by text." : undefined}
+        action={
+          <Button size="xl" disabled={code.length !== 6 || ok} loading={busy && !ok} onClick={() => void verify(code)}>
+            Confirm
+          </Button>
+        }
       />
     );
   }
@@ -199,14 +213,15 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
           </Line>
           {!signin && <Sub>A text code holds it.</Sub>}
           <label className="mt-s8 block">
-            <span className="sr-only">Phone number</span>
+            <span className="pods-ob-phone-label">Mobile number</span>
             <input
               ref={phoneRef}
               className="pods-ob-phone"
               type="tel"
               inputMode="tel"
               autoComplete="tel-national"
-              placeholder="(555) 014 2290"
+              aria-label="Phone number"
+              placeholder="(555) 555 5555"
               value={fmt(digits)}
               onChange={(e) => {
                 setDigits(e.target.value.replace(/\D/g, "").replace(/^1(?=\d{10})/, "").slice(0, 10));
@@ -214,13 +229,14 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
               }}
             />
           </label>
-          <p aria-live="polite" className="mt-s2 min-h-6 text-label text-ink-2">
+          <p aria-live="polite" className="mt-s2 min-h-6 text-[15px] text-ink-2">
             {msg}
           </p>
         </form>
       }
       object={object}
-      status={!signin ? <GoLink href="/app/onboarding/city">Not here?</GoLink> : <GoLink href={STEP_ROUTE.you}>New here</GoLink>}
+      dot={signin ? undefined : DOT.seat}
+      status={!signin ? <GoLink href="/app/onboarding/city">Other city</GoLink> : <GoLink href={STEP_ROUTE.you}>New here</GoLink>}
       action={
         <Button size="xl" disabled={digits.length !== 10} loading={busy} onClick={send}>
           Send code

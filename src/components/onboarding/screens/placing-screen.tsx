@@ -2,7 +2,8 @@
 // Beat 2 of the video. "Finding your pods." The logo's three circles breathe (<CirclesLoader size={120}>, MOTION 5.2)
 // for 2.4 s at least, so the frame reads on camera. Then "Your pods.": the circles grow into your pods, named,
 // interest pods first, your disc where they meet (FoundPods). Each circle is `Shared pod-<id>`, so Your pods picks it
-// up on the hand-off (1.6 s later). No back, no button. Placement runs only here, only after the code and the check
+// up on the hand-off. The reveal holds until "Continue" (QA round 1: it used to leave on its own after 2.6 s, too
+// fast to read on camera), and beat 3 is a full line in ink: "Only 3 Zambians nearby. You're in Southern African." Placement runs only here, only after the code and the check
 // (the repo refuses otherwise).
 //   filling  no pod could start yet: "Your pod is filling." / "We'll text you." Never a fake pod (D #5).
 //   failed   "Not quite." / "Your answers are kept." · Try again.
@@ -22,9 +23,12 @@ import { CONTACT_HREF } from "@/components/legal/contact";
 import { FlowStep, GoLink, Sub, useTableSize } from "../flow";
 import { FoundPods, SplitTables, type FoundPod } from "../objects";
 import { resumeRoute } from "../steps";
+import { motion } from "motion/react";
+import { ARRIVE } from "@/components/brand/motion";
+import { takePendingInvite } from "@/lib/platform/invite";
+import { widenedHeadline } from "@/lib/placement/explain";
 
 const MIN_MS = 2400;
-const HAND_OFF_MS = 1600;
 
 export function PlacingScreen() {
   const router = useRouter();
@@ -36,7 +40,7 @@ export function PlacingScreen() {
   useEffect(() => {
     if (!hydrated) return;
     if (!me || !me.verified) router.replace(resumeRoute(me));
-    else if (entry === "done") router.replace("/app/pods");
+    else if (entry === "done") router.replace("/app/home");
   }, [hydrated, me, entry, router]);
   if (!hydrated || !go || entry === "done") return <PageSkeleton />;
   return <Finding initial={me!.first_name.slice(0, 1).toUpperCase()} />;
@@ -48,6 +52,7 @@ function Finding({ initial }: { initial: string }) {
   const { size, wide } = useTableSize();
   const [state, setState] = useState<"finding" | "placed" | "filling" | "failed">("finding");
   const [found, setFound] = useState<FoundPod[]>([]);
+  const [note, setNote] = useState<string | null>(null);
   const started = useRef(false);
 
   const run = useCallback(async () => {
@@ -63,19 +68,31 @@ function Finding({ initial }: { initial: string }) {
     const mine = myMemberships(useStore.getState().db);
     const active = mine.filter((m) => m.activation === "active").length;
     if (!active) return setState("filling");
+    // A saved invite joins its pod after placement (PLATFORM §F7). A miss (another device, expired) is silent.
+    const invite = takePendingInvite();
+    if (invite) await repo.redeemInvite(invite).catch(() => null);
     const db = useStore.getState().db;
-    const pods = mine
+    // beat 3: the widened pod's line, from this run's own trace ("Only 3 Zambians nearby, so we widened to …")
+    // Same source as Your pods (the cached explainer) first, so both screens say the same number; the trace second.
+    const runs = db.placementRuns.filter((r) => r.user_id === db.me);
+    const wPod = myMemberships(db).map((m) => db.pods[m.pod_id]).find((p) => p?.widened_from?.kind === "group");
+    const cached = wPod ? (db.plannerCache as Record<string, { output?: unknown }>)[`${wPod.id}:widen_explainer`] : undefined;
+    const body = (cached?.output as { body?: string } | undefined)?.body;
+    const m = body?.match(/Only (\d+) (\S+)/);
+    const widenedLine = m ? `Only ${m[1]} ${m[2]} nearby` : runs.length ? widenedHeadline(runs[runs.length - 1])?.split(",")[0] : null;
+    setNote(wPod && widenedLine ? `${widenedLine}.|${shortName(wPod)}` : null);
+    const pods = myMemberships(db)
       .map((m) => db.pods[m.pod_id])
       .filter(Boolean)
       .sort((a, b) => (a.type === b.type ? 0 : a.type === "interest" ? -1 : 1))
       .map((p) => ({
         id: p.id,
         type: p.type === "community" ? ("community" as const) : ("interest" as const),
+        hue: p.hue,
         name: p.type === "community" && db.config.flags.maskCommunityInApp ? "Community pod" : shortName(p),
       }));
     setFound(pods);
     setState("placed");
-    setTimeout(() => router.push("/app/pods"), HAND_OFF_MS);
   }, [repo, router]);
 
   useEffect(() => {
@@ -84,7 +101,7 @@ function Finding({ initial }: { initial: string }) {
     void run();
   }, [run]);
 
-  const S = wide ? 340 : Math.round(size * 0.98);
+  const S = wide ? 340 : Math.min(Math.round(size * 0.98), 190);
   const line = state === "failed" ? "Not quite." : state === "filling" ? "Your pod is filling." : state === "placed" ? "Your pods." : "Finding your pods.";
 
   return (
@@ -98,6 +115,11 @@ function Finding({ initial }: { initial: string }) {
           <Line size="lg" className="max-w-[8ch]">
             {line}
           </Line>
+          {state === "placed" && note && (
+            <motion.p data-widened-note className="pods-ob-note" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ ...ARRIVE, delay: 0.9 }}>
+              {note.split("|")[0]} You&apos;re in <b>{note.split("|")[1]}</b>.
+            </motion.p>
+          )}
           {state === "filling" && <Sub>We&apos;ll text you.</Sub>}
           {state === "failed" && <Sub>Your answers are kept.</Sub>}
         </div>
@@ -105,7 +127,7 @@ function Finding({ initial }: { initial: string }) {
       object={
         state === "finding" ? (
           <div className="grid place-items-center" style={{ width: S * 1.8, height: S * 1.8 }}>
-            <CirclesLoader size={120} label="Loading" />
+            <CirclesLoader size={wide ? 200 : 168} label="Finding your pods" />
           </div>
         ) : state === "placed" ? (
           <FoundPods size={S} pods={found} initial={initial} />
@@ -121,7 +143,11 @@ function Finding({ initial }: { initial: string }) {
         ) : undefined
       }
       action={
-        state === "failed" ? (
+        state === "placed" ? (
+          <Button size="xl" onClick={() => router.push("/app/home")}>
+            Continue
+          </Button>
+        ) : state === "failed" ? (
           <Button size="xl" onClick={run}>
             Try again
           </Button>

@@ -23,7 +23,10 @@ import { notify } from "@/components/ui/toast";
 import { useIsDesktop } from "@/components/ui/use-media-query";
 import { useRepo } from "@/lib/db/hooks";
 import { downloadIcs, directionsUrl } from "../plan-utils";
-import { hm, placeWord, rainWord, weekday, type TableModel } from "./model";
+import { usePlanActions } from "../use-plan-actions";
+import { ProposeSheet } from "./propose-sheet";
+import { GiveUpSheet } from "./sheets";
+import { hm, placeWord, rainWord, sourceLine, weekday, type TableModel } from "./model";
 import { costWord, planTitle, SeatRow, seatDots } from "./plan-card";
 import { whyRows } from "./sheets";
 
@@ -34,6 +37,8 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
   const calm = useCalmMotion();
   const drag = useDragControls();
   const [busy, setBusy] = useState(false);
+  const [side, setSide] = useState<null | "propose" | "giveup">(null);
+  const actions = usePlanActions(m.pod.id);
   const sheet = useRef<HTMLElement>(null);
   const v = m.view;
   const p = m.plan?.plan_json;
@@ -44,11 +49,10 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
   const place = placeWord(m.venue);
   const cost = costWord(m);
   const title = planTitle(m, iso);
-  const byClaude = m.plan?.source === "claude" || m.plan?.source === "seed";
 
   useEffect(() => {
     sheet.current?.focus({ preventScroll: true });
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector('[role="dialog"][data-state="open"]') && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
@@ -71,6 +75,22 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
       // beat 6: let "4 of 8 in · Locked" land on camera, then hand back to the pod for the lock moment
       setTimeout(() => router.replace(`/app/pods/${m.pod.id}`, { scroll: false }), calm ? 900 : 1700);
     } else notify("You're in.", { undo: () => void repo.rsvp(t, "not_going"), duration: 6000 });
+  };
+
+  // the quiet "more" row: one line of text links under the plan, never a second filled button
+  const canAsk = (v.phase === "proposed" || v.phase === "in") && !!v.suggestion;
+  const canGiveUp = v.imIn && ["in", "locked", "starting_soon"].includes(v.phase);
+  const ask = () => {
+    if (!v.suggestion) return;
+    onClose();
+    void actions.suggestElse(v.suggestion, []);
+  };
+  const giveUp = async () => {
+    setSide(null);
+    const t = v.hangout?.id ?? v.targetId;
+    if (!t) return;
+    const r = await repo.rsvp(t, "not_going");
+    if (r.ok) notify("Seat given back.", { undo: () => void repo.rsvp(t, "going"), duration: 6000 });
   };
 
   const rain = !m.venue
@@ -137,6 +157,12 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
                 </p>
               )}
               <p className="pd-tags">
+                {m.plan && (
+                  <span className="pd-tag" data-ai="">
+                    <Icon name="why" size={16} />
+                    {sourceLine(m.plan)}
+                  </span>
+                )}
                 {cost && <span className="pd-tag">{cost}</span>}
                 <span className="pd-tag">{m.venue?.indoor ? "Indoors" : "Outdoors"}</span>
                 <span className="pd-tag">Public</span>
@@ -198,7 +224,7 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
                 </div>
               ))}
             </dl>
-            <p className="pd-sub">{byClaude ? "Planned by Claude." : "Planned from free times."}</p>
+            <p className="pd-sub">{sourceLine(m.plan)}.</p>
             {m.venue && (
               <a className="pd-dir pressable" href={directionsUrl(m.venue)} target="_blank" rel="noreferrer">
                 Directions
@@ -206,6 +232,25 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
               </a>
             )}
           </section>
+
+          <nav className="pd-more settle" aria-label="More for this plan">
+            {canGiveUp && (
+              <button type="button" className="pd-more-b pressable" onClick={() => setSide("giveup")}>
+                <Icon name="undo" size={20} />
+                Can&apos;t make it
+              </button>
+            )}
+            {canAsk && (
+              <button type="button" className="pd-more-b pressable" onClick={ask}>
+                <Icon name="turn" size={20} />
+                Ask AI for a new plan
+              </button>
+            )}
+            <button type="button" className="pd-more-b pressable" onClick={() => setSide("propose")}>
+              <Icon name="add" size={20} />
+              Propose a hangout
+            </button>
+          </nav>
         </div>
 
         <footer className="pd-foot glass">
@@ -236,6 +281,8 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
           )}
         </footer>
       </motion.section>
+      <ProposeSheet m={m} open={side === "propose"} onOpenChange={(o) => setSide(o ? "propose" : null)} />
+      <GiveUpSheet open={side === "giveup"} onOpenChange={(o) => setSide(o ? "giveup" : null)} onGiveUp={() => void giveUp()} />
     </div>
   );
 }

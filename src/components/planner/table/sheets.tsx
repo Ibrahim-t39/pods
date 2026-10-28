@@ -7,9 +7,9 @@ import { ResponsiveSheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/icons";
 import { directionsUrl } from "../plan-utils";
-import { freeCount, hm, placeWord, rainWord, wd3, type TableModel } from "./model";
+import { freeCount, hm, placeWord, rainWord, sourceLine, wd3, type TableModel } from "./model";
 
-export type SheetId = "menu" | "why" | "place" | "giveup" | null;
+export type SheetId = "menu" | "why" | "place" | "giveup" | "propose" | null;
 
 const SLOT: Record<string, string> = {
   basketball: "hoops",
@@ -41,11 +41,10 @@ export function whyRows(m: TableModel): [string, string][] {
   ];
 }
 
-/** S01 · Why this plan as a sheet. Claude is named here (K D5). */
+/** S01 · Why this plan as a sheet. The source line says AI, never the model's name. */
 export function WhySheet({ m, open, onOpenChange, asPage }: { m: TableModel; open: boolean; onOpenChange: (o: boolean) => void; asPage?: boolean }) {
   const s = m.plan;
   const rows = whyRows(m);
-  const byClaude = s?.source === "claude" || s?.source === "seed";
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title="Why this plan">
       {/* as the /plan/[id] route the sheet is the page, so it carries the page's one heading (the table under it is inert) */}
@@ -61,7 +60,7 @@ export function WhySheet({ m, open, onOpenChange, asPage }: { m: TableModel; ope
       </dl>
       <p className="pt-foot-note">
         <Icon name="why" size={18} />
-        {byClaude ? "Planned by Claude." : "Planned from free times."}
+        {sourceLine(s)}.
       </p>
     </ResponsiveSheet>
   );
@@ -141,21 +140,37 @@ export function PlanMenu({
   onOpenChange,
   go,
   risky,
+  onAsk,
 }: {
   m: TableModel;
   open: boolean;
   onOpenChange: (o: boolean) => void;
   go: (s: SheetId) => void;
   risky?: ReactNode;
+  /** "Ask AI for a new plan": a fresh option for this round (open plans only) */
+  onAsk?: () => void;
 }) {
   const hasPlan = !!m.plan && !["empty", "pending_review"].includes(m.view.phase);
   const canGiveUp = m.view.imIn && ["in", "locked", "starting_soon"].includes(m.view.phase);
+  const canAsk = !!onAsk && ["proposed", "in"].includes(m.view.phase);
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title={`${m.name} #${m.view.round}`}>
       <div className="pt-rows">
         {hasPlan && <MenuRow icon="why" label="Why this plan" onClick={() => go("why")} />}
         {hasPlan && m.venue && <MenuRow icon="place" label="The place" onClick={() => go("place")} />}
         {canGiveUp && <MenuRow icon="undo" label="Can't make it" onClick={() => go("giveup")} />}
+        <div className="pt-gap" />
+        {canAsk && (
+          <MenuRow
+            icon="turn"
+            label="Ask AI for a new plan"
+            onClick={() => {
+              onOpenChange(false);
+              onAsk?.();
+            }}
+          />
+        )}
+        <MenuRow icon="add" label="Propose a hangout" onClick={() => go("propose")} />
         {risky && (
           <>
             <div className="pt-gap" />

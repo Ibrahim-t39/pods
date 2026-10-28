@@ -1,0 +1,106 @@
+/* Pods bubbles (MOTION_SYSTEM §11; founder idea 8, "make the pods like bubbles, glossy, modern").
+   A person is a white dot; their world is a bubble around it; a pod is where bubbles overlap.
+   Clean, not cartoon: thin tinted centre, colour gathers at the rim (how a real bubble reads), one specular spot from
+   the top-left like the logo's light, a 1px bright rim, a soft coloured shadow. Overlaps are translucent
+   tints composited by alpha, so they stay luminous (no muddy darks; no blend modes, no backdrop filters).
+   Colour comes only from tokens (--pods-*). Motion: buoy (ambient, 3px), merge (commit), settle (lock), pop (arrive).
+   Transform and opacity only. Reduced motion: still, and state changes cross-fade. */
+
+.pods-bubble {
+  --h: var(--pods-signal);
+  --size: 120px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 999px;
+  flex: none;
+  isolation: auto;
+  background:
+    /* specular spot, top-left (the logo's light) */
+    radial-gradient(circle at 31% 24%, rgb(255 255 255 / .95) 0 3.5%, rgb(255 255 255 / .55) 6.5%, rgb(255 255 255 / 0) 17%),
+    /* soft window reflection along the upper rim */
+    radial-gradient(ellipse 46% 22% at 42% 12%, rgb(255 255 255 / .55) 0, rgb(255 255 255 / 0) 100%),
+    /* bounce light, lower right */
+    radial-gradient(circle at 74% 80%, rgb(255 255 255 / .45) 0 3%, rgb(255 255 255 / 0) 12%),
+    /* the body: thin in the middle, colour gathers at the rim */
+    radial-gradient(circle at 50% 46%,
+      color-mix(in oklch, var(--h) 14%, transparent) 0 40%,
+      color-mix(in oklch, var(--h) 32%, transparent) 68%,
+      color-mix(in oklch, var(--h) 60%, transparent) 93%,
+      color-mix(in oklch, var(--h) 46%, transparent) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / .7),
+    inset 0 -6px 14px -6px color-mix(in oklch, var(--h) 45%, transparent),
+    0 calc(var(--size) * .08) calc(var(--size) * .2) calc(var(--size) * -.08) color-mix(in oklch, var(--h) 38%, transparent);
+}
+.pods-bubble[data-hue="ember"] { --h: var(--pods-ember); }
+.pods-bubble[data-hue="signal"] { --h: var(--pods-signal); }
+.pods-bubble[data-hue="grove"] { --h: var(--pods-grove); }
+.pods-bubble[data-hue="teal"] { --h: var(--pods-teal); }
+/* Overlaps are plain alpha compositing of translucent bodies: a shared region is always LIGHTER-than-mud, never
+   darker than the richer hue (founder R5: no muddy darks). `solo` keeps an opaque white core for small bubbles that
+   sit on busy ground (vote rows, seats), so they read as people, not holes. */
+.pods-bubble[data-solo] { background-color: color-mix(in oklch, var(--h) 8%, white); }
+
+/* the person: a white dot inside their world, placed like the logo's dots (pushed toward the outside) */
+.pods-bubble__dot {
+  position: absolute;
+  left: calc(50% + var(--dx, 0%));
+  top: calc(50% + var(--dy, 0%));
+  width: calc(var(--size) * .25);
+  height: calc(var(--size) * .25);
+  min-width: 10px;
+  min-height: 10px;
+  translate: -50% -50%;
+  border-radius: 999px;
+  background: radial-gradient(circle at 36% 30%, white 0 40%, color-mix(in oklch, var(--h) 8%, white) 100%);
+  box-shadow: 0 1px 2px color-mix(in oklch, var(--h) 40%, transparent), 0 0 0 1px rgb(255 255 255 / .9);
+}
+.pods-bubble__label {
+  position: relative;
+  max-width: 78%;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────────────────────────────────────────── */
+/* buoy: ambient, 3px, slow, each bubble out of phase. Only where people are at rest (landing, placement reveal). */
+@keyframes pods-buoy {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(var(--buoy-x, 1px), -3px, 0); }
+}
+.pods-bubble[data-buoy] {
+  animation: pods-buoy var(--buoy-dur, 6.4s) var(--ease-in-out) var(--buoy-delay, 0s) infinite;
+}
+/* merge: when people commit they drift into each other (set --mx/--my toward the shared centre) */
+.pods-bubble[data-merge] {
+  transform: translate3d(var(--mx, 0), var(--my, 0), 0);
+  transition: transform var(--dur-light) var(--ease-out);
+  animation: none;
+}
+/* settle: the lock. One soft squash, then still (700 ms, no overshoot you can see) */
+@keyframes pods-bubble-settle {
+  0% { scale: 1; }
+  30% { scale: 1.05 .95; }
+  62% { scale: .985 1.02; }
+  100% { scale: 1; }
+}
+.pods-bubble[data-settle] { animation: pods-bubble-settle var(--dur-light) var(--ease-out) both; }
+/* arrive: the dot first, then the world grows around it */
+@keyframes pods-bubble-grow {
+  from { scale: .18; opacity: 0; }
+  60% { opacity: 1; }
+  to { scale: 1; opacity: 1; }
+}
+.pods-bubble[data-grow] { animation: pods-bubble-grow var(--dur-light) var(--ease-out) var(--grow-delay, 0s) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pods-bubble[data-buoy], .pods-bubble[data-settle] { animation: none; }
+  .pods-bubble[data-grow] { animation: pods-fade-in 160ms both; }
+  .pods-bubble[data-merge] { transition-duration: 160ms; }
+}

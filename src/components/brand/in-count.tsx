@@ -16,10 +16,8 @@ export interface InCountProps {
 
 export function InCount({ n, of, locked, className }: InCountProps) {
   return (
-    <span className={cn("inline-flex items-center gap-s2 tabular font-semibold leading-none", className)}>
-      <span className="sr-only" aria-live="polite">
-        {`${n} of ${of} in${locked ? ". Locked." : ""}`}
-      </span>
+    // one sentence for screen readers (the label), the rolling digits stay out of the accessible text (QA core r1)
+    <span role="status" aria-live="polite" aria-label={`${n} of ${of} in${locked ? ". Locked." : ""}`} className={cn("inline-flex items-center gap-s2 tabular font-semibold leading-none", className)}>
       <span aria-hidden className="inline-flex items-center gap-[0.25em] leading-none">
         <NumberTicker value={n} />
         <span>of {of} in</span>

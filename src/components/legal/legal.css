@@ -6,6 +6,23 @@
   min-height: 100dvh;
   padding-bottom: var(--s16);
 }
+/* paper pages carry the landing's own clean light (logo hues only, no plum), so the top corner never reads muddy */
+.legal[data-light="paper"] {
+  background:
+    radial-gradient(circle 240px at 96% 80px, color-mix(in oklch, var(--pods-signal) 11%, transparent) 0 50%, transparent 100%),
+    radial-gradient(circle 200px at 104% 360px, color-mix(in oklch, var(--pods-grove) 10%, transparent) 0 45%, transparent 100%),
+    var(--paper);
+  background-repeat: no-repeat;
+}
+@media (min-width: 1024px) {
+  .legal[data-light="paper"] {
+    background:
+      radial-gradient(circle 520px at 88% 120px, color-mix(in oklch, var(--pods-signal) 10%, transparent) 0 50%, transparent 100%),
+      radial-gradient(circle 400px at 102% 560px, color-mix(in oklch, var(--pods-grove) 9%, transparent) 0 45%, transparent 100%),
+      var(--paper);
+    background-repeat: no-repeat;
+  }
+}
 .legal-body {
   max-width: 1440px;
   margin: 0 auto;
@@ -98,19 +115,13 @@ li:has(.legal-mark) .legal-more {
     transform: translateY(-8px);
   }
 }
-.legal-next {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--s6);
-  margin-top: var(--s8);
-}
 
 @media (min-width: 1024px) {
   .legal-body {
     display: grid;
     grid-template-columns: 520px minmax(0, 640px);
     column-gap: var(--s24);
-    padding: 116px var(--s16) 0;
+    padding: 96px var(--s16) 0;
   }
   .legal-title {
     position: sticky;

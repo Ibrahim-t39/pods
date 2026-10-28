@@ -14,7 +14,7 @@ import { VennStory } from "@/components/brand/venn-story";
 import { useCalmMotion } from "@/components/brand/motion";
 import { Line } from "@/components/brand/line";
 import { Stage } from "@/components/brand/stage";
-import { Chrome } from "@/components/shell/chrome";
+import { SiteBar } from "@/components/legal/site-chrome";
 import { Page } from "@/components/shell/page";
 import { Button } from "@/components/ui/button";
 import { formatUsPhone } from "@/components/ui/phone-input";
@@ -71,12 +71,15 @@ export function WaitlistScreen() {
       <Stage light={done ? "clear" : "paper"} />
       <Page
         label="Waitlist"
-        chrome={<Chrome left="back" backHref="/" />}
+        chrome={<SiteBar />}
         head={
           done ? (
             <>
               <Line size="lg">On the list.</Line>
               <p className="wl-sub text-ink-2">We&apos;ll text you.</p>
+              <Button asChild size="xl" className="wl-done">
+                <Link href="/">Back to Pods</Link>
+              </Button>
             </>
           ) : (
             <>
@@ -98,6 +101,31 @@ export function WaitlistScreen() {
                 )}
                 {!age && "."}
               </p>
+              <form onSubmit={submit} noValidate className="wl-form" aria-label="Waitlist">
+                <label className="wl-field" data-error={error ? "" : undefined}>
+                  <span className="sr-only">Your number</span>
+                  <input
+                    inputMode="tel"
+                    autoComplete="tel-national"
+                    placeholder="Phone"
+                    value={formatUsPhone(digits)}
+                    onChange={(e) => {
+                      setDigits(e.target.value.replace(/\D/g, "").slice(0, 10));
+                      setError(null);
+                    }}
+                    aria-invalid={!!error}
+                    aria-describedby={error ? "wl-err" : undefined}
+                  />
+                </label>
+                {error && (
+                  <p id="wl-err" role="alert" className="wl-err text-label text-ink">
+                    {error}
+                  </p>
+                )}
+                <Button type="submit" size="xl" className="wl-pill">
+                  Text me
+                </Button>
+              </form>
             </>
           )
         }
@@ -105,39 +133,6 @@ export function WaitlistScreen() {
           <div className="wl-obj" data-done={done ? "" : undefined}>
             <VennStory progress={story} reduced={reduced} className="wl-venn" />
           </div>
-        }
-        foot={
-          done ? (
-            <Button asChild size="xl" className="wl-done">
-              <Link href="/">Back to Pods</Link>
-            </Button>
-          ) : (
-            <form onSubmit={submit} noValidate className="wl-form" aria-label="Waitlist">
-              <label className="wl-field" data-error={error ? "" : undefined}>
-                <span className="sr-only">Your number</span>
-                <input
-                  inputMode="tel"
-                  autoComplete="tel-national"
-                  placeholder="Phone"
-                  value={formatUsPhone(digits)}
-                  onChange={(e) => {
-                    setDigits(e.target.value.replace(/\D/g, "").slice(0, 10));
-                    setError(null);
-                  }}
-                  aria-invalid={!!error}
-                  aria-describedby={error ? "wl-err" : undefined}
-                />
-              </label>
-              {error && (
-                <p id="wl-err" role="alert" className="wl-err text-label text-ink">
-                  {error}
-                </p>
-              )}
-              <Button type="submit" size="xl" className="wl-pill">
-                Text me
-              </Button>
-            </form>
-          )
         }
       />
     </>

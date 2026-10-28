@@ -92,7 +92,7 @@ export function OptionRing({
                       width: sz,
                       height: sz,
                       fontSize: Math.round(sz * 0.5),
-                      background: v.me ? YOU_COLOR.bg : personColor(v.name ?? v.initial).bg,
+                      backgroundColor: v.me ? YOU_COLOR.bg : personColor(v.name ?? v.initial).bg,
                       color: v.me ? YOU_COLOR.fg : personColor(v.name ?? v.initial).fg,
                     }}
                   >
@@ -110,7 +110,7 @@ export function OptionRing({
             data-nc
             className="pt-voter"
             transition={SNAPPY}
-            style={{ left: W / 2 - youD / 2, top: W * 1.02 - youD, width: youD, height: youD, fontSize: Math.round(youD * 0.5), background: YOU_COLOR.bg, color: YOU_COLOR.fg }}
+            style={{ left: W / 2 - youD / 2, top: W * 1.02 - youD, width: youD, height: youD, fontSize: Math.round(youD * 0.5), backgroundColor: YOU_COLOR.bg, color: YOU_COLOR.fg }}
           >
             {me.initial}
           </motion.span>

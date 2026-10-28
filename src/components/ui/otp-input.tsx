@@ -53,7 +53,7 @@ export const OtpInput = forwardRef<HTMLInputElement, OtpInputProps>(function Otp
               key={i}
               aria-hidden
               className={cn(
-                "relative grid h-14 w-12 place-items-center rounded-input border bg-surface font-display text-[26px] font-extrabold tabular text-fg shadow-xs",
+                "relative grid h-14 w-12 place-items-center rounded-input border bg-surface font-display text-[26px] font-semibold tabular text-fg shadow-xs",
                 "transition-[border-color,box-shadow,background-color] duration-fast ease-standard",
                 state === "error"
                   ? "border-danger bg-danger-soft"

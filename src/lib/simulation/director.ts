@@ -46,7 +46,7 @@ export async function skipToPlaced(repo: Repo): Promise<ActionResult> {
       first_name: DEMO.persona.first_name,
       nickname: null,
       pronouns: "she/her",
-      bio: "New in town. Hoops on Sundays, guitar when it's quiet.",
+      bio: "New in town. Hoops on Saturdays, guitar when it's quiet.",
       prompts: [],
       photo_urls: ["/avatars/preset-01.svg"],
       date_of_birth: "2004-03-14",
@@ -80,13 +80,13 @@ export async function skipToPlaced(repo: Repo): Promise<ActionResult> {
   return r.ok ? done("Placed. Chanda is in her pods.") : fail(`Placement failed: ${r.error.code}`);
 }
 
-/** Move the clock to Sun 3:15 PM, mark the hangout done, post the check-in prompt. */
+/** Move the clock to just after the hangout (Sat 12:15 PM), mark the hangout done, post the check-in prompt. */
 export function jumpAfterHangout(): ActionResult {
   jumpTo(DEMO.directorJump.at);
   useStore.getState().commit((x) => {
     settleHangouts(x, nowMs(), nowISO());
   });
-  return done("It's Sunday 3:15 PM. The check-in prompt is out.");
+  return done("It's Saturday 12:15 PM. The check-in prompt is out.");
 }
 
 /** Every "going" member of the demo hangout is checked in (the prompt is posted first if the clock was not jumped). */
@@ -133,11 +133,11 @@ export function revealRunItBack(): ActionResult {
   return done(`${yes} of ${checked} want to run it back.`);
 }
 
-/** "Make it rain": the Hoopers plan moves to the park courts variant (rain plan to the Rec Center). */
+/** "Make it rain": the Hoopers run moves indoors to the Rec Center (toggle back to the park courts). */
 export function makeItRain(): ActionResult {
   const on = db().config.demo.venueVariant === "park_courts";
   useStore.getState().commit((x) => applyVenueVariant(x, on ? "rec_center" : "park_courts"));
-  return done(on ? "Back to the Rec Center." : "Park courts plan with a rain plan.");
+  return done(on ? "Rain plan on: indoors at the Rec Center." : "Back to the park courts.");
 }
 
 /** One simulated member who was going switches to "can't make it" (shows the count dropping and the host reply). */

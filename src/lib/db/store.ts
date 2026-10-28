@@ -12,13 +12,20 @@ import { produce, type Draft } from "immer";
 import { toast } from "sonner";
 import type { DbState } from "@/lib/types";
 import { buildSeed, SEED_VERSION } from "@/data/seed";
+import { buildLiveSeed, LIVE_SEED_VERSION } from "@/data/live-seed";
+import { DB_KEYS, MODE_KEY, modeFromSearch, readModePref, resolveInitialMode, writeModePref, type AppMode } from "@/lib/mode/mode";
+import { toChicagoISO } from "@/lib/time/tz";
 import { DEMO } from "@/config/demo";
 import { AppConfigSchema } from "@/config";
 import { hash32 } from "@/lib/ids";
 
-export const STORE_KEY = "pods:v1";
+/** The Demo database key (kept as "pods:v1"). Live uses DB_KEYS.live. */
+export const STORE_KEY = DB_KEYS.demo;
 export const SCHEMA_VERSION = 1;
 export const SEED_HASH = String(hash32(`${SEED_VERSION}|${DEMO.anchor}`));
+/** Live never resets on a demo seed bump: only a change to the Live world itself does. */
+export const LIVE_SEED_HASH = String(hash32(`live|${LIVE_SEED_VERSION}`));
+const seedHashFor = (m: AppMode) => (m === "live" ? LIVE_SEED_HASH : SEED_HASH);
 const CHANNEL = "pods";
 
 type Persisted = { db: DbState; seedHash: string; schemaVersion: number };
@@ -29,12 +36,24 @@ export interface StoreState {
   storageMode: "local" | "memory";
   /** Apply an immer recipe to the db, bump rev, persist and broadcast. Repo modules only. */
   commit: (recipe: (draft: Draft<DbState>) => void) => void;
-  /** Replace the db with a fresh seed (Director / DemoBar "Reset demo"). */
+  /** Replace the CURRENT mode's db with a fresh one (Director "Reset demo"; Live "Start over"). */
   resetDemo: () => void;
+  /** Platform §M: which world is loaded. "demo" on the server and first paint; bootStore() applies the saved mode. */
+  mode: AppMode;
+  /** Switch worlds. Persists the current one, loads (or creates) the other. Never deletes data. */
+  setMode: (m: AppMode) => Promise<void>;
 }
 
-export function freshDb(): DbState {
+/** A fresh database for a mode. Live reads the real clock, so call it on the client only. */
+export function freshDb(mode: AppMode = "demo"): DbState {
+  if (mode === "live") return buildLiveSeed(toChicagoISO(typeof window === "undefined" ? Date.parse(DEMO.anchor) : Date.now()));
   return buildSeed(DEMO.anchor);
+}
+
+/** Live runs on the real clock: re-anchor virtual time to real time at boot (Demo keeps its pinned clock). */
+function realClock(): DbState["clock"] {
+  const t = Date.now();
+  return { virtual_at: toChicagoISO(t), real_at: t };
 }
 
 // ── Storage: localStorage with in-memory fallback ─────────────────────
@@ -42,6 +61,9 @@ const memory = new Map<string, string>();
 let memoryMode = false;
 let warnedMemory = false;
 let pendingResetToast = false;
+/** True while a mode swap resets in-memory state: the persist middleware writes on every setState, and that write
+ * must not overwrite the incoming world before it is read. */
+let suppressWrites = false;
 
 function warnMemory() {
   memoryMode = true;
@@ -71,6 +93,7 @@ const safeStorage: PersistStorage<Persisted> = {
     }
   },
   setItem(name, value) {
+    if (suppressWrites) return;
     const raw = JSON.stringify(value);
     if (!memoryMode) {
       try {
@@ -93,10 +116,10 @@ const safeStorage: PersistStorage<Persisted> = {
 };
 
 /** Light structural check + zod on config; anything off → fresh seed. */
-function isUsable(p: unknown): p is Persisted {
+function isUsable(p: unknown, mode: AppMode = currentMode()): p is Persisted {
   if (!p || typeof p !== "object") return false;
   const v = p as Partial<Persisted>;
-  if (v.seedHash !== SEED_HASH || v.schemaVersion !== SCHEMA_VERSION) return false;
+  if (v.seedHash !== seedHashFor(mode) || v.schemaVersion !== SCHEMA_VERSION) return false;
   const db = v.db as Partial<DbState> | undefined;
   if (!db || typeof db.rev !== "number" || typeof db.users !== "object" || typeof db.pods !== "object") return false;
   return AppConfigSchema.safeParse(db.config).success;
@@ -119,6 +142,7 @@ function broadcast(rev: number) {
 }
 
 let booted = false;
+const currentMode = (): AppMode => useStore.getState()?.mode ?? "demo";
 
 export const useStore = create<StoreState>()(
   persist(
@@ -136,12 +160,20 @@ export const useStore = create<StoreState>()(
         broadcast(next.rev);
       },
       resetDemo() {
+        const mode = get().mode;
         const rev = get().db.rev + 1;
-        const db = freshDb();
+        const db = freshDb(mode);
         db.rev = rev;
-        db.clock = { virtual_at: db.clock.virtual_at, real_at: Date.now() };
+        db.clock = mode === "live" ? realClock() : { virtual_at: db.clock.virtual_at, real_at: Date.now() };
         set({ db });
         broadcast(rev);
+      },
+      mode: "demo",
+      async setMode(m) {
+        if (typeof window === "undefined") return;
+        writeModePref(m);
+        if (get().mode === m && get().hydrated) return;
+        await loadMode(m);
       },
     }),
     {
@@ -149,7 +181,7 @@ export const useStore = create<StoreState>()(
       version: SCHEMA_VERSION,
       storage: safeStorage,
       skipHydration: true,
-      partialize: (s) => ({ db: s.db, seedHash: SEED_HASH, schemaVersion: SCHEMA_VERSION }),
+      partialize: (s) => ({ db: s.db, seedHash: seedHashFor(s.mode), schemaVersion: SCHEMA_VERSION }),
       migrate: () => {
         // Any older schema → clean reset (J5). Returning a non-usable value makes merge() fall back to fresh.
         pendingResetToast = true;
@@ -157,12 +189,12 @@ export const useStore = create<StoreState>()(
       },
       merge(persisted, current) {
         if (persisted == null) return current; // first visit, or reset requested
-        if (!isUsable(persisted)) {
-          pendingResetToast = true;
-          return { ...current, db: freshDb() };
+        if (!isUsable(persisted, current.mode)) {
+          pendingResetToast = current.mode === "demo";
+          return { ...current, db: freshDb(current.mode) };
         }
         // Fill any top-level keys a newer build added, keep everything persisted.
-        return { ...current, db: { ...freshDb(), ...persisted.db } };
+        return { ...current, db: { ...freshDb(current.mode), ...persisted.db } };
       },
       onRehydrateStorage: () => (state, error) => {
         if (error) pendingResetToast = true;
@@ -171,7 +203,8 @@ export const useStore = create<StoreState>()(
           booted = true;
           // Pinned clock (J5): re-stamp real time at boot so "now" resumes at the stored virtual time.
           const db = produce(s.db, (d) => {
-            d.clock.real_at = Date.now();
+            if (s.mode === "live") d.clock = realClock();
+            else d.clock.real_at = Date.now();
           });
           useStore.setState({ db, hydrated: true, storageMode: memoryMode ? "memory" : "local" });
         } else {
@@ -207,17 +240,47 @@ export function bootStore(): () => void {
   };
 }
 
+/**
+ * Point the persist middleware at `m`'s key and load it. A mode with nothing stored starts from its fresh world.
+ * The outgoing world is already persisted (every commit writes), so nothing is lost.
+ */
+async function loadMode(m: AppMode): Promise<void> {
+  suppressWrites = true;
+  try {
+    useStore.persist.setOptions({ name: DB_KEYS[m] });
+    booted = false; // re-stamp the clock for the incoming world
+    useStore.setState({ mode: m, db: freshDb(m), hydrated: false });
+  } finally {
+    suppressWrites = false;
+  }
+  await useStore.persist.rehydrate();
+  const rev = useStore.getState().db.rev;
+  broadcast(rev);
+}
+
 function startSync(): () => void {
-  if (!useStore.getState().hydrated) void useStore.persist.rehydrate();
+  if (!useStore.getState().hydrated) {
+    const m = resolveInitialMode(window.location.search, readModePref());
+    if (modeFromSearch(window.location.search)) writeModePref(m); // ?mode= sticks, like the toggle
+    if (m !== useStore.getState().mode) void loadMode(m);
+    else void useStore.persist.rehydrate();
+  }
   const ch = getChannel();
   const onMsg = (e: MessageEvent) => {
     const m = e.data as { type?: string; rev?: number; from?: string };
-    if (m?.type === "db" && m.from !== TAB_ID && (m.rev ?? 0) >= useStore.getState().db.rev) {
-      void useStore.persist.rehydrate();
+    if (m?.type === "db" && m.from !== TAB_ID) {
+      const saved = readModePref();
+      if (saved && saved !== useStore.getState().mode) void loadMode(saved);
+      else if ((m.rev ?? 0) >= useStore.getState().db.rev) void useStore.persist.rehydrate();
     }
   };
   const onStorage = (e: StorageEvent) => {
-    if (e.key === STORE_KEY) void useStore.persist.rehydrate();
+    if (e.key === DB_KEYS[useStore.getState().mode]) void useStore.persist.rehydrate();
+    // Another tab switched worlds: follow it.
+    if (e.key === MODE_KEY) {
+      const m = readModePref();
+      if (m && m !== useStore.getState().mode) void loadMode(m);
+    }
   };
   if (ch) ch.addEventListener("message", onMsg);
   else window.addEventListener("storage", onStorage);

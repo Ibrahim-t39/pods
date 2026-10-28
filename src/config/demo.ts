@@ -14,7 +14,7 @@ export type DemoConfig = z.infer<typeof DemoConfigSchema>;
 
 export const demoDefaults: DemoConfig = DemoConfigSchema.parse({
   anchor: "2026-11-04T09:00:00-06:00",
-  venueVariant: "rec_center",
+  venueVariant: "park_courts",
   noAI: false,
   crowd: true,
   fastLatency: false,
@@ -26,13 +26,13 @@ export const DEMO = {
   hoopers: {
     podId: "pod_hoopers",
     suggestionId: "sug_hoopers_1",
-    title: "Sunday pickup run at Brahan Spring",
-    starts_at: "2026-11-08T13:00:00-06:00",
-    ends_at: "2026-11-08T15:00:00-06:00",
-    reason: "7 of 8 of you are free Sunday afternoons",
+    title: "Saturday pickup at Brahan Spring Park",
+    starts_at: "2026-11-07T10:00:00-06:00",
+    ends_at: "2026-11-07T12:00:00-06:00",
+    reason: "7 of 8 of you are free Saturday mornings",
     goingBeforeYou: 3,
   },
-  directorJump: { label: "Jump to after hangout (Sun 3:15 PM)", at: "2026-11-08T15:15:00-06:00" },
+  directorJump: { label: "Jump to after hangout (Sat 12:15 PM)", at: "2026-11-07T12:15:00-06:00" },
   southernAfrican: {
     podId: "pod_southern_african",
     starts_at: "2026-11-15T13:00:00-06:00",
@@ -40,8 +40,8 @@ export const DEMO = {
     venue: "Big Spring Park",
   },
   hangout2Options: [
-    { label: "Same time in 2 weeks", starts_at: "2026-11-22T13:00:00-06:00", venue: "Brahan Spring", isDefault: true },
-    { label: "Weeknight run", starts_at: "2026-11-19T18:30:00-06:00", venue: "Dr. Richard Showers Sr. Recreation Center", isDefault: false },
+    { label: "Same time in 2 weeks", starts_at: "2026-11-21T10:00:00-06:00", venue: "Brahan Spring Park", isDefault: true },
+    { label: "Weeknight run", starts_at: "2026-11-19T18:30:00-06:00", venue: "Brahan Spring Recreation Center", isDefault: false },
   ],
   podsAtStart: 2,
   zambiansInMetro: 3,

@@ -1,9 +1,12 @@
-// Settings are folded into Your seat sheets (V3_SPEC §6.5); the route is kept and lands on its sheet.
-import { redirect } from "next/navigation";
-
-/** A redirect has nothing to show instantly; let it block (docs: instant-navigation, opting out). */
-export const instant = false;
+// /app/settings (profile_safety area; QA round 1): the real Settings page. PLATFORM_SPEC §F10.
+import { Suspense } from "react";
+import { ScreenSkeleton } from "@/components/profile/screen-bits";
+import { SettingsScreen } from "@/components/profile/settings-screen";
 
 export default function Page() {
-  redirect("/app/profile?sheet=more");
+  return (
+    <Suspense fallback={<ScreenSkeleton />}>
+      <SettingsScreen />
+    </Suspense>
+  );
 }

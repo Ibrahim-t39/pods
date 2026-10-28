@@ -20,7 +20,7 @@ for (const [vn, vp] of Object.entries(VPS)) {
   const fresh = async () => {
     const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Chicago" });
     const page = await ctx.newPage();
-    page.setDefaultTimeout(30000);
+    page.setDefaultTimeout(150000);
     page.on("pageerror", (e) => errs.push(e.message));
     page.on("console", (m) => m.type() === "error" && !/DevTools|HMR|Fast Refresh/.test(m.text()) && errs.push(m.text()));
     return { ctx, page };
@@ -32,15 +32,15 @@ for (const [vn, vp] of Object.entries(VPS)) {
     console.log(f);
   };
   const lab = async (page, state, to = POD) => {
-    await page.goto(`${base}/dev/planner?state=${state}&reset=1`, { waitUntil: "networkidle" });
+    await page.goto(`${base}/dev/planner?state=${state}&reset=1`, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(3500);
-    await page.goto(base + to, { waitUntil: "networkidle" });
+    await page.goto(base + to, { waitUntil: "domcontentloaded" });
   };
   try {
     const { ctx, page } = await fresh();
     await lab(page, "placed", POD + "/plan/sug_hoopers_1?table=1");
     await shot(page, "01-card-own", 4200);
-    await page.goto(base + POD + "/plan/sug_hoopers_1", { waitUntil: "networkidle" });
+    await page.goto(base + POD + "/plan/sug_hoopers_1", { waitUntil: "domcontentloaded" });
     await shot(page, "02-details", 1400);
     const sc = page.locator(".pd-scroll");
     for (let i = 1; i <= 3; i++) {
@@ -80,7 +80,7 @@ for (const [vn, vp] of Object.entries(VPS)) {
         const pick = page.getByRole("button", { name: "Pick a time" });
         if (await pick.isVisible().catch(() => false)) {
           await pick.click();
-          await shot(page, "13-vote", 3500);
+          await shot(page, "13-vote", 10000);
           const opt = page.getByRole("radiogroup", { name: "Pick a time" }).getByRole("radio").first();
           if (await opt.isVisible().catch(() => false)) {
             await opt.click();

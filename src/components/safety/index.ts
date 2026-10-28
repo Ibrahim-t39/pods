@@ -5,5 +5,5 @@ export { BlockedList, useBlockedPeople } from "./blocked-list";
 export { HelpLines, EMERGENCY_LINE, WRITE_TO_US } from "./help-lines";
 export { DownloadData } from "./download-data";
 export { DeleteAccountFlow, AccountDeleted } from "./delete-data-flow";
-export { SafetyCenter } from "./safety-center";
+export { SafetyPage } from "./safety-page";
 export { PrivacyCenter } from "./privacy-center";

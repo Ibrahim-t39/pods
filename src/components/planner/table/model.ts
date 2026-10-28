@@ -88,6 +88,11 @@ function ageOf(dob: string, nowMs: number) {
   return a;
 }
 
+/** Everyone who said "I'm in" to a hangout or checked in at it. */
+function attendeeIds(db: DbState, hangoutId: ID): ID[] {
+  return [...new Set(db.rsvps.filter((r) => r.hangout_id === hangoutId && (r.status === "going" || r.checked_in)).map((r) => r.user_id))];
+}
+
 export interface TableModel {
   view: CardView;
   pod: Pod;
@@ -107,6 +112,10 @@ export interface TableModel {
   /** run it back: answers in (count only) and how many checked in at the last hangout */
   answered: number;
   went: number;
+  /** who was in for the last hangout (the one denominator for run it back and the vote) */
+  attended: number;
+  /** the last hangout's people (initials and names), for the after screens */
+  attendees: Person[];
   nowMs: number;
 }
 
@@ -144,6 +153,8 @@ export function useTable(podId: ID): TableModel | null {
         hereIds: here,
         answered: lh ? Object.keys(db.runItBack[lh]?.responses ?? {}).length : 0,
         went: lh ? db.rsvps.filter((r) => r.hangout_id === lh && r.checked_in).length : 0,
+        attended: lh ? attendeeIds(db, lh).length : 0,
+        attendees: lh ? people.filter((p) => attendeeIds(db, lh).includes(p.id)) : [],
         nowMs: now,
       };
     },
@@ -173,4 +184,13 @@ export function seatsFor(m: TableModel, opts: { all?: boolean; here?: boolean } 
   const list = others.slice(0, n - 1).map<Seat>((p) => ({ initial: p.initial, name: p.name, in: true }));
   while (list.length < n - 1) list.push({ open: true });
   return { seats: [you, ...list], n };
+}
+
+/** Who made this plan, as users read it: "Planned by AI" (never the model's name), "Proposed by Malik", or
+ *  "Planned from free times" (the no-AI path). */
+export function sourceLine(s: HangoutSuggestion | null): string {
+  if (!s) return "";
+  if (s.source === "claude" || s.source === "seed") return "Planned by AI";
+  if ((s.source as string) === "member") return /^Proposed by /.test(s.plan_json.reason ?? "") ? s.plan_json.reason.replace(/\.$/, "") : "Proposed by the pod";
+  return "Planned from free times";
 }

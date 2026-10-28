@@ -1,13 +1,18 @@
 // Pods (wireframe K03). Each pod is its ring in the pod's hue, with one worn ring per held hangout (Repeat is
 // visible, V3_SPEC §1), its name in bold, seated count and round state. Hours together live here only (library
 // H #2). Community names stay masked; tapping one asks for a reason and logs the reveal.
+// Every stat is labelled (QA admin r1): phone rows read "7 seated · #3 Sun · 5h together"; laptop is a table with a sticky
+// header (Pod · Seated · Hangout · Together) so long lists keep their columns named while scrolling.
 "use client";
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useDb, useHydrated } from "@/lib/db/hooks";
 import type { Pod } from "@/lib/types";
-import { AdminPage, AdminRow, FilterLink } from "./admin-shell";
+import { useMediaQuery } from "@/components/ui/use-media-query";
+import { cn } from "@/lib/cn";
+import { ARRIVE } from "@/components/brand/motion";
+import { AdminPage, AdminRow, FilterLink, PodPair } from "./admin-shell";
 import { AdminLoading, Quiet } from "./states";
 import { HELD_MIN, hereCount, hoursTogether, hueOf, roundState, seated } from "./facts";
 import { RevealSheet, hidePod, usePodLabel, useRevealed } from "./reveal";
@@ -22,6 +27,7 @@ export function PodsScreen() {
   const revealed = useRevealed();
   const [closedView, setClosedView] = useState(false);
   const [asking, setAsking] = useState<Pod | null>(null);
+  const wide = useMediaQuery("(min-width: 1024px)");
 
   const rows = useMemo(() => {
     if (!hydrated) return [];
@@ -51,6 +57,42 @@ export function PodsScreen() {
     >
       {shown.length === 0 ? (
         <Quiet>No pods yet.</Quiet>
+      ) : wide ? (
+        <div role="table" aria-label="Pods" className="-mx-s6">
+          <div role="row" className="sticky top-[96px] z-sticky grid grid-cols-[minmax(0,1fr)_96px_168px_112px] items-center gap-s4 rounded-t-[28px] border-b border-line bg-lit px-s6 pt-s2 pb-s3 text-[13px] font-semibold text-ink-2">
+            <span role="columnheader" className="pl-14">Pod</span>
+            <span role="columnheader" className="text-right">Seated</span>
+            <span role="columnheader">Hangout</span>
+            <span role="columnheader" className="text-right">Together</span>
+          </div>
+          <div role="rowgroup">
+            {shown.map(({ p, seated: n, state, hours, held }, i) => {
+              const community = p.type === "community";
+              const onClick = community ? () => (revealed[p.id] ? hidePod(p.id) : setAsking(p)) : undefined;
+              const cells = (
+                <>
+                  <span role="cell" className="flex min-w-0 items-center gap-s4">
+                    <PodPair hue={hueOf(p)} held={held} />
+                    <span className="truncate text-[22px] leading-[1.15] font-semibold tracking-[-0.02em]">{label(p)}</span>
+                  </span>
+                  <span role="cell" className="tabular text-right text-[16px] text-ink">{n}</span>
+                  <span role="cell" className="tabular truncate text-[16px] text-ink">{state}</span>
+                  <span role="cell" className="tabular text-right text-[16px] text-ink-2">{hours ? `${hours}h` : "–"}</span>
+                </>
+              );
+              const cls = "grid min-h-16 w-full grid-cols-[minmax(0,1fr)_96px_168px_112px] items-center gap-s4 border-b border-line px-s6 py-s2 text-left last:border-0";
+              return (
+                <motion.div key={p.id} role="row" data-data initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ ...ARRIVE, delay: Math.min(i, 8) * 0.03 }}>
+                  {onClick ? (
+                    <button type="button" onClick={onClick} className={cn(cls, "pressable hover:bg-primary-soft/40")}>{cells}</button>
+                  ) : (
+                    <div className={cls}>{cells}</div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
       ) : (
         <motion.ul layout>
           <AnimatePresence initial={false}>
@@ -64,7 +106,7 @@ export function PodsScreen() {
                   rings={1 + held}
                   hue={hueOf(p)}
                   title={label(p)}
-                  meta={`${n} seated · ${state}`}
+                  meta={`${n} seated · ${hangoutLabel(state)}`}
                   under={hours ? `${hours}h together` : undefined}
                   onClick={community ? () => (revealed[p.id] ? hidePod(p.id) : setAsking(p)) : undefined}
                 />
@@ -76,4 +118,9 @@ export function PodsScreen() {
       <RevealSheet pod={asking} open={!!asking} onOpenChange={(o) => !o && setAsking(null)} nowISO={iso} />
     </AdminPage>
   );
+}
+
+/** roundState for the phone line: "#3 Sun" stays short (the row also says "seated" and "together"), words get a capital. */
+function hangoutLabel(state: string): string {
+  return state.startsWith("#") ? state : state[0].toUpperCase() + state.slice(1);
 }

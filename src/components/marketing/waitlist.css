@@ -1,4 +1,5 @@
-/* /waitlist flow step. Steps: 16 line to its sub, 32 field to the pill (the primary's clear zone), 8 field to its error. */
+/* /waitlist flow step. The field and pill sit directly under the copy (QA r1: no dead gap), the circles below.
+   Steps: 16 line to its sub, 32 sub to the field, 16 field to the pill, 8 field to its error. */
 .wl-sub {
   margin-top: var(--s4);
   font-size: 18px;
@@ -34,6 +35,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 400px;
+  margin-top: var(--s8);
 }
 .wl-field input {
   width: 100%;
@@ -63,20 +66,14 @@
   padding-left: var(--s6);
 }
 .wl-pill {
-  margin-top: var(--s8);
-  align-self: flex-end;
+  margin-top: var(--s4);
+  align-self: flex-start;
 }
 
 @media (min-width: 1024px) {
   .wl-sub {
     font-size: 20px;
     line-height: 30px;
-  }
-  .wl-form {
-    max-width: 400px;
-  }
-  .wl-pill {
-    align-self: flex-start;
   }
 }
 
@@ -106,10 +103,6 @@ html[data-light="paper"]:has(.wl-obj) {
   }
 }
 .wl-done {
-  margin-left: auto;
-}
-@media (min-width: 1024px) {
-  .wl-done {
-    margin-left: 0;
-  }
+  margin-top: var(--s8);
+  justify-self: start;
 }

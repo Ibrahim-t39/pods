@@ -13,3 +13,120 @@
     transition: none;
   }
 }
+
+/* ── Home (PLATFORM_SPEC §F1) ──
+ * Spacing (DESIGN §spacing, 4pt): s2 inside a group, s8 between the head and the lead and between sections,
+ * gutter 20 on phone; laptop 64 margin, 96 between the two columns. */
+.pods-home {
+  min-height: 100dvh;
+  padding-bottom: calc(var(--s12) + var(--shell-bottom, 0px) + env(safe-area-inset-bottom));
+}
+.pods-home-body {
+  display: grid;
+  gap: var(--s8);
+  padding: var(--s6) var(--gutter) 0;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.pods-home-inbox {
+  max-width: 440px;
+}
+.pods-home-pods {
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: var(--s8);
+  align-content: start;
+}
+.pods-home-pods > .pods-home-more {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.pods-home-orb {
+  width: 76px;
+  height: 76px;
+}
+/* The Room scrolls on a phone: every row sizes to its bubbles and labels (QA core r1: nothing overlaps the head). */
+@media (max-width: 1023px) {
+  .pods-room .pods-pg-body {
+    grid-template-rows: auto auto auto;
+  }
+}
+@media (min-width: 1024px) {
+  .pods-home-body {
+    grid-template-columns: 440px minmax(0, 1fr);
+    column-gap: var(--s24);
+    padding: 116px var(--s16) var(--s16);
+  }
+  .pods-home-pods {
+    grid-template-columns: 1fr;
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    padding-top: 0;
+    max-width: 680px;
+  }
+  .pods-home-pods ul {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--s8);
+  }
+  .pods-home-orb {
+    width: 112px;
+    height: 112px;
+  }
+  .pods-home-inbox {
+    grid-column: 1;
+  }
+}
+
+/* ── The table on a wide laptop: Talk docked as the context panel (PLATFORM_SPEC §C split view) ──
+ * rail 232 | the table column (the phone anatomy, centred: plan card, table, foot) | Talk 420.
+ * Spacing: 48px inner margins in the table column, 24px gap to the panel, the panel's own 32px padding. */
+.pods-talk-dock {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  bottom: 24px;
+  width: 420px;
+  z-index: var(--z-sticky);
+  display: flex;
+  flex-direction: column;
+  border-radius: 28px;
+}
+@media (min-width: 1280px) {
+  [data-docked] .pods-pg {
+    padding-right: 444px;
+  }
+  [data-docked] .pods-pg-body {
+    grid-template-areas: "head" "obj" "foot";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    column-gap: 0;
+    padding: 0 var(--s12);
+    max-width: none;
+  }
+  [data-docked] .pods-pg-col {
+    display: contents;
+  }
+  [data-docked] .pods-pg-head {
+    grid-area: head;
+    padding-top: var(--s6);
+    display: flex;
+    justify-content: center;
+  }
+  [data-docked] .pods-pg-obj {
+    grid-area: obj;
+  }
+  [data-docked] .pods-pg-foot {
+    grid-area: foot;
+    flex-direction: row;
+    justify-content: space-between;
+    max-width: 440px;
+    width: 100%;
+    justify-self: center;
+    padding: var(--s6) 0 var(--s8);
+  }
+  [data-docked][data-sheet-open] .pods-pg-obj {
+    transform: none;
+  }
+}
+

@@ -59,6 +59,7 @@ function You() {
             next();
           }}
         >
+          <p className="pods-ob-intro">A minute, then your pods.</p>
           <Line size="lg" className="[text-wrap:wrap]">
             I&apos;m{" "}
             <span className="whitespace-nowrap">
@@ -97,7 +98,7 @@ function You() {
             .
             </span>
           </Line>
-          <Sub live className="min-h-6">
+          <Sub live className="min-h-6 text-[17px]">
             {young ? "Pods is 18 and up." : old ? `Pods is ${minAge} to ${maxAge}.` : ""}
           </Sub>
           <button type="submit" hidden />
@@ -105,6 +106,7 @@ function You() {
       }
       object={<SeatTable size={size} initial={initial} />}
       dot={DOT.you}
+      hint={ok ? undefined : !name.trim() ? "Type your first name." : n === null ? "Add your age." : undefined}
       action={
         <Button size="xl" disabled={!ok} onClick={next}>
           Next

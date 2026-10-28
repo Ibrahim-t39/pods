@@ -15,18 +15,18 @@ for (const [vn, vp] of Object.entries(VPS)) {
   const errs = [];
   page.on('pageerror', e => errs.push(e.message));
   page.on('console', m => m.type() === 'error' && errs.push(m.text()));
-  const shot = async (name) => { await page.waitForTimeout(900); await page.screenshot({ path: `${out}/${name}.${vn}.png` }); console.log(`${out}/${name}.${vn}.png`, errs.length ? 'ERR ' + errs.join(' | ').slice(0, 300) : 'ok'); errs.length = 0; };
+  const shot = async (name) => { await page.waitForTimeout(1800); await page.screenshot({ path: `${out}/${name}.${vn}.png` }); console.log(`${out}/${name}.${vn}.png`, errs.length ? 'ERR ' + errs.join(' | ').slice(0, 300) : 'ok'); errs.length = 0; };
   for (const r of ['/admin/reports', '/admin/pods', '/admin/hangouts', '/admin']) {
-    await page.goto(B + r, { waitUntil: 'networkidle' });
+    await page.goto(B + r, { waitUntil: 'load', timeout: 180000 });
     await shot(r.replace(/\//g, '-').slice(1));
   }
   // scrolled (condensing head)
-  await page.goto(B + '/admin/hangouts', { waitUntil: 'networkidle' });
+  await page.goto(B + '/admin/hangouts', { waitUntil: 'load', timeout: 180000 });
   await page.waitForTimeout(800);
   await page.mouse.wheel(0, 400); await page.evaluate(() => window.scrollTo(0, 300));
   await shot('hangouts-scrolled');
   // switcher open
-  await page.goto(B + '/admin/reports', { waitUntil: 'networkidle' });
+  await page.goto(B + '/admin/reports', { waitUntil: 'load', timeout: 180000 });
   await page.waitForTimeout(600);
   await page.locator('header button[aria-haspopup=menu]').click();
   await shot('switcher');

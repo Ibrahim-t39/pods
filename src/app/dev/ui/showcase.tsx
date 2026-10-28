@@ -1128,7 +1128,7 @@ function ProgressSection() {
           <ProgressRing value={n} max={6} label={`${n}/6`} sublabel="joined" size={104} />
           <ProgressRing value={5} max={6} tone="grove" size={72} label="5" />
           <div className="flex flex-col gap-2">
-            <span className="font-display text-[44px] leading-none font-black [font-stretch:112%]">
+            <span className="font-display text-[44px] leading-none font-semibold">
               <NumberTicker value={n * 7} />
             </span>
             <div className="flex gap-1.5">

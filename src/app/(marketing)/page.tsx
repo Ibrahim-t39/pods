@@ -1,6 +1,6 @@
-// The Doorway (/), wireframes A01-A03. See components/marketing/doorway.tsx.
+// The landing (/): a real product site. See components/marketing/landing.tsx.
 import type { Metadata } from "next";
-import { Doorway } from "@/components/marketing/doorway";
+import { Landing } from "@/components/marketing/landing";
 
 export const metadata: Metadata = {
   title: { absolute: "Pods" },
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function LandingPage() {
-  return <Doorway />;
+  return <Landing />;
 }

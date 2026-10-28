@@ -19,7 +19,7 @@ const WELCOME_OPENERS = [
 ] as const;
 
 const WELCOME_BY_KEY: Record<string, readonly string[]> = {
-  basketball: ["Who's got the Sunday run? Anyone bringing a ball?", "Pickup is casual here. All levels."],
+  basketball: ["Who's got the Saturday run? Anyone bringing a ball?", "Pickup is casual here. All levels."],
   guitar: ["What do you play? Acoustic, electric, a little of both?", "We usually trade songs more than we perform."],
   southern_african: ["Good to see another familiar accent in here.", "Say hi when you've settled in. No pressure."],
   sda: ["Welcome. Potlucks and walks are usually on the table.", "Happy to meet you. Take your time."],

@@ -1,4 +1,4 @@
-// /app/onboarding/pledge: B07 Promise, 4 of 4, with the Claude consent
+// /app/onboarding/pledge: B07 Promise, 4 of 4, with the AI consent
 import { Suspense } from "react";
 import { PromiseScreen } from "@/components/onboarding/screens/promise-screen";
 

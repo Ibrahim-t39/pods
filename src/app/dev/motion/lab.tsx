@@ -24,17 +24,17 @@ export function MotionLab() {
           <PlanHalo state={n >= 4 ? "locked" : "waiting"} radius={24}>
             <div className="rounded-[24px] bg-white p-s6 shadow-[var(--shadow-float)]">
               <p className="text-label text-ink-2">Pickup</p>
-              <p className="mt-s1 text-[28px] font-bold tracking-[-0.02em]">Saturday, <span className="tabular">10am</span></p>
+              <p className="mt-s1 text-[28px] font-semibold tracking-[-0.02em]">Saturday, <span className="tabular">10am</span></p>
               <p className="mt-s1 text-ink-2">Brahan Spring Park · Free</p>
               <div className="mt-s4"><InCount n={n + 0} of={8} locked={n >= 4} /></div>
             </div>
           </PlanHalo>
         </section>
         <section className="settle mt-s16 flex items-center gap-s6">
-          <span className="text-display font-bold tabular">
+          <span className="text-display font-semibold tabular">
             <span key={n} className="pods-tick">{n}</span> in
           </span>
-          <NumberTicker value={n} className="text-display font-bold" />
+          <NumberTicker value={n} className="text-display font-semibold" />
           <Button onClick={() => setN((v) => (v >= 4 ? 1 : v + 1))}>I&apos;m in</Button>
         </section>
         <section className="settle mt-s16 flex gap-s3">

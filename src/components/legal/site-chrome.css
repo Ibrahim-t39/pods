@@ -1,0 +1,55 @@
+/* Marketing-page chrome (site-chrome.tsx). Bar: 64px, inset by the gutter (20 phone / 64 laptop), the same height and
+   inset as the landing's header. Footer: four links on a 2-column grid (phone) or one row (laptop), 44px targets. */
+.sc-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  height: 64px;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: var(--gutter, 20px);
+}
+@media (min-width: 1024px) { .sc-bar { padding-inline: 64px; } }
+.sc-logo { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+.sc-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding-inline: 12px;
+  margin-right: -12px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.sc-back-ico { scale: -1 1; color: var(--color-link); }
+.sc-back:hover { background: color-mix(in oklch, var(--ink) 6%, transparent); }
+.sc-back:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+
+.sc-foot {
+  display: grid;
+  gap: 8px;
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.sc-foot-links { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.sc-foot-a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+a.sc-foot-a:hover { text-decoration: underline; text-underline-offset: 5px; }
+.sc-foot-a[data-here] { color: var(--ink-2); }
+.sc-foot-c { margin: 0; font-size: 13px; color: var(--ink-2); }
+@media (min-width: 1024px) {
+  .sc-foot { grid-template-columns: 1fr auto; align-items: center; }
+  .sc-foot-links { display: flex; gap: 32px; }
+}

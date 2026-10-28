@@ -44,7 +44,7 @@ export function DropdownItem({
     >
       {icon}
       <span className="flex-1">{children}</span>
-      {shortcut && <span className="font-mono text-[11px] text-fg-subtle">{shortcut}</span>}
+      {shortcut && <span className="font-mono text-[12px] text-fg-subtle">{shortcut}</span>}
     </DropdownMenu.Item>
   );
 }

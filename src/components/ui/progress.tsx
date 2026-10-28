@@ -53,7 +53,7 @@ export function CommitMeter({ total, filled, threshold, locked, className, notch
       {notchLabel && threshold != null && (
         <span
           aria-hidden
-          className="absolute top-3 -translate-x-1/2 text-[11px] font-medium whitespace-nowrap text-fg-subtle"
+          className="absolute top-3 -translate-x-1/2 text-[12px] font-medium whitespace-nowrap text-fg-subtle"
           style={{ left: `${(threshold / n) * 100}%` }}
         >
           locks at {threshold}

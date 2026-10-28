@@ -104,7 +104,7 @@ describe("pipeline", () => {
     expect(o.options).toHaveLength(3);
     expect(o.options[0].plan.starts_at).toBe(DEMO.hangout2Options[0].starts_at);
     expect(o.options[1].plan.starts_at).toBe(DEMO.hangout2Options[1].starts_at);
-    expect(o.options[1].venue.id).toBe("venue_showers_rec");
+    expect(o.options[1].venue.id).toBe("venue_brahan_rec");
     expect(o.options[2].source).toBe("seed"); // cached Claude draft (recording rule)
   });
 });
@@ -182,7 +182,7 @@ describe("repeat loop (repo)", () => {
     expect(db.votes[vote.id].status).toBe("closed");
     const h2 = Object.values(db.hangouts).find((x) => x.suggestion_id === ids[0])!;
     expect(h2.sequence).toBe(2);
-    expect(h2.starts_at).toBe("2026-11-22T13:00:00-06:00");
+    expect(h2.starts_at).toBe(DEMO.hangout2Options[0].starts_at);
     expect(db.messages[DEMO.hoopers.podId].some((m) => m.text.startsWith("Round two. Locked."))).toBe(true);
     expect((await repo.saveSuggestion({ pod_id: DEMO.hoopers.podId, summary: "x", plan_json: o.options[0].plan, venue_id: o.options[0].venue.id, starts_at: "", status: "suggested", source: "fallback", round: 3, option_index: 2, trace: [] })).ok).toBe(true);
   });

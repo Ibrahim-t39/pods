@@ -1,5 +1,6 @@
 // [U8] Profile edits, interests, identity field deletion. U0 wrote a minimal working version; U8 owns it.
 import type { RepoCtx } from "./context";
+import { ensureStarterPlans } from "./starter";
 import { ok, err, type RepoPart } from "@/lib/db/repo";
 import { newId } from "@/lib/ids";
 import { applyPlacementPlan, makeRun, placeUser } from "@/lib/placement";
@@ -41,6 +42,7 @@ export function profileRepo(ctx: RepoCtx): RepoPart<"updateProfile" | "addIntere
         applyPlacementPlan(d, plan, me, now);
         d.placementRuns.push(run);
       });
+      await ensureStarterPlans(ctx, [...podIds].filter((x): x is string => !!x)); // Platform §F3
       return ok(run);
     },
     async removeInterest(id) {

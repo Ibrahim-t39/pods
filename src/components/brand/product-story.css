@@ -1,0 +1,277 @@
+/* The landing scroll story (MOTION_SYSTEM §3). Normal scroll; scenes assemble as they enter (view timelines,
+   transform + opacity only); one short pin (the lock). Spacing on the 4pt scale (DESIGN §4): s4 inside a group,
+   s12 between copy and object, s24 between scenes; gutter 20 phone / 64 laptop. Static where unsupported. */
+
+.ps {
+  --gut: var(--spacing-gutter, 20px);
+  position: relative;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--gut);
+  color: var(--ink);
+}
+@media (min-width: 1024px) { .ps { --gut: 64px; } }
+
+.ps-scene {
+  display: grid;
+  gap: 48px;
+  padding-block: 96px;
+  align-items: center;
+}
+@media (min-width: 1024px) {
+  .ps-scene { grid-template-columns: 5fr 7fr; gap: 64px; min-height: 86svh; }
+  /* the plan scene mirrors: object left, copy right, so the page does not read as one repeated template */
+  .ps-plan > .ps-copy { order: 2; }
+}
+
+.ps-copy { display: grid; gap: 16px; align-content: start; }
+.ps-line {
+  margin: 0;
+  max-width: 11ch;
+  font-size: var(--text-heading-xl-size);
+  line-height: 1.06;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+@media (min-width: 1024px) { .ps-line { font-size: var(--text-display-lg-size); } }
+.ps-sub { margin: 0; max-width: 26ch; font-size: 17px; line-height: 1.45; color: var(--ink-2); text-wrap: pretty; }
+
+/* ── reveal: rise in as it enters; the --i index staggers siblings along the scroll ───────────────────────────── */
+@keyframes ps-rise { from { opacity: 0; transform: translate3d(0, 20px, 0); } to { opacity: 1; transform: none; } }
+@keyframes ps-grow { from { opacity: .35; transform: scale(.24); } to { opacity: 1; transform: none; } }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ps-in {
+      animation: ps-rise linear both;
+      animation-timeline: view();
+      animation-range: entry calc(10% + var(--i, 0) * 6%) cover calc(28% + var(--i, 0) * 6%);
+    }
+    .ps-grow {
+      animation: ps-grow linear both;
+      animation-timeline: view();
+      animation-range: entry calc(30% + var(--i, 0) * 10%) cover calc(42% + var(--i, 0) * 6%);
+    }
+  }
+}
+
+/* ── 1 People ─────────────────────────────────────────────────────────────────────────────────────────────── */
+.ps-trio-apart {
+  --b: clamp(84px, 24vw, 210px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  max-width: 640px;
+}
+.ps-trio-apart > :nth-child(2) { translate: 0 28%; }
+.ps-trio-apart > :nth-child(3) { translate: 0 -12%; }
+.ps-grow { display: inline-block; }
+
+/* ── 2 Fit: the logo's geometry, in bubble diameters (mark.svg: r 97, centres 404/355, 332/469, 476/469) ───── */
+.ps-fitobj { display: grid; gap: 32px; justify-items: start; }
+.ps-venn {
+  --v: clamp(150px, 46vw, 300px);
+  position: relative;
+  width: calc(var(--v) * 1.742);
+  height: calc(var(--v) * 1.588);
+  view-timeline-name: --venn;
+}
+.ps-drift { position: absolute; }
+.ps-drift[data-h="ember"] { left: calc(var(--v) * .371); top: 0; --fx: 0; --fy: -34%; }
+.ps-drift[data-h="signal"] { left: 0; top: calc(var(--v) * .588); --fx: -30%; --fy: 18%; }
+.ps-drift[data-h="grove"] { left: calc(var(--v) * .742); top: calc(var(--v) * .588); --fx: 30%; --fy: 18%; }
+@keyframes ps-drift { from { transform: translate3d(var(--fx), var(--fy), 0) scale(.86); } to { transform: none; } }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ps-drift { animation: ps-drift linear both; animation-timeline: --venn; animation-range: entry 20% cover 55%; }
+  }
+}
+.ps-pods { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; max-width: 460px; }
+.ps-pod {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 16px 8px 8px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  box-shadow: var(--glass-edge);
+  backdrop-filter: var(--glass-blur);
+  font-size: 15px;
+  font-weight: 500;
+}
+.ps-pod i {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--disc-sheen), var(--pods-ember);
+}
+.ps-pod[data-hue="grove"] i { background: var(--disc-sheen), var(--pods-grove); }
+
+/* ── 3 Plan card (looks like the app; not a control) ───────────────────────────────────────────────────────── */
+.ps-card-wrap { width: min(100%, 380px); }
+@media (min-width: 1024px) {
+  .ps-card-wrap { width: 460px; justify-self: center; }
+  .ps-vote { justify-self: center; }
+}
+.ps-card {
+  display: grid;
+  gap: 4px;
+  padding: 24px;
+  border-radius: 28px;
+  background: var(--lit);
+  box-shadow: var(--shadow-float, 0 18px 40px -20px rgb(14 26 34 / .25));
+}
+.ps-card-over { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 12px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.ps-ai { color: var(--color-signal-text); }
+.ps-card-when { margin: 0; font-size: 34px; line-height: 1.05; font-weight: 600; letter-spacing: -0.025em; }
+.ps-card-what { margin: 8px 0 0; font-size: 17px; font-weight: 500; }
+.ps-card-where { margin: 0; font-size: 15px; color: var(--ink-2); }
+.ps-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.ps-seats { display: inline-flex; }
+.ps-seats i {
+  width: 24px;
+  height: 24px;
+  margin-left: -6px;
+  border-radius: 999px;
+  border: 1.5px dashed var(--ink-3);
+  background: var(--lit);
+}
+.ps-seats i:first-child { margin-left: 0; }
+.ps-seats i[data-on] { border: 2px solid var(--lit); background: var(--disc-sheen), var(--pods-signal); }
+.ps-seats i[data-you] { background: var(--disc-sheen), var(--you); }
+
+/* ── 4 Lock: the one pin ───────────────────────────────────────────────────────────────────────────────────── */
+.ps-lock { position: relative; height: 260svh; }
+.ps-lock-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: grid;
+  align-content: center;
+  gap: 48px;
+}
+@media (min-width: 1024px) {
+  .ps-table { --t: min(64svh, 560px); }
+  .ps-lock-stage { grid-template-columns: 5fr 7fr; align-items: center; gap: 64px; }
+}
+.ps-lock[data-calm] { height: auto; }
+.ps-lock[data-calm] .ps-lock-stage { position: static; height: auto; padding-block: 96px; }
+.ps-lock-copy { min-height: 140px; }
+.ps-lock-count { font-size: 17px; }
+
+.ps-table {
+  --t: min(80vw, 54svh, 440px);
+  --rr: .46;
+  --s: calc(var(--t) * .2);
+  position: relative;
+  width: var(--t);
+  height: var(--t);
+  justify-self: center;
+}
+.ps-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-112.5deg); overflow: visible; }
+.ps-ring circle { fill: none; }
+.ps-ring-base { stroke: var(--line); stroke-width: 1; }
+.ps-ring-close { stroke: var(--spark); stroke-width: 1.6; stroke-linecap: round; transition: stroke var(--dur-settle) var(--ease-out); }
+.ps-table[data-locked] .ps-ring-close { stroke: var(--select); }
+.ps-seat {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--s);
+  height: var(--s);
+  margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+  transform: rotate(var(--a)) translateX(calc(var(--t) * var(--rr))) rotate(calc(-1 * var(--a)));
+  transition: transform var(--dur-light) var(--ease-out), opacity var(--dur-settle) var(--ease-out);
+}
+/* commit: the four drift in toward the table (merge), the empty seats recede */
+.ps-table[data-locked] { --rr: .4; }
+.ps-table[data-locked] .ps-seat:has(.ps-empty) { --rr: .46; opacity: .35; }
+.ps-you { display: block; }
+.ps-empty {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  border: 1.5px dashed var(--ink-3);
+  opacity: .55;
+  background: var(--paper);
+}
+.ps-table-mid {
+  position: absolute;
+  inset: 31%;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--lit);
+  box-shadow: var(--glass-edge), 0 18px 40px -24px rgb(14 26 34 / .3);
+  font-size: clamp(17px, calc(var(--t) * .06), 24px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  transition: background-color var(--dur-settle) var(--ease-out), color var(--dur-settle) var(--ease-out);
+}
+.ps-table[data-locked] .ps-table-mid { background-color: var(--select); color: var(--on-select); background-image: var(--sheen); }
+
+/* ── 5 Repeat ─────────────────────────────────────────────────────────────────────────────────────────────── */
+.ps-vote {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 360px);
+  padding: 20px 24px 24px;
+  border-radius: 24px 24px 24px 8px;
+  background: var(--lit);
+  box-shadow: var(--shadow-float, 0 18px 40px -20px rgb(14 26 34 / .25));
+}
+.ps-vote-q { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.ps-vote-row { display: flex; align-items: center; gap: 12px; }
+.ps-vote-discs { display: inline-flex; }
+.ps-vote-discs > span { display: inline-block; margin-left: -8px; }
+.ps-vote-discs > span:first-child { margin-left: 0; }
+.ps-vote-n { font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.ps-vote-next {
+  margin: 4px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-signal-text);
+  opacity: 0;
+  transform: translate3d(0, 6px, 0);
+  transition: opacity var(--dur-settle) var(--ease-out) .9s, transform var(--dur-settle) var(--ease-out) .9s;
+}
+.ps-vote-next[data-on] { opacity: 1; transform: none; }
+
+.ps-close {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px 32px;
+  padding-top: 48px;
+}
+.ps-close-logo { display: block; height: 64px; width: auto; aspect-ratio: 1398 / 432; }
+.ps-close-line { margin: 0; font-size: var(--text-heading-xl-size); line-height: 1.06; font-weight: 600; letter-spacing: -0.03em; }
+.ps-close-line span { color: var(--ink-2); }
+@media (min-width: 1024px) { .ps-close-logo { height: 88px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ps-vote-next { transition-duration: 160ms; transition-delay: 0s; }
+}
+
+/* laptop sizes (after the base rules so they win) */
+@media (min-width: 1024px) {
+  .ps-table { --t: min(66svh, 580px); }
+  .ps-card { padding: 32px; }
+  .ps-card-when { font-size: 44px; }
+  .ps-vote { width: 440px; padding: 28px 32px 32px; }
+  .ps-vote-q { font-size: 28px; }
+  .ps-pods { max-width: 520px; }
+  .ps-pod { font-size: 17px; min-height: 48px; }
+}

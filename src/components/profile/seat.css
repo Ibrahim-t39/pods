@@ -4,9 +4,15 @@
    laptop  margin 64 · text column 520 · gap 96 · head 116 below the chrome row (the same offset LegalPage uses) ·
            the table rises beside the head, centred in the rest */
 
+/* the floating nav bar (core) sits over the foot on phones: leave it a clear lane (bar 64 + its 16 inset + 32 air) */
 .seat-pg {
   min-height: 100dvh;
-  padding-bottom: var(--s16);
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}
+@media (min-width: 1024px) {
+  .seat-pg {
+    padding-bottom: var(--s16);
+  }
 }
 .seat-body {
   margin: 0 auto;
@@ -55,23 +61,64 @@
   text-underline-offset: 0.14em;
   text-decoration-color: var(--select);
 }
-.seat-more {
+/* an editable field (QA r1): label over value, an edit mark right; reads as a control, not a sentence */
+.seat-field {
   display: flex;
   align-items: center;
   gap: var(--s4);
   width: 100%;
-  min-height: 56px;
-  margin-top: var(--s8);
-  font-size: 16px;
-  color: var(--ink);
+  min-height: 72px;
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--line);
   text-align: left;
+  color: var(--ink);
   outline-offset: -2px;
 }
-.seat-more > svg:first-child {
-  color: var(--select);
+.seat-field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink-2);
 }
+.seat-field-value {
+  display: block;
+  margin-top: var(--s1);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.seat-field-edit {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  color: var(--ink-2);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.seat-field[aria-expanded="true"] .seat-field-edit {
+  color: var(--on-select);
+  background: var(--select);
+}
+@media (hover: hover) {
+  .seat-field:hover .seat-field-edit {
+    color: var(--ink);
+  }
+}
+
+/* the quiet group: labelled 56px rows (If something's off · Mode · More), one s8 step under the sentences */
+.seat-quiet {
+  margin-top: var(--s8);
+}
+/* phones: the table would sit under the floating nav, so it is laptop only (QA r1) */
 .seat-obj {
-  display: flex;
+  display: none;
   justify-content: center;
   margin-top: var(--s12);
 }
@@ -111,8 +158,12 @@
     font-size: 36px;
   }
   .seat-obj {
+    display: flex;
     align-items: flex-start;
     margin-top: -128px;
+  }
+  .seat-field-value {
+    font-size: 24px;
   }
 }
 
@@ -122,10 +173,14 @@
   justify-content: center;
   margin-top: var(--s6);
 }
+/* laptop: the sheet is a margin card on the right, so the shared table stays in view under the head on the left */
 @media (min-width: 1024px) {
+  .seat-body.person-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .person-obj {
     justify-content: flex-start;
-    margin-top: 0;
+    margin-top: var(--s8);
   }
 }
 
@@ -149,9 +204,164 @@
   }
 }
 
-/* Texts on laptop: the list sits under the head in a reading column (no second object to show). */
+
+
+/* If something's off (/app/safety): groups s8 apart under the head; the trust object is laptop only. */
+.safe-col > * + * {
+  margin-top: var(--s8);
+}
+.safe-col {
+  margin-top: var(--s6);
+}
+.safe-obj {
+  display: none;
+}
+/* the emergency card: two 56px controls side by side, a soft lit card, s4 inside */
+.safe-sos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: var(--s2);
+  padding: var(--s3);
+  border-radius: 28px;
+  background: var(--lit);
+  box-shadow: var(--glass-edge), var(--shadow-float);
+}
+.safe-sos-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: 56px;
+  padding: 0 var(--s2);
+  border-radius: 9999px;
+  font-size: 16px;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--teal) 10%, transparent);
+  outline-offset: 2px;
+  text-align: center;
+  line-height: 1.15;
+}
+.safe-sos-btn[data-tone="red"] {
+  color: var(--color-danger-text);
+  background: var(--color-danger-soft);
+  box-shadow: inset 0 0 0 1px var(--color-danger-border);
+}
+.safe-sos-btn svg {
+  flex: none;
+}
 @media (min-width: 1024px) {
-  .texts-body {
-    grid-template-columns: minmax(0, 640px);
+  .safe-obj {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    margin-top: -96px;
+  }
+  .safe-pair {
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* Mode (/app/settings/mode): sentence rows with a ring and a line under; laptop shows two circles, yours in colour. */
+.mode-row {
+  gap: var(--s4);
+  min-height: 88px;
+  padding: var(--s4) 0;
+}
+.mode-sub {
+  display: block;
+  margin-top: var(--s1);
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+.mode-obj {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .mode-obj {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -96px;
+    height: 360px;
+  }
+  .mode-orb {
+    width: 240px;
+    height: 240px;
+    border-radius: 9999px;
+    border: 1.5px dashed var(--line-2);
+  }
+  .mode-orb + .mode-orb {
+    margin-left: -64px;
+  }
+  .mode-orb[data-on] {
+    border: 0;
+    background: var(--grad-tide-soft);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-signal) 50%, transparent), var(--shadow-bead);
+  }
+}
+
+/* Inbox: filters as a pill row (a sliding select bead under the chosen one), rows 64px on hairlines. */
+.inbox-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  margin-top: var(--s6);
+}
+.inbox-chips {
+  display: flex;
+  gap: var(--s1);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 calc(-1 * var(--s1));
+  padding: 0 var(--s1);
+}
+.inbox-chip {
+  position: relative;
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--s4);
+  border-radius: 9999px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-2);
+  outline-offset: -2px;
+}
+.inbox-chip[aria-selected="true"] {
+  color: var(--on-select);
+}
+.inbox-list {
+  margin-top: var(--s4);
+  border-bottom: 1px solid var(--line);
+}
+.texts-row[data-selected] {
+  background: color-mix(in srgb, var(--select) 7%, transparent);
+}
+.inbox-pane {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .texts-row {
+    padding-left: var(--s2);
+    padding-right: var(--s2);
+    border-radius: 12px;
+  }
+  .inbox-pane {
+    display: block;
+    position: sticky;
+    top: 128px;
+    align-self: start;
+    margin-top: var(--s6);
+    padding: var(--s12);
+    border-radius: 28px;
+    background: var(--lit);
+    box-shadow: var(--glass-edge), var(--shadow-float);
+    max-width: 640px;
   }
 }

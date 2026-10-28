@@ -1,21 +1,19 @@
-import { chromium } from "playwright";
-import { mkdirSync } from "node:fs";
+import { chromium } from 'playwright';
 const CHROME = `${process.env.HOME}/Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
-const vpn = process.argv[2] || "mobile";
-const VP = { mobile:{viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true}, desktop:{viewport:{width:1440,height:900},deviceScaleFactor:1}}[vpn];
-const out = `/tmp/qa/${vpn}`; mkdirSync(out,{recursive:true});
-const b = await chromium.launch({executablePath:CHROME});
-const ctx = await b.newContext({...VP, locale:"en-US", timezoneId:"America/Chicago"});
-const page = await ctx.newPage(); page.setDefaultTimeout(8000);
-const errs=[]; page.on("pageerror",e=>errs.push(e.message)); page.on("console",m=>m.type()==="error"&&errs.push(m.text().slice(0,200)));
-let n=0;
-const shot=async(name)=>{n++;await page.waitForTimeout(900);await page.screenshot({path:`${out}/${String(n).padStart(2,"0")}-${name}.png`});};
-const dump=async()=>console.log(page.url(),"\n"+(await page.evaluate(()=>[...document.querySelectorAll("button,a,input,textarea,[role=radio],[role=checkbox],[role=switch]")].filter(e=>e.getBoundingClientRect().width>0).map(e=>{const r=e.getBoundingClientRect();return `${e.tagName}${e.getAttribute("role")?"("+e.getAttribute("role")+")":""} "${(e.innerText||e.value||e.getAttribute("aria-label")||e.placeholder||"").replace(/\s+/g," ").slice(0,40)}" ${Math.round(r.width)}x${Math.round(r.height)}`}).join("\n"))));
-const body=async()=>console.log("TEXT:",(await page.evaluate(()=>document.body.innerText)).replace(/\s+/g," ").slice(0,400));
-await page.goto("http://localhost:3000/",{waitUntil:"load"}); await page.waitForTimeout(2500);
-await shot("landing"); await dump(); await body();
-await page.mouse.wheel(0,700); await shot("landing-scroll1");
-await page.mouse.wheel(0,900); await shot("landing-scroll2");
-await page.mouse.wheel(0,900); await shot("landing-scroll3");
-console.log("errs",errs);
+const b = await chromium.launch({ executablePath: CHROME });
+const routes = ['/','/app','/app?director=1','/privacy','/safety','/terms','/waitlist','/admin','/app/pods','/app/plans','/app/inbox','/app/settings','/app/discover'];
+for (const [n,vp] of [['m',{width:390,height:844,deviceScaleFactor:1,isMobile:true,hasTouch:true}],['d',{width:1440,height:900}]]) {
+  const ctx = await b.newContext({viewport:{width:vp.width,height:vp.height},...vp});
+  const p = await ctx.newPage(); const errs=[];
+  p.on('pageerror',e=>errs.push(e.message)); p.on('console',m=>m.type()==='error'&&errs.push(m.text()));
+  for (const r of routes) {
+    const resp = await p.goto('http://localhost:3000'+r,{waitUntil:'networkidle'}).catch(e=>null);
+    await p.waitForTimeout(1200);
+    const slug=r.replace(/[^a-z0-9]+/gi,'-')||'home';
+    await p.screenshot({path:`shots/qa1/${slug}.${n}.png`});
+    const t = await p.evaluate(()=>({url:location.pathname+location.search,txt:document.body.innerText.replace(/\s+/g,' ').slice(0,600),sx:document.documentElement.scrollWidth>innerWidth}));
+    console.log(n,r,resp?.status(),JSON.stringify(t));
+  }
+  console.log(n,'ERRS',errs.slice(0,5));
+}
 await b.close();

@@ -177,18 +177,21 @@ html[data-light="night"] .pt-over {
 /* waiting dots (E03): answered count as filled dots */
 .pt-dots {
   display: flex;
-  gap: var(--s2);
+  gap: var(--s3);
   align-items: center;
 }
+/* answers as the logo's white dots inside the bubble (a dot is a person, BRAND §1); still open = a dashed ring */
 .pt-dots span {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
-  background: var(--select);
+  background: #fff;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / .9), 0 4px 10px -3px color-mix(in oklab, var(--pod, var(--select)) 70%, transparent);
 }
 .pt-dots span[data-off] {
   background: transparent;
-  border: 1.5px dashed var(--ink-3);
+  box-shadow: none;
+  border: 1.5px dashed color-mix(in oklab, var(--ink) 40%, transparent);
 }
 
 /* centre cue: talk glyph (+ unread) */
@@ -293,7 +296,7 @@ html[data-light="night"] .pt-over {
   left: var(--gutter);
   top: calc(env(safe-area-inset-top) + var(--s6));
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 32px;
   line-height: 1;
   letter-spacing: -0.025em;
@@ -308,9 +311,10 @@ html[data-light="night"] .pt-over {
   pointer-events: none;
 }
 .pt-lock-table {
+  /* the table sits where the three orbs of --moment meet (their centroid: 50% 42.3% on a phone, tokens.css) */
   position: absolute;
   left: 50%;
-  top: 37%;
+  top: 42.3%;
   transform: translate(-50%, -50%);
 }
 .pt-lock-day {
@@ -319,7 +323,7 @@ html[data-light="night"] .pt-over {
   bottom: 112px;
   margin: 0;
   color: var(--lamp);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.04em;
   /* sized to fit the screen, never cropped: "Saturday" (8 letters) fills the 390 frame edge to edge.
      Jakarta 700 at -0.04em averages ~0.6em a letter; --chars is set from the word. */
@@ -349,16 +353,17 @@ html[data-light="night"] .pt-over {
     top: var(--s8);
   }
   .pt-lock-table {
-    left: auto;
-    right: 10%;
-    top: 34%;
-    transform: translateY(-50%);
+    /* laptop --moment orbs sit at 70% 30%, 60% 64%, 80% 64%: their centroid */
+    left: 70%;
+    top: 52.7%;
+    transform: translate(-50%, -50%);
   }
   .pt-lock-day {
+    /* the left column only, clear of the orbs (which start near 43vw), descenders inside the frame */
     left: var(--s16);
-    bottom: var(--s8);
-    font-size: min(240px, calc(52vw / (var(--chars, 8) * 0.6)));
-    max-width: 56vw;
+    bottom: var(--s16);
+    font-size: min(200px, calc(36vw / (var(--chars, 8) * 0.6)));
+    max-width: 40vw;
   }
   .pt-lock-foot {
     left: var(--s16);
@@ -396,7 +401,7 @@ html[data-light="night"] .pt-over {
 }
 .pt-opt-day {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 0.95;
   letter-spacing: -0.025em;
   font-variant-numeric: tabular-nums;
@@ -420,7 +425,9 @@ html[data-light="night"] .pt-over {
   font-family: var(--font-display);
   font-weight: 600;
   line-height: 1;
-  box-shadow: 0 0 0 2px var(--stage);
+  /* people are glossy beads (COLOR_LIFE §15): the colour stays solid under the initial, one small highlight */
+  background-image: var(--bead);
+  box-shadow: 0 0 0 2px var(--stage), var(--shadow-bead, 0 2px 6px -2px rgb(0 0 0 / .3));
 }
 
 /* waiting objects breathe through motion/react (one infinite animation per screen at most, MOTION_SYSTEM §8) */
@@ -440,7 +447,8 @@ html[data-light="night"] .pt-over {
   place-items: center;
 }
 .pt-inline-foot {
-  padding-bottom: calc(var(--s8) + env(safe-area-inset-bottom));
+  /* clears core's floating nav capsule on a phone (--shell-bottom, shell.css) */
+  padding-bottom: calc(var(--s8) + env(safe-area-inset-bottom) + var(--shell-bottom, 0px));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -451,7 +459,7 @@ html[data-light="night"] .pt-over {
 /* E04 reveal: the one gradient word of the moment (COLOR_LIFE §5.4 rule 6): "#2" in the logo's blue-teal-green */
 .pt-big {
   display: inline-block;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 0.9;
   letter-spacing: -0.05em;
   font-variant-numeric: tabular-nums;
@@ -532,7 +540,7 @@ html[data-light="night"] .pt-over {
 .pc-title {
   margin-top: var(--s3);
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 30px;
   line-height: 1.05;
   letter-spacing: -0.03em;
@@ -733,15 +741,15 @@ html[data-light="night"] .pt-over {
   padding-top: var(--s2);
 }
 .pd-over {
-  font-size: var(--text-overline-size, 13px);
-  line-height: 16px;
+  font-size: 15px;
+  line-height: 20px;
   font-weight: 500;
   color: var(--ink-2);
 }
 .pd-title {
   margin-top: var(--s2);
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 20px;
   line-height: 24px;
   letter-spacing: -0.02em;
@@ -754,7 +762,7 @@ html[data-light="night"] .pt-over {
   display: flex;
   flex-direction: column;
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 48px;
   line-height: 0.98;
   letter-spacing: -0.035em;
@@ -773,10 +781,11 @@ html[data-light="night"] .pt-over {
 .pd-tag {
   display: inline-flex;
   align-items: center;
-  height: 28px;
+  gap: var(--s1);
+  height: 32px;
   padding: 0 var(--s3);
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   background: color-mix(in srgb, var(--lit) 80%, transparent);
   box-shadow: inset 0 0 0 1px var(--line);
@@ -788,8 +797,8 @@ html[data-light="night"] .pt-over {
   display: flex;
   align-items: center;
   gap: var(--s2);
-  font-size: 13px;
-  line-height: 16px;
+  font-size: 15px;
+  line-height: 20px;
   font-weight: 600;
   color: var(--ink-2);
   margin-bottom: var(--s3);
@@ -813,8 +822,8 @@ html[data-light="night"] .pt-over {
   gap: var(--s3);
   padding: var(--s3) 0;
   border-top: 1px solid var(--line);
-  font-size: 16px;
-  line-height: 22px;
+  font-size: 17px;
+  line-height: 24px;
 }
 .pd-t {
   font-weight: 600;
@@ -842,13 +851,13 @@ html[data-light="night"] .pt-over {
   font-family: var(--font-display);
   font-size: 22px;
   line-height: 28px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 .pd-sub {
   margin-top: var(--s2);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 15px;
+  line-height: 22px;
   color: var(--ink-2);
 }
 .pd-dir {
@@ -866,19 +875,25 @@ html[data-light="night"] .pt-over {
   text-underline-offset: 5px;
 }
 .pd-foot {
+  position: relative;
+  z-index: 3;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--s3);
-  padding: var(--s4) var(--gutter) calc(var(--s4) + env(safe-area-inset-bottom));
+  padding: var(--s4) var(--gutter) calc(var(--s6) + env(safe-area-inset-bottom));
   border-radius: 0;
+  border-top: 1px solid var(--line);
 }
 .pd-count {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse; /* the count reads first, the seats sit under it */
   align-items: flex-start;
-  gap: var(--s1);
-  font-size: 15px;
+  gap: var(--s2);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
   min-width: 0;
 }
 .pd-in {
@@ -910,4 +925,291 @@ html[data-light="night"] .pt-over {
   .pd-foot {
     padding: var(--s4) var(--s8);
   }
+}
+
+/* Propose a hangout (planner_loop): label over chips, groups 24 apart, chips 8 apart (DESIGN §5 spacing) */
+.pp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+}
+.pp-group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.pp-k {
+  padding: 0;
+  margin-bottom: var(--s2);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.pp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+/* PlanDetails: the quiet "more" row (text links, 44px targets, grouped apart from the plan by --s8) */
+.pd-more {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  margin: var(--s8) 0 var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+}
+.pd-more-b {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 48px;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.pd-more-b svg {
+  color: var(--ink-2);
+}
+
+/* ── After the hangout (QA planner_loop r1): check in → okay? → run it back? → reveal → vote, one flow on one centred
+   axis. Ring screens: table, line, answers; groups 24 apart, the answers 24 under the line (inside the 32 cap). ── */
+.pt-inline[data-moment] {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: var(--s6);
+  padding-bottom: calc(var(--s8) + env(safe-area-inset-bottom) + var(--shell-bottom, 0px));
+}
+.pt-inline[data-moment] .pt-inline-head,
+.pt-inline[data-moment] .pt-inline-foot {
+  width: 100%;
+  max-width: 440px;
+}
+.pt-inline[data-moment] .pt-head {
+  align-items: center;
+}
+.pt-inline[data-moment] .pt-sub {
+  margin-top: var(--s2);
+  font-size: 16px;
+  line-height: 22px;
+  text-wrap: balance;
+}
+.pt-inline[data-moment] .pt-inline-foot {
+  padding: 0;
+  justify-content: center;
+}
+.pt-inline[data-moment="ring"] .pt-inline-obj {
+  order: 1;
+  flex: 0 0 auto;
+  width: 100%;
+  height: 236px;
+  min-height: 0;
+}
+.pt-inline[data-moment="ring"] .pt-inline-head {
+  order: 2;
+}
+.pt-inline[data-moment="ring"] .pt-inline-foot {
+  order: 3;
+}
+.pt-inline[data-moment="list"] {
+  justify-content: flex-start;
+  padding-top: var(--s4);
+}
+.pt-inline[data-moment="list"] .pt-inline-obj {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 440px;
+  min-height: 0;
+}
+@media (min-width: 1024px) {
+  .pt-inline[data-moment="ring"] .pt-inline-obj {
+    height: 340px;
+  }
+  .pt-inline[data-moment="list"] {
+    justify-content: center;
+    padding-top: 0;
+  }
+}
+/* the standalone <PodTable> frame centres the same way */
+.pt-moment-page .pt-head {
+  align-items: center;
+  text-align: center;
+}
+
+/* one answer control: equal pills in a row, 12 apart */
+.pt-inline[data-moment] .pt-answers {
+  width: 100%;
+}
+.pt-answers {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s3);
+}
+.pt-answer {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 168px;
+  padding-inline: var(--s4) !important;
+}
+.pt-answer[data-pressed] {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+/* where you are after the hangout: three short bars */
+.pt-steps {
+  display: inline-flex;
+  gap: 6px;
+  margin-bottom: var(--s4);
+}
+.pt-steps span {
+  width: 24px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line-2);
+  transition: background 240ms var(--ease-paper);
+}
+.pt-steps span[data-on] {
+  background: var(--pod, var(--select));
+}
+
+/* planning #2: the beats as readable rows, a tick when done */
+.pt-plan-beats {
+  display: inline-grid;
+  gap: var(--s2);
+  margin: var(--s4) auto 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font-size: 17px;
+  line-height: 24px;
+  color: var(--ink-2);
+}
+.pt-plan-beats li {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+.pt-plan-beats li[data-on] {
+  color: var(--ink);
+}
+.pt-plan-tick {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+  color: var(--on-select);
+  transition: background 240ms var(--ease-paper), box-shadow 240ms var(--ease-paper);
+}
+.pt-plan-beats li[data-on] .pt-plan-tick {
+  background: var(--select);
+  box-shadow: none;
+}
+.pt-plan-beats li[data-now] .pt-plan-tick {
+  box-shadow: inset 0 0 0 2px var(--select);
+}
+
+/* the vote (E05, rebuilt): option cards, 12 apart, each a 44px+ target with the full day, time and place */
+.vc {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  width: 100%;
+}
+.vc-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  width: 100%;
+  min-height: 88px;
+  padding: var(--s4) var(--s4) var(--s4) var(--s6);
+  border: 0;
+  border-radius: 20px;
+  text-align: left;
+  color: var(--ink);
+  background: var(--lit);
+  box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
+  transition: box-shadow 240ms var(--ease-paper), background 240ms var(--ease-paper);
+}
+.vc-card[aria-checked="true"] {
+  background: color-mix(in srgb, var(--pod) 8%, var(--lit));
+  box-shadow: inset 0 0 0 2px var(--pod), var(--shadow-md);
+}
+.vc-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+.vc-tag {
+  margin-bottom: var(--s1);
+  padding: 2px var(--s2);
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--pod-text, var(--ink));
+  background: color-mix(in srgb, var(--pod) 14%, transparent);
+}
+.vc-day {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.vc-meta {
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+.vc-side {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex: none;
+}
+.vc-voters {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+.vc-more {
+  margin-left: var(--s1);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.vc-check {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+  color: var(--on-select);
+}
+.vc-check[data-on] {
+  background: var(--pod, var(--select));
+  box-shadow: none;
+}
+
+/* the plan details: the AI's chip leads the tags; "Why this plan" rows read at 16px (QA planner_loop r1: >= 15px) */
+.pd-tag[data-ai] {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--select) 8%, var(--lit));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--select) 30%, transparent);
+}
+.pd-tag[data-ai] svg {
+  color: var(--select);
+}
+.pd-rows .pt-row {
+  font-size: 16px;
+  line-height: 22px;
 }

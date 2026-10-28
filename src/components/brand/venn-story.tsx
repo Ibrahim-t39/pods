@@ -1,12 +1,12 @@
 // <VennStory progress={p} />: the logo told as a story, driven by scroll (COLOR_LIFE §12.1; the thesis in one object).
 // Three circles are three people, each with their own world. As you scroll:
 //   0.00  apart        three worlds, drifting (a slow quarter-turn as they come in)
-//   0.30  fit          they drift together and overlap; multiply makes the overlaps darker where more meet
+//   0.30  fit          they drift together and overlap; glass orbs, so where they meet is brighter (COLOR_LIFE §15)
 //   0.55  the plan     a blue ring closes around them and four seats fill (the lock, the signature moment)
 //   0.85  repeat       the overlaps deepen, the centre fills (the pod), a second worn ring is drawn one step out
 // `progress` is a 0..1 MotionValue (useScroll on the story section). Transform and opacity only, no layout.
 // Reduced motion: the circles rest in the logo position; only the rings and depth follow scroll (no travel).
-// Colours are the logo's own tokens; each circle is lit from the top-left (gloss) and grained by the stage.
+// Colours are the logo's own tokens; each circle is a glass orb with its person (the white dot) inside.
 "use client";
 
 import { motion, useTransform, type MotionValue } from "motion/react";
@@ -29,6 +29,27 @@ const SEATS = [
 ] as const;
 
 const P = [0, 0.3, 0.55, 0.85, 1];
+// the person inside each world: the logo's white dots (mark.svg: circle r 97, dot r 24 at (0,-38), (-32,15), (32,15)),
+// scaled to R
+const K = R / 97;
+const DOTS = [
+  { dx: 0, dy: -38 * K },
+  { dx: -32 * K, dy: 15 * K },
+  { dx: 32 * K, dy: 15 * K },
+] as const;
+const DOT_R = 24 * K;
+
+function Window({ x, y, soft }: { x: MotionValue<number>; y: MotionValue<number>; soft: string }) {
+  const cx = useTransform(x, (v) => v - 0.5 * R);
+  const cy = useTransform(y, (v) => v - 0.5 * R);
+  return <motion.ellipse cx={cx} cy={cy} rx={0.24 * R} ry={0.11 * R} fill="white" opacity={0.55} filter={soft} style={{ rotate: -45 }} />;
+}
+
+function Person({ x, y, dx, dy }: { x: MotionValue<number>; y: MotionValue<number>; dx: number; dy: number }) {
+  const cx = useTransform(x, (v) => v + dx);
+  const cy = useTransform(y, (v) => v + dy);
+  return <motion.circle cx={cx} cy={cy} r={DOT_R} fill="white" style={{ filter: "drop-shadow(0 2px 3px rgb(14 26 34 / .16))" }} />;
+}
 
 function useCircle(progress: MotionValue<number>, angle: number, reduced: boolean) {
   // distance of each circle's centre from the middle, then a drift rotation that settles to 0
@@ -46,7 +67,7 @@ export function VennStory({ progress, reduced = false, className }: { progress: 
   const c = useCircle(progress, CIRCLES[2].angle, reduced);
   const pos = [a, b, c];
   // depth: what they share grows (fill strength), and the whole cluster breathes up slightly when it fits
-  const fillOpacity = useTransform(progress, P, [0.86, 0.72, 0.78, 0.88, 0.88]);
+  const fillOpacity = useTransform(progress, P, [1, 0.92, 0.96, 1, 1]);
   // the pod: where all three meet lights up warm (a saved seat, the lamp on) as the repeat scene settles
   const core = useTransform(progress, [0.82, 0.9], [0, 1]);
   const coreScale = useTransform(progress, [0.82, 0.9], reduced ? [1, 1] : [0.7, 1]);
@@ -62,13 +83,19 @@ export function VennStory({ progress, reduced = false, className }: { progress: 
     <motion.svg viewBox="0 0 600 600" className={className} style={{ scale, overflow: "visible" }} aria-hidden focusable="false">
       <defs>
         {CIRCLES.map((k) => (
-          <radialGradient key={k.key} id={`${uid}-${k.key}`} cx="34%" cy="28%" r="80%">
-            {/* flat like the logo, with one soft top-left light (COLOR_LIFE §6.4 rule 2; no 3D shading to black) */}
-            <stop offset="0%" style={{ stopColor: `color-mix(in oklch, ${k.hue} 86%, white)` }} />
-            <stop offset="40%" style={{ stopColor: k.hue }} />
-            <stop offset="100%" style={{ stopColor: k.hue }} />
+          <radialGradient key={k.key} id={`${uid}-${k.key}`} cx="50%" cy="50%" r="50%">
+            {/* a glass orb (COLOR_LIFE §15): clear body, denser rim (Fresnel), a lit edge. Overlaps blend normal, so
+                where worlds meet it is brighter, never muddy. */}
+            <stop offset="0%" style={{ stopColor: k.hue, stopOpacity: 0.26 }} />
+            <stop offset="55%" style={{ stopColor: k.hue, stopOpacity: 0.36 }} />
+            <stop offset="88%" style={{ stopColor: k.hue, stopOpacity: 0.7 }} />
+            <stop offset="97.5%" style={{ stopColor: `color-mix(in oklch, ${k.hue} 24%, white)`, stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: k.hue, stopOpacity: 0.2 }} />
           </radialGradient>
         ))}
+        <filter id={`${uid}-soft`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
         {/* the clip for the centre: the intersection of all three circles (nested clips) */}
         {CIRCLES.map((k, i) => (
           <clipPath key={k.key} id={`${uid}-clip-${k.key}`}>
@@ -105,10 +132,16 @@ export function VennStory({ progress, reduced = false, className }: { progress: 
         style={{ pathLength: ring1, opacity: ring1Opacity, rotate: 90, transformOrigin: "300px 300px" }}
       />
 
-      {/* the three people; multiply so the overlaps are darker where more meet (the logo's own rule) */}
-      <g style={{ mixBlendMode: "multiply", isolation: "isolate" }}>
+      {/* the three worlds as glass orbs, each with its person (the logo's white dot, same placement as mark.svg) */}
+      <g style={{ isolation: "isolate" }}>
         {CIRCLES.map((k, i) => (
-          <motion.circle key={k.key} r={R} cx={pos[i].x} cy={pos[i].y} fill={`url(#${uid}-${k.key})`} style={{ opacity: fillOpacity, mixBlendMode: "multiply" }} />
+          <motion.circle key={k.key} r={R} cx={pos[i].x} cy={pos[i].y} fill={`url(#${uid}-${k.key})`} style={{ opacity: fillOpacity }} />
+        ))}
+        {CIRCLES.map((k, i) => (
+          <Window key={k.key} x={pos[i].x} y={pos[i].y} soft={`url(#${uid}-soft)`} />
+        ))}
+        {CIRCLES.map((k, i) => (
+          <Person key={k.key} x={pos[i].x} y={pos[i].y} dx={DOTS[i].dx} dy={DOTS[i].dy} />
         ))}
       </g>
 

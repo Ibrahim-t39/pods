@@ -13,12 +13,15 @@ import type { PlannerSource } from "@/lib/planner/types";
 import type { PlannerStep } from "@/lib/types";
 import "./planner.css";
 
+/** Users see "AI", never the model's name (V3_SPEC §4; founder 2026-10-28). Stored traces may still say Claude. */
+const aiWord = <T extends string | null | undefined>(s: T): T => (s ? (s.replace(/\bClaude\b/g, "AI") as T) : s);
+
 type Row = Pick<TraceStep, "id" | "label" | "detail" | "status"> & { at?: number };
 
 export interface PlannerTraceProps {
   steps: Row[];
   running?: boolean;
-  source?: PlannerSource | "admin" | null;
+  source?: PlannerSource | "admin" | "member" | null;
   /** Replay a stored trace (2x speed) with a Replay button. */
   replay?: boolean;
   compact?: boolean;
@@ -130,7 +133,7 @@ export function PlannerTrace({ steps, running, source, replay, compact, classNam
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-caption text-fg-muted">
           <span className="inline-flex items-center gap-1.5 font-medium text-fg">
             <Icon name="why" size={14} aria-hidden />
-            {source === "seed" ? "Planned ahead" : sourceCaption(source ?? null)}
+            {source === "seed" ? "Planned ahead" : aiWord(sourceCaption(source ?? null))}
           </span>
           <span className="hidden sm:inline">Venues come only from our checked list.</span>
           <span className="ml-auto flex items-center gap-1">
@@ -158,4 +161,4 @@ export function PlannerTrace({ steps, running, source, replay, compact, classNam
 }
 
 /** Stored PlannerStep[] → rows (for replay). */
-export const traceRows = (t: PlannerStep[]): Row[] => t.map((s) => ({ id: s.id, label: s.label, detail: s.detail, status: s.status === "running" ? "done" : s.status }));
+export const traceRows = (t: PlannerStep[]): Row[] => t.map((s) => ({ id: s.id, label: aiWord(s.label) ?? "", detail: aiWord(s.detail), status: s.status === "running" ? "done" : s.status }));

@@ -12,6 +12,7 @@ import { heritageNode, faithNode } from "@/data/taxonomy";
 import type { OnboardingStep, PlacementRun, Slot, Verification } from "@/lib/types";
 import { SLOTS, BLOCKABLE_DAYS } from "@/lib/types";
 import { recordMinorBlock } from "./auth";
+import { ensureStarterPlans } from "./starter";
 
 const ORDER: OnboardingStep[] = ["account", "about", "communities", "availability", "photo", "pledge", "placing", "verify", "done"];
 
@@ -193,6 +194,8 @@ export function onboardingRepo(
         d.placementRuns.push(run);
         d.users[me.id].onboarding_step = "done";
       });
+      // Platform §F3: every pod opens with its first hangout planned (no-op for pods that already have one).
+      await ensureStarterPlans(ctx);
       return ok(run);
     },
   };

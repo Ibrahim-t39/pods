@@ -11,6 +11,7 @@ import { profileRepo } from "./profile";
 import { safetyRepo } from "./safety";
 import { notificationsRepo } from "./notifications";
 import { adminRepo } from "./admin";
+import { socialRepo } from "./social";
 
 export function createLocalRepo(): Repo {
   return {
@@ -22,6 +23,7 @@ export function createLocalRepo(): Repo {
     ...profileRepo(ctx),
     ...safetyRepo(ctx),
     ...notificationsRepo(ctx),
+    ...socialRepo(ctx),
     admin: adminRepo(ctx),
   } satisfies Repo;
 }

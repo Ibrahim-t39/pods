@@ -31,9 +31,10 @@ import type { RunItBackAnswer, Venue } from "@/lib/types";
 import { usePlanActions } from "../use-plan-actions";
 import { downloadIcs } from "../plan-utils";
 import { LockMoment } from "./lock-moment";
-import { OptionRing, type VoteOption } from "./option-ring";
+import { orderOptions, VoteCards, type VoteCardOption } from "./vote-cards";
 import { PlanCard } from "./plan-card";
 import { GiveUpSheet, PlaceSheet, PlanMenu, WhySheet, type SheetId } from "./sheets";
+import { ProposeSheet } from "./propose-sheet";
 import { freeCount, hm, placeWord, rainWord, placesCount, seatsFor, useTable, wd3, weekday, type TableModel } from "./model";
 import { tableSizeFor, useFit } from "./use-fit";
 
@@ -64,6 +65,9 @@ export interface PlanStage {
   view: CardView | null;
   /** phone only: the line sits under the object (E01) */
   headLow?: boolean;
+  /** the after screens, one centred axis: "ring" = the table first, then the line, then the answers;
+   *  "list" = the line, then the option cards, then the count (the vote) */
+  moment?: "ring" | "list";
   openSheet: (s: SheetId) => void;
 }
 
@@ -80,6 +84,7 @@ type Kind =
   | "plan"
   | "locked"
   | "today"
+  | "checkin"
   | "okay"
   | "thanks"
   | "ballot"
@@ -99,7 +104,8 @@ const LIGHT: Record<Kind, StageLight> = {
   plan: "dawn",
   locked: "clear",
   today: "clear",
-  okay: "clear",
+  checkin: "dusk",
+  okay: "dusk",
   thanks: "dusk",
   ballot: "dusk",
   waiting: "dusk",
@@ -115,20 +121,24 @@ const laid = new Set<string>();
 /** Hangouts whose reveal you have seen ("Pick a time" tapped). */
 const revealed = new Set<string>();
 const SKIP_KEY = "pods.skipRound";
-function readSkip(): string[] {
+/** Hangouts whose private "Everything okay?" you answered (asked after the check-in, before "Run it back?"). */
+const OKAY_KEY = "pods.okay";
+function readList(key: string): string[] {
   try {
-    return JSON.parse(localStorage.getItem(SKIP_KEY) ?? "[]") as string[];
+    return JSON.parse(localStorage.getItem(key) ?? "[]") as string[];
   } catch {
     return [];
   }
 }
-function addSkip(id: string) {
+function addTo(key: string, id: string) {
   try {
-    localStorage.setItem(SKIP_KEY, JSON.stringify([...new Set([...readSkip(), id])]));
+    localStorage.setItem(key, JSON.stringify([...new Set([...readList(key), id])]));
   } catch {
-    /* private mode: skip for this visit only */
+    /* private mode: kept for this visit only (state below) */
   }
 }
+const readSkip = () => readList(SKIP_KEY);
+const addSkip = (id: string) => addTo(SKIP_KEY, id);
 
 const BEATS = ["free times", "places", "sky", "check"] as const;
 const BEAT_STEP: Record<string, (typeof BEATS)[number]> = { time: "free times", venues: "places", weather: "sky", validate: "check", retry: "check" };
@@ -152,11 +162,15 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
   const [beat, setBeat] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
   const [skip, setSkip] = useState<string[]>([]);
-  const [revealFor, setRevealFor] = useState<{ id: string; yes: number; answered: number; round: number; seats: Seat[]; n: number } | null>(null);
+  const [okayed, setOkayed] = useState<string[]>([]);
+  const [revealFor, setRevealFor] = useState<{ id: string; yes: number; of: number; round: number; seats: Seat[]; n: number } | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
-  useEffect(() => setSkip(readSkip()), []);
+  useEffect(() => {
+    setSkip(readSkip());
+    setOkayed(readList(OKAY_KEY));
+  }, []);
 
   const view = m?.view;
   const phase = view?.phase ?? null;
@@ -196,7 +210,7 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
   const rv = view?.revealed;
   const again = !!rv && (rv.yes >= 3 || (rv.answered >= 3 && rv.yes / rv.answered >= 0.6));
   useEffect(() => {
-    if (phase === "planning_next" && again && lastId && rv && m && !revealed.has(lastId)) setRevealFor({ id: lastId, yes: rv.yes, answered: rv.answered, round: view?.round ?? 1, ...seatsFor(m, { all: true }) });
+    if (phase === "planning_next" && again && lastId && rv && m && !revealed.has(lastId)) setRevealFor({ id: lastId, yes: rv.yes, of: Math.max(m.attended, rv.answered), round: view?.round ?? 1, ...seatsFor(m, { all: true }) });
   }, [phase, again, lastId]);
   useEffect(() => {
     if (phase === "planning_next" && again && view) void actions.planNextRound(view);
@@ -249,10 +263,10 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
         kind = "today";
         break;
       case "check_in":
-        kind = "okay";
+        kind = "checkin";
         break;
       case "ballot":
-        kind = skip.includes(lastHid) ? "thanks" : "ballot";
+        kind = skip.includes(lastHid) ? "thanks" : okayed.includes(lastHid) ? "ballot" : "okay";
         break;
       case "waiting_reveal":
         kind = skip.includes(lastHid) ? "thanks" : editing ? "ballot" : "waiting";
@@ -301,12 +315,20 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
     const has = Object.values(useStore.getState().db.suggestions).some((s) => s.pod_id === podId && s.status !== "replaced");
     if (!has) setFailed(true);
   };
-  const okay = async (fine: boolean) => {
+  // After the hangout, one flow with one answer control (QA planner_loop r1): 1 check in, 2 okay? (private), 3 run it back?
+  const checkIn = async (went: boolean) => {
     const h = view.lastHangout;
     if (!h || busy) return;
     setBusy(true);
-    await repo.checkIn(h.id);
+    const r = went ? await repo.checkIn(h.id) : await repo.rsvp(h.id, "not_going");
     setBusy(false);
+    if (!r.ok) notify(went ? "Not sent." : "Couldn't save that.", { retry: () => void checkIn(went), duration: 6000 });
+  };
+  const okay = (fine: boolean) => {
+    const h = view.lastHangout;
+    if (!h) return;
+    addTo(OKAY_KEY, h.id);
+    setOkayed((o) => [...new Set([...o, h.id])]);
     if (!fine) {
       addSkip(h.id);
       setSkip(readSkip());
@@ -322,12 +344,18 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
     setEditing(false);
     if (!r.ok) notify("Saved. Sends when you're back online.", { duration: 6000 });
   };
-  const castVote = async () => {
-    if (!view.vote || !picked || busy) return;
+  /** Tapping a time is the vote (one tap on camera); tapping another changes it. */
+  const castVote = async (id: string) => {
+    if (!view.vote || busy) return;
+    const before = picked;
+    setPicked(id);
     setBusy(true);
-    const r = await repo.voteNextOption(view.vote.id, picked);
+    const r = await repo.voteNextOption(view.vote.id, id);
     setBusy(false);
-    if (!r.ok) notify("Not sent.", { retry: () => void castVote(), duration: 6000 });
+    if (!r.ok) {
+      setPicked(before);
+      notify("Not sent.", { retry: () => void castVote(id), duration: 6000 });
+    }
   };
   const runningLate = async () => {
     await repo.sendMessage(podId, "Running a few minutes late.", `late_${Date.now().toString(36)}`);
@@ -418,6 +446,11 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
     </span>
   );
 
+  // the after screens (check in → okay? → run it back? → reveal → vote): one centred axis, the table at ~55% of the
+  // column, the answers within 32px of the line (QA planner_loop r1)
+  const after = (s: { seats: Seat[]; n: number }, o: { names?: boolean; dim?: boolean; fill?: boolean; worn?: number; center?: ReactNode } = {}) =>
+    table(s.seats, s.n, { ...o, waiting: false, max: desktop ? 300 : 200 });
+
   let page: ReactNode;
   switch (kind) {
     case "laying": {
@@ -437,7 +470,15 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
           head={
             <div className="pt-head">
               {over(`${m.name} #${round}`)}
-              <Line size="lg">Planning {m.name}.</Line>
+              <Line size="lg">
+                {round > 1 ? (
+                  <>
+                    Planning <span className="fig">#{round}</span>.
+                  </>
+                ) : (
+                  <>Planning {m.name}.</>
+                )}
+              </Line>
               <div className="pt-beats" aria-live="polite">
                 {BEATS.map((b, i) => (
                   <div key={b} className="pt-beat" data-on={i < at ? "" : undefined}>
@@ -513,7 +554,7 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
               <PlanCard m={m} href={detailsHref} onImIn={() => void imIn()} onCalendar={calendar} busy={busy} lap={round > 1} />
             </div>
           }
-          object={table(seats, n, { fill: kind === "locked", waiting: false, roof: outdoorRain, center: cue, onClick: talk, label: unread ? `Talk, ${unread} new` : "Talk", max: desktop ? 360 : 220 })}
+          object={table(seats, n, { fill: kind === "locked", waiting: false, roof: outdoorRain, center: cue, onClick: talk, label: unread ? `Talk, ${unread} new` : "Talk", max: desktop ? 360 : 260 })}
         />
       );
       break;
@@ -558,25 +599,52 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
       );
       break;
     }
+    case "checkin": {
+      // Video beat 7, the check-in tap. The people who were in sit at the table; you check yourself in.
+      const h = view.lastHangout;
+      page = (
+        <Page
+          chrome={bare}
+          head={
+            <div className="pt-head">
+              <AfterSteps at={1} />
+              <Line size="lg">Did you make it?</Line>
+              <p className="pt-sub">{h ? `${weekday(h.starts_at)} · ${placeWord(m.venue)}` : "Only you see this."}</p>
+            </div>
+          }
+          object={after(seatsFor(m, { all: true }), { names: true })}
+          foot={
+            <div className="pt-answers" role="group" aria-label="Did you make it?">
+              <Button size="xl" variant="spark" onClick={() => void checkIn(true)} loading={busy}>
+                Check in
+              </Button>
+              <Button size="xl" variant="secondary" onClick={() => void checkIn(false)} disabled={busy}>
+                I missed it
+              </Button>
+            </div>
+          }
+        />
+      );
+      break;
+    }
     case "okay":
       page = (
         <Page
           chrome={bare}
-          headLow={!desktop}
           head={
             <div className="pt-head">
-              {over(`${m.name} #${round}`)}
+              <AfterSteps at={2} />
               <Line size="lg">Everything okay?</Line>
               <p className="pt-sub">Only you see this.</p>
             </div>
           }
-          object={
-            <div className="pt-answers" style={{ gap: "var(--s4)" }}>
-              <AnswerDisc i={0} k="ok" label="Yes" size={desktop ? 128 : 112} onClick={() => void okay(true)} disabled={busy} />
-              <AnswerDisc i={1} k="no" label="Not really" size={desktop ? 112 : 96} onClick={() => void okay(false)} disabled={busy} />
+          object={after(seatsFor(m, { all: true }), { names: false })}
+          foot={
+            <div className="pt-answers" role="radiogroup" aria-label="Everything okay?">
+              <Answer label="Yes" yes onClick={() => okay(true)} />
+              <Answer label="Not really" onClick={() => okay(false)} />
             </div>
           }
-          foot={desktop ? undefined : <span />}
         />
       );
       break;
@@ -591,40 +659,39 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
               <p className="pt-sub">Only you see this.</p>
             </div>
           }
-          object={table(seatsFor(m).seats, seatsFor(m).n, { dim: true, onClick: talk, label: "Talk" })}
+          object={after(seatsFor(m, { all: true }), { names: false, dim: true })}
           foot={
-            <>
+            <div className="pt-answers">
               <Button variant="link" onClick={() => setSheet("help")}>
                 If something&apos;s off
               </Button>
-              <span />
-            </>
+            </div>
           }
         />
       );
       break;
     case "ballot":
     case "waiting": {
-      const { seats, n } = seatsFor(m);
       const waiting = kind === "waiting";
-      const dots = Math.max(m.went, m.answered);
+      const att = Math.max(m.attended, m.answered, 1);
+      const left = Math.max(0, att - m.answered);
+      const mine = view.myBallot;
+      const said = mine === "yes" ? "You're a yes." : mine === "not_sure" ? "Maybe, noted." : "Got it.";
       page = (
         <Page
           chrome={bare}
           head={
             <div className="pt-head">
-              {over(`${m.name} · after #${round}`)}
-              <Line size={desktop ? "xl" : "lg"}>{waiting ? "Sent." : "Run it back?"}</Line>
-              <p className="pt-sub">{waiting ? `${m.answered} of ${dots} answered. Maybe isn't a yes.` : "Only you see your answer."}</p>
+              <AfterSteps at={3} />
+              <Line size="lg">{waiting ? said : "Run it back?"}</Line>
+              <p className="pt-sub">{waiting ? (left ? `${m.answered} of ${att} answered · waiting on ${left}` : `All ${att} answered`) : "Same people, in two weeks. Only you see your answer."}</p>
             </div>
           }
-          object={table(seats, n, {
-            fill: false,
-            names: waiting || desktop,
-            max: waiting ? undefined : desktop ? 340 : 168,
+          object={after(seatsFor(m, { all: true }), {
+            names: false,
             center: waiting ? (
-              <span className="pt-dots" aria-label={`${m.answered} of ${dots} answered`}>
-                {Array.from({ length: dots }, (_, i) => (
+              <span className="pt-dots" aria-label={`${m.answered} of ${att} answered`}>
+                {Array.from({ length: Math.min(att, 8) }, (_, i) => (
                   <span key={i} data-off={i >= m.answered ? "" : undefined} />
                 ))}
               </span>
@@ -632,17 +699,16 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
           })}
           foot={
             waiting ? (
-              <>
+              <div className="pt-answers">
                 <Button variant="link" onClick={() => setEditing(true)}>
                   Change answer
                 </Button>
-                <span />
-              </>
+              </div>
             ) : (
               <div className="pt-answers" role="radiogroup" aria-label="Run it back?">
-                <AnswerDisc i={0} k="yes" label="Yes" size={desktop ? 112 : 96} onClick={() => void answer("yes")} pressed={view.myBallot === "yes"} disabled={busy} />
-                <AnswerDisc i={1} k="maybe" label="Maybe" size={desktop ? 80 : 72} onClick={() => void answer("not_sure")} pressed={view.myBallot === "not_sure"} disabled={busy} />
-                <AnswerDisc i={2} k="no" label="No" size={desktop ? 64 : 56} onClick={() => void answer("no")} pressed={view.myBallot === "no"} disabled={busy} />
+                <Answer label="Yes" yes pressed={mine === "yes"} onClick={() => void answer("yes")} disabled={busy} />
+                <Answer label="Maybe" pressed={mine === "not_sure"} onClick={() => void answer("not_sure")} disabled={busy} />
+                <Answer label="No" pressed={mine === "no"} onClick={() => void answer("no")} disabled={busy} />
               </div>
             )
           }
@@ -652,7 +718,7 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
     }
     case "reveal": {
       const yes = revealFor?.yes ?? 0;
-      const of = revealFor?.answered ?? 0;
+      const of = revealFor?.of ?? 0;
       const held = revealFor?.round ?? round;
       const { seats, n } = revealFor ?? seatsFor(m, { all: true });
       page = (
@@ -660,26 +726,25 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
           chrome={bare}
           head={
             <div className="pt-head">
-              <p className="pt-over">{inline ? `${yes} of ${of} said yes` : `${m.name} · ${yes} of ${of} said yes`}</p>
-              <Line size="xxl">
-                <span className="fig pt-big text-logo" style={{ fontSize: desktop ? 220 : 152 }}>
-                  #{held + 1}
-                </span>
+              <p className="pt-over">{`${yes} of ${of} said yes`}</p>
+              <Line size="lg">
+                Hangout <span className="fig text-logo">#{held + 1}</span> is a go.
               </Line>
+              <p className="pt-sub">Same people. The pod picks the time.</p>
             </div>
           }
-          object={table(seats, n, {
+          object={after({ seats, n }, {
+            names: false,
             fill: true,
             worn: 2,
             center: (
-              <motion.span className="pt-worn" data-pod-hue={m.hue} initial={reduce ? false : { scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3, duration: 0.6 }} style={{ width: "62%", height: "62%", border: "1.5px solid color-mix(in srgb, var(--pod) 45%, transparent)" }}>
-                <span className="fig">#{held}</span>
+              <motion.span className="pt-worn fig text-logo" initial={reduce ? false : { scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3, duration: 0.6 }} style={{ fontSize: desktop ? 72 : 56, fontWeight: 600 }}>
+                #{held + 1}
               </motion.span>
             ),
           })}
           foot={
-            <>
-              <span />
+            <div className="pt-answers">
               <Button
                 size="xl"
                 onClick={() => {
@@ -689,31 +754,33 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
               >
                 Pick a time
               </Button>
-            </>
+            </div>
           }
         />
       );
       break;
     }
-    case "planning2":
+    case "planning2": {
+      const live = new Set(actions.genSteps.map((s) => BEAT_STEP[s.id]).filter(Boolean));
       page = (
         <Page
           chrome={bare}
           head={
             <div className="pt-head">
-              {over(m.name)}
+              <p className="pt-over">Same people, a new time</p>
               <Line size="lg">
                 Planning <span className="fig">#{round + 1}</span>.
               </Line>
-              <p className="pt-sub">Same people, a new time.</p>
+              <Beats done={live.size || (actions.genKind ? 0 : BEATS.length)} />
             </div>
           }
-          object={<Breathe>{table(seatsFor(m, { all: true }).seats, seatsFor(m, { all: true }).n, { worn: 2 })}</Breathe>}
+          object={<Breathe>{after(seatsFor(m, { all: true }), { names: true, worn: 2 })}</Breathe>}
         />
       );
       break;
+    }
     case "vote":
-      page = voteFrame({ inline, m, chrome: menu, picked, setPicked, onVote: () => void castVote(), busy, desktop, fit, venues });
+      page = voteFrame({ m, chrome: menu, picked, onPick: (id) => void castVote(id), busy, venues });
       break;
     case "notagain":
     case "missed":
@@ -727,16 +794,16 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
               <p className="pt-sub">{kind === "missed" ? "Your seat stays." : "The pod stays."}</p>
             </div>
           }
-          object={table(seatsFor(m, { all: true }).seats, seatsFor(m, { all: true }).n, { dim: true, onClick: talk, label: "Talk", center: cue })}
+          object={after(seatsFor(m, { all: true }), { dim: true, names: false })}
           foot={
-            <>
-              <Button variant="link" onClick={talk}>
+            <div className="pt-answers">
+              <Button size="xl" variant="secondary" onClick={talk}>
                 Talk
               </Button>
               <Button variant="link" onClick={() => router.push("/app/pods")} trailingIcon={<Icon name="arrow" size={18} />}>
                 Your pods
               </Button>
-            </>
+            </div>
           }
         />
       );
@@ -748,7 +815,7 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
   // The frame's parts, each keyed by the state so one hands off to the next (fade and a 1.5% settle, DESIGN §7).
   const parts = (page as ReactElement<PageProps>).props;
   // Repeat made visible (COLOR_LIFE §6.3): the pod's wash deepens one step per hangout held.
-  const AFTER: Kind[] = ["okay", "thanks", "ballot", "waiting", "reveal", "planning2", "vote", "notagain", "missed"];
+  const AFTER: Kind[] = ["checkin", "okay", "thanks", "ballot", "waiting", "reveal", "planning2", "vote", "notagain", "missed"];
   const depth = Math.min(3, Math.max(1, AFTER.includes(kind) ? round + 1 : round));
   const t = { duration: reduce ? 0.16 : 0.32, ease: [0.2, 0.8, 0.2, 1] as const };
   const enter = reduce ? { opacity: 0 } : { opacity: 0, y: 6 };
@@ -768,12 +835,23 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
     ),
     foot: parts.foot ? <div key={`${kind}-foot`} className="contents">{parts.foot}</div> : null,
     headLow: parts.headLow,
+    moment: kind === "vote" ? "list" : AFTER.includes(kind) ? "ring" : undefined,
     title: `${m.name} #${round}`,
     view,
     openSheet,
     overlay: (
       <>
-        {ownMenu && <PlanMenu m={m} open={sheet === "menu"} onOpenChange={(o) => setSheet(o ? "menu" : null)} go={setSheet} risky={risky} />}
+        {ownMenu && (
+          <PlanMenu
+            m={m}
+            open={sheet === "menu"}
+            onOpenChange={(o) => setSheet(o ? "menu" : null)}
+            go={setSheet}
+            risky={risky}
+            onAsk={() => view.suggestion && void actions.suggestElse(view.suggestion, [])}
+          />
+        )}
+        <ProposeSheet m={m} open={sheet === "propose"} onOpenChange={(o) => setSheet(o ? "propose" : null)} />
         <WhySheet m={m} open={sheet === "why"} onOpenChange={(o) => setSheet(o ? "why" : null)} />
         <PlaceSheet m={m} open={sheet === "place"} onOpenChange={(o) => setSheet(o ? "place" : null)} />
         <GiveUpSheet open={sheet === "giveup"} onOpenChange={(o) => setSheet(o ? "giveup" : null)} onGiveUp={() => void giveUp()} />
@@ -791,6 +869,7 @@ export function PodTable({ podId, ...opts }: PodTableProps) {
       <Stage light={st.light} />
       {st.light !== "night" && (
         <Page
+          className={st.moment ? "pt-moment-page" : undefined}
           chrome={<Chrome left="mark" right="menu" onMenu={() => st.openSheet("menu")} menuLabel={`${st.title} menu`} />}
           head={st.head}
           object={st.object}
@@ -800,29 +879,6 @@ export function PodTable({ podId, ...opts }: PodTableProps) {
       )}
       {st.overlay}
     </>
-  );
-}
-
-/** A disc is the button (E01, E02). Discs spring in one by one (COLOR_LIFE §8: stiffness 420, damping 32, 60 ms stagger). */
-function AnswerDisc({ i = 0, k, label, size, onClick, pressed, disabled }: { i?: number; k: "yes" | "ok" | "maybe" | "no"; label: string; size: number; onClick: () => void; pressed?: boolean; disabled?: boolean }) {
-  const reduce = useReducedMotion();
-  return (
-    <motion.button
-      type="button"
-      role="radio"
-      aria-checked={!!pressed}
-      className="pt-ans pressable"
-      data-k={k}
-      onClick={onClick}
-      disabled={disabled}
-      whileTap={{ scale: 0.93 }}
-      initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={reduce ? { duration: 0.16 } : { ...SNAPPY, delay: 0.12 + i * 0.06 }}
-      style={{ width: size, height: size, fontSize: Math.round(size * (label.length > 5 ? 0.2 : label.length > 3 ? 0.22 : 0.28)), padding: label.length > 5 ? "0 14%" : 0 }}
-    >
-      {label}
-    </motion.button>
   );
 }
 
@@ -844,67 +900,82 @@ function HelpSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (o: bo
   );
 }
 
-/** E05 · Pick a time. Options as circles; discs gather; Vote stays off until you pick (E05b). */
-function voteFrame({ inline, m, chrome, picked, setPicked, onVote, busy, desktop, fit, venues }: { inline: boolean; m: TableModel; chrome: ReactNode; picked: string | null; setPicked: (id: string) => void; onVote: () => void; busy: boolean; desktop: boolean; fit: ReturnType<typeof useFit<HTMLDivElement>>; venues: Record<string, Venue> }) {
+/** E05 · Pick a time. Legible option cards on one axis; tapping one is your vote; the people who picked each sit on it. */
+function voteFrame({ m, chrome, picked, onPick, busy, venues }: { m: TableModel; chrome: ReactNode; picked: string | null; onPick: (id: string) => void; busy: boolean; venues: Record<string, Venue> }) {
   const view = m.view;
+  const votes = view.vote?.votes ?? {};
   // Dedupe identical options (judges' fix): same minute, same place. Votes on a duplicate count on its twin.
-  const { options, canon } = (() => {
-    const byKey = new Map<string, VoteOption>();
-    const canon: Record<string, string> = {};
-    const votes = view.vote?.votes ?? {};
-    for (const o of view.options) {
-      const key = `${Math.round(Date.parse(o.starts_at) / 60000)}|${placeWord(venues[o.venue_id])}`;
-      const first = byKey.get(key);
-      canon[o.id] = first?.id ?? o.id;
-      const voters = m.people.filter((p) => votes[p.id] === o.id);
-      if (first) first.voters = [...first.voters, ...voters];
-      else byKey.set(key, { id: o.id, iso: o.starts_at, place: "", voters });
-    }
-    return { options: [...byKey.values()], canon };
-  })();
-  const showPlace = new Set(options.map((o) => placeWord(venues[view.options.find((x) => x.id === o.id)?.venue_id ?? ""]))).size > 1;
-  const withPlace = options.map((o) => ({ ...o, place: showPlace ? placeWord(venues[view.options.find((x) => x.id === o.id)?.venue_id ?? ""]) : "" }));
-  const voted = Object.keys(view.vote?.votes ?? {}).length;
-  const pickedOpt = withPlace.find((o) => o.id === (picked ? (canon[picked] ?? picked) : null));
-  const mine = view.myVote ? (canon[view.myVote] ?? view.myVote) : null;
-  const changed = !!picked && (canon[picked] ?? picked) !== mine;
-  const closes = view.vote?.closes_at;
-  // never let a short slot crush the circles (inline on a laptop the slot can be ~120px tall): floor at 260/300
-  const size = fit[1] ? Math.max(desktop ? 300 : 260, Math.min(fit[1].w - 8, (fit[1].h - 8) / 1.02, desktop ? 520 : 360)) : 0;
-  // "two weeks later": from the hangout just held to the first option, in whole weeks (data, never a promise)
-  const last = view.lastHangout?.starts_at;
-  const first = options.length ? Math.min(...options.map((o) => Date.parse(o.iso))) : NaN;
-  const weeks = last && Number.isFinite(first) ? Math.round((first - Date.parse(last)) / (7 * 86_400_000)) : 0;
-  const later = weeks >= 2 ? `${weeks} weeks later` : weeks === 1 ? "a week later" : "";
+  const byKey = new Map<string, VoteCardOption>();
+  const canon: Record<string, string> = {};
+  for (const o of view.options) {
+    const v = venues[o.venue_id];
+    const key = `${Math.round(Date.parse(o.starts_at) / 60000)}|${o.venue_id}`;
+    const first = byKey.get(key);
+    canon[o.id] = first?.id ?? o.id;
+    const voters = m.people.filter((p) => votes[p.id] === o.id);
+    if (first) first.voters = [...first.voters, ...voters];
+    else byKey.set(key, { id: o.id, iso: o.starts_at, place: v?.short_name || v?.name || placeWord(v), voters });
+  }
+  const { list, twoWeeks } = orderOptions([...byKey.values()], view.lastHangout?.starts_at);
+  const voted = Object.keys(votes).length;
+  const of = Math.max(m.attended, voted, 1);
+  const mine = picked ? (canon[picked] ?? picked) : null;
+  const need = Math.max(0, m.view.threshold - Math.max(0, ...list.map((o) => o.voters.length)));
   return (
     <Page
       chrome={chrome}
       head={
         <div className="pt-head">
-          <p className="pt-over" hidden={inline}>
-            {m.name} #{view.round}
-            {closes ? ` · closes ${wd3(closes)}` : ""}
-          </p>
-          <Line size={desktop && !inline ? "xl" : "lg"}>Pick a time.</Line>
-          {later && <p className="pt-sub">Same people · {later}</p>}
+          <p className="pt-over">Same people · hangout #{view.round}</p>
+          <Line size="lg">Pick a time.</Line>
+          <p className="pt-sub">First to {m.view.threshold} locks it.</p>
         </div>
       }
-      object={
-        <div ref={fit[0]} className="pt-obj">
-          {size > 0 && <OptionRing options={withPlace} picked={picked ? (canon[picked] ?? picked) : null} onPick={setPicked} me={m.me} hue={m.hue} size={size} showPlace={showPlace} />}
-        </div>
-      }
+      object={<VoteCards options={list} picked={mine} onPick={onPick} me={m.me} hue={m.hue} twoWeeksId={twoWeeks?.id ?? null} disabled={busy} />}
       foot={
-        <>
+        <div className="pt-answers">
           <span className="pt-status" aria-live="polite">
-            {changed && pickedOpt ? `${wd3(pickedOpt.iso)} ${hm(pickedOpt.iso)}` : `${voted} of ${view.size} voted`}
+            {voted} of {of} voted{need > 0 && voted ? ` · ${need} more locks it` : ""}
           </span>
-          <Button size="xl" variant={changed ? "spark" : "primary"} onClick={onVote} disabled={!changed} loading={busy}>
-            Vote
-          </Button>
-        </>
+        </div>
       }
     />
+  );
+}
+
+/** Where you are after the hangout: 3 short bars (check in, okay, run it back). */
+function AfterSteps({ at }: { at: 1 | 2 | 3 }) {
+  return (
+    <span className="pt-steps" role="img" aria-label={`Step ${at} of 3`}>
+      {[1, 2, 3].map((i) => (
+        <span key={i} data-on={i <= at ? "" : undefined} />
+      ))}
+    </span>
+  );
+}
+
+/** One answer control for every after question: equal pills in a row; the yes is the warm spark, the rest outlined. */
+function Answer({ label, yes, pressed, onClick, disabled }: { label: string; yes?: boolean; pressed?: boolean; onClick: () => void; disabled?: boolean }) {
+  return (
+    <Button size="xl" variant={yes ? "spark" : "secondary"} role="radio" aria-checked={!!pressed} data-pressed={pressed ? "" : undefined} className="pt-answer" onClick={onClick} disabled={disabled}>
+      {label}
+    </Button>
+  );
+}
+
+/** The planning beats, readable (17px rows, a tick when done). */
+function Beats({ done }: { done: number }) {
+  return (
+    <ol className="pt-plan-beats" aria-live="polite">
+      {BEATS.map((b, i) => (
+        <li key={b} data-on={i < done ? "" : undefined} data-now={i === done ? "" : undefined}>
+          <span className="pt-plan-tick" aria-hidden>
+            {i < done && <Icon name="check" size={14} />}
+          </span>
+          {b}
+        </li>
+      ))}
+    </ol>
   );
 }
 

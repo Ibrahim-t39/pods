@@ -141,7 +141,7 @@ export function fallbackWhyFits(i: WhyFitsInput): WhyFits {
   const who = `${NUM[i.size] ?? i.size} people`;
   const what = i.kind === "community" ? "from your community" : `into ${i.activity}`;
   const when = i.topSlot && i.topSlot.free >= Math.ceil(i.size / 2) ? `, most free ${i.topSlot.label}` : `, ages ${i.ageBand[0]}-${i.ageBand[1]}`;
-  return { line: `${who} ${what} around ${i.metro}${when}`.slice(0, 90) };
+  return { line: `${who} ${what} nearby${when}`.slice(0, 90) };
 }
 
 // ── Job 4: widened-pod explainer ─────────────────────────────────────

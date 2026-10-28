@@ -23,7 +23,7 @@ export function NumberTicker({ value, className, minDigits = 1, live }: NumberTi
   return (
     <span className={cn("relative inline-flex tabular leading-none", className)} aria-live={live ? "polite" : undefined}>
       <span className="sr-only">{value}</span>
-      <span aria-hidden className="inline-flex overflow-hidden" style={{ height: "1em", lineHeight: 1 }}>
+      <span aria-hidden className="inline-flex overflow-hidden select-none" style={{ height: "1em", lineHeight: 1 }}>
         {neg && <span>−</span>}
         {str.split("").map((ch, idx) => {
           const d = Number(ch);
@@ -36,10 +36,10 @@ export function NumberTicker({ value, className, minDigits = 1, live }: NumberTi
                 animate={{ y: `${-d}em` }}
                 transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 32 }}
               >
+                {/* the rolling column is drawn by CSS (content: attr), so page text and screen readers get only the
+                    one number above, never "3 0 1 2 3 4 5 6 7 8 9" (QA core r1) */}
                 {DIGITS.map((n) => (
-                  <span key={n} className="block h-[1em] text-center leading-none">
-                    {n}
-                  </span>
+                  <span key={n} data-n={n} className="block h-[1em] text-center leading-none before:content-[attr(data-n)]" />
                 ))}
               </motion.span>
             </span>

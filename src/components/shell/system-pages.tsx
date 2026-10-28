@@ -12,18 +12,23 @@ function EmptyTable() {
   return <span aria-hidden className="block size-48 rounded-full border-[1.5px] border-dashed border-line-2 lg:size-80" />;
 }
 
-/** Z01. */
+/** Z01. Any unknown URL (QA r1: "No pod here." was wrong for non-pod links): a plain line, one line of help, Home. */
 export function NotFoundView({ inApp = false }: { inApp?: boolean }) {
   return (
     <Page
       chrome={<Chrome left="mark" />}
-      head={<Line size="lg">No pod here.</Line>}
+      head={
+        <>
+          <Line size="lg">Not found.</Line>
+          <p className="mt-s4 text-body-lg text-ink-2">This link goes nowhere. Your seats are kept.</p>
+        </>
+      }
       object={<EmptyTable />}
       foot={
         <>
           <span />
           <Button asChild>
-            <Link href={inApp ? "/app/pods" : "/app"}>Your pods</Link>
+            <Link href={inApp ? "/app/home" : "/app"}>Home</Link>
           </Button>
         </>
       }
@@ -39,7 +44,7 @@ export function ErrorView({ onRetry }: { onRetry: () => void; inApp?: boolean; d
       head={
         <>
           <Line size="lg">Something slipped.</Line>
-          <p className="mt-s4 text-body text-ink-2">Your seats are kept.</p>
+          <p className="mt-s4 text-body-lg text-ink-2">Your seats are kept.</p>
         </>
       }
       object={<EmptyTable />}

@@ -2,22 +2,27 @@
 // Same brand as the member app, calm, a real ops tool: cool paper under logo light, the rows on one white table.
 // Colour follows the thesis ("Overlap", COLOR_LIFE §5-6): a pod is two logo circles meeting (PodPair), its overlap
 // deepening with every hangout held; chosen/current = --select (the plan's blue); teal stays on the moderation icons
-// (moderation is safety); status as calm chips (open = signal, settled = grove, removed = red text). The mark top-left (home = the queue; the hidden 700 ms Director press), ONE switcher top-right (no tab row,
-// no sidebar). Laptop: the bold head sits in a 520 px column at the left and the table beside it after a 96 px gap
-// (DESIGN §9 rule 6). Admin authorization is a launch item (library C #8).
+// (moderation is safety); status as calm chips (open = signal, settled = grove, removed = red text). The mark top-left (home = the queue; the hidden 700 ms Director press), ONE switcher top-right: on laptop the four
+// places in one lit pill, on phone a pill naming the page that opens them. Laptop: the bold head sits in a 400 px column
+// at the left and the table beside it after a 64 px gap, so the table gets the width (QA admin r1). Admin authorization is a launch item (library C #8).
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useScroll, useTransform } from "motion/react";
 import { MarkButton } from "@/components/brand/mark-button";
+import { PullCircles } from "@/components/brand/pull-circles";
 import { ARRIVE, DUR, EASE as EASES, SNAPPY, useCalmMotion } from "@/components/brand/motion";
 import { useMediaQuery } from "@/components/ui/use-media-query";
 import { POD_SOLID, type PodHueKey } from "@/components/brand/disc";
 import { Icon } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { useDb } from "@/lib/db/hooks";
+import { useStore } from "@/lib/db/store";
+
+/** Pull to refresh on the admin lists (MOTION_SYSTEM §5): re-read the current world from storage. */
+const refresh = () => useStore.persist.rehydrate();
 
 export const ADMIN_NAV = [
   { href: "/admin/reports", label: "Reports" },
@@ -59,22 +64,44 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <span className="-ml-2">
           <MarkButton href="/admin/reports" label="Pods admin" size={30} />
         </span>
-        <div ref={box} className="relative">
+        {/* Laptop: the four places side by side in one lit pill (a clear switcher, 44 px targets). */}
+        <nav aria-label="Admin" className="hidden items-center gap-1 rounded-full bg-lit p-1 shadow-sm ring-1 ring-line lg:flex">
+          {ADMIN_NAV.map((n) => {
+            const on = active(n.href);
+            return (
+              <Link
+                key={n.href}
+                href={n.href}
+                aria-current={on ? "page" : undefined}
+                className={cn(
+                  "pressable relative inline-flex h-11 items-center gap-s2 rounded-full px-s4 text-[16px] font-semibold",
+                  on ? "text-primary-soft-text" : "text-ink-2 hover:text-ink",
+                )}
+              >
+                {on && <motion.span layoutId="admin-switch" aria-hidden className="absolute inset-0 rounded-full bg-primary-soft" transition={SNAPPY} />}
+                <span className="relative">{n.label}</span>
+                {n.href === "/admin/reports" && urgent && <span aria-label="urgent report open" className="relative size-2 rounded-full bg-info" />}
+              </Link>
+            );
+          })}
+        </nav>
+        {/* Phone: one pill naming the page; it opens the four places. */}
+        <div ref={box} className="relative lg:hidden">
           <button
             type="button"
             aria-haspopup="menu"
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}
-            className="pressable -mr-2 inline-flex h-11 items-center gap-s2 rounded-full px-2 text-[16px] font-medium text-ink"
+            className="pressable inline-flex h-11 items-center gap-s2 rounded-full bg-lit pr-s3 pl-s4 text-[17px] font-semibold text-ink shadow-sm ring-1 ring-line"
           >
-            <Icon name="room" size={22} className="text-teal" />
-            <span className="u">{current.label}</span>
+            <span>{current.label}</span>
             {urgent && (
               <span aria-label="urgent report open" className="relative grid size-2 place-items-center">
-                <motion.span aria-hidden className="absolute inset-0 rounded-full bg-info" animate={{ scale: [1, 2.4], opacity: [0.5, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }} />
-                <span className="size-2 rounded-full bg-info" />
+                <motion.span aria-hidden className="absolute inset-0 rounded-full bg-info" initial={{ scale: 1, opacity: 0.5 }} animate={{ scale: 2.6, opacity: 0 }} transition={{ duration: DUR.light, ease: EASE, delay: 0.2 }} />
+                <motion.span className="size-2 rounded-full bg-info" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={SNAPPY} />
               </span>
             )}
+            <Chevron className={cn("text-ink-2 transition-transform", open && "rotate-180")} />
           </button>
           <AnimatePresence>
             {open && (
@@ -115,7 +142,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
 /**
  * The admin page: head (bold word + one quiet label + at most one filter link) and the rows.
- * Phone: stacked, 32 px between the head and the rows. Laptop: the head in a 520 px column, rows beside it.
+ * Phone: stacked, 32 px between the head and the rows. Laptop: the head in a 400 px column, rows beside it.
  * `side` replaces the head on laptop (the open report) while the rows stay put.
  */
 export function AdminPage({ title, sub, link, children, side }: { title: string; sub?: ReactNode; link?: ReactNode; children: ReactNode; side?: ReactNode }) {
@@ -128,7 +155,8 @@ export function AdminPage({ title, sub, link, children, side }: { title: string;
   const headScale = useTransform(scrollY, [0, 72], still ? [1, 1] : [1, 0.92]);
   const headY = useTransform(scrollY, [0, 72], still ? [0, 0] : [0, -10]);
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)] lg:gap-s24">
+    <div className="lg:grid lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:gap-s16">
+      {!wide && <PullCircles onRefresh={refresh} />}
       <div className="lg:sticky lg:top-s24 lg:self-start">
         <AnimatePresence mode="wait" initial={false}>
           {side ?? (
@@ -143,10 +171,19 @@ export function AdminPage({ title, sub, link, children, side }: { title: string;
         </AnimatePresence>
       </div>
       <div className="mt-s8 lg:mt-0">
-        <div className="rounded-[28px] bg-lit px-s4 py-s2 shadow-sm ring-1 ring-line lg:px-s6 lg:py-s3">{children}</div>
+        <div className="rounded-[28px] bg-lit px-s4 pt-s2 pb-s4 shadow-sm ring-1 ring-line lg:px-s6 lg:pt-s3 lg:pb-s4">{children}</div>
         {link && <div className="mt-s6 lg:hidden">{link}</div>}
       </div>
     </div>
+  );
+}
+
+/** A plain down chevron (drawn here: the icon set has no chevron). */
+function Chevron({ size = 18, className }: { size?: number; className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M6 9.5l6 6 6-6" />
+    </svg>
   );
 }
 
@@ -217,7 +254,7 @@ export function AdminRow({
       {(meta || under || chip) && (
         <span className="hidden shrink-0 flex-col items-end gap-s1 text-right lg:flex">
           {meta && <span className="tabular text-[15px] text-ink-2">{meta}</span>}
-          {under && <span className="tabular text-[13px] text-ink-2">{under}</span>}
+          {under && <span className="tabular text-[14px] text-ink-2">{under}</span>}
           {chip}
         </span>
       )}
@@ -225,7 +262,7 @@ export function AdminRow({
   );
   const cls = cn(
     "relative flex min-h-[72px] w-full items-center gap-s4 py-s3 text-left",
-    "after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-line group-last:after:hidden",
+    "after:absolute after:right-0 after:bottom-0 after:left-14 after:h-px after:bg-line group-last:after:hidden",
   );
   return (
     <motion.li
@@ -271,25 +308,34 @@ export const POD_PAIR: Record<PodHueKey, readonly [string, string]> = {
 };
 
 /**
- * A pod as two circles meeting, drawn like the logo: solid circles, the overlap (multiply) darker, because it is what
- * they share. Repeat is visible: each held hangout deepens the circles (depth 1-3, the same steps as data-depth).
- * `waiting` = has not met again yet: two dashed outlines, nothing shared yet.
+ * A pod as two circles meeting, drawn like the logo (COLOR_LIFE §15: overlaps get brighter, never muddier). Each circle
+ * is its colour at a set strength; the lens where they meet is lit (a white wash), because what they share is the
+ * light part. Repeat is visible: each held hangout deepens the circles (depth 1-3, the same steps as data-depth).
+ * `waiting` = has not met again yet: two dashed outlines, nothing shared yet. Flat on purpose: admin has no bubbles.
  */
 export function PodPair({ hue, held = 0, size = 40, waiting, className }: { hue: PodHueKey; held?: number; size?: number; waiting?: boolean; className?: string }) {
   const [a, b] = POD_PAIR[hue];
   const depth = Math.min(3, Math.max(1, held));
-  const alpha = [0.5, 0.7, 0.9][depth - 1];
+  const alpha = [0.55, 0.75, 0.92][depth - 1];
+  const clip = `pp${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <svg aria-hidden viewBox="0 0 40 40" width={size} height={size} className={cn("shrink-0", className)} fill="none">
-      <g style={{ isolation: "isolate" }}>
-        {([[14, a], [26, b]] as const).map(([cx, c], i) =>
-          waiting ? (
-            <circle key={i} cx={cx} cy="20" r="9.5" stroke={c} strokeWidth="1.75" strokeDasharray="3 2.5" />
-          ) : (
-            <circle key={i} cx={cx} cy="20" r="10.5" fill={c} fillOpacity={alpha} style={{ mixBlendMode: "multiply" }} />
-          ),
-        )}
-      </g>
+      {waiting ? (
+        ([[14, a], [26, b]] as const).map(([cx, c], i) => <circle key={i} cx={cx} cy="20" r="9.5" stroke={c} strokeWidth="1.75" strokeDasharray="3 2.5" />)
+      ) : (
+        <>
+          <defs>
+            <clipPath id={clip}>
+              <circle cx="14" cy="20" r="10.5" />
+            </clipPath>
+          </defs>
+          <circle cx="14" cy="20" r="10.5" fill={a} fillOpacity={alpha} />
+          <circle cx="26" cy="20" r="10.5" fill={b} fillOpacity={alpha} />
+          {/* the shared lens, lit */}
+          <circle cx="26" cy="20" r="10.5" fill="#fff" fillOpacity={0.42} clipPath={`url(#${clip})`} />
+          <circle cx="26" cy="20" r="10.5" fill={a} fillOpacity={alpha * 0.35} clipPath={`url(#${clip})`} />
+        </>
+      )}
     </svg>
   );
 }

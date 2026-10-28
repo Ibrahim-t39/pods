@@ -42,7 +42,7 @@ type RowTone = "safe" | "quiet" | "danger";
 type RowBase = { icon?: IconName; label: ReactNode; value?: ReactNode; arrow?: boolean; className?: string; tone?: RowTone };
 
 /** A tappable row: a link (href), an outside link (external) or a button (onClick). */
-export function SheetRow({ icon, label, value, arrow, className, href, external, onClick, tone = "safe" }: RowBase & { href?: string; external?: boolean; onClick?: () => void }) {
+export function SheetRow({ icon, label, value, arrow, className, href, external, onClick, tone = "safe", disabled }: RowBase & { href?: string; external?: boolean; onClick?: () => void; disabled?: boolean }) {
   const body = (
     <>
       {icon && <Icon name={icon} size={24} className={cn("shrink-0", tone === "danger" ? "text-danger-text" : tone === "quiet" ? "text-ink-2" : "text-safe")} />}
@@ -65,7 +65,7 @@ export function SheetRow({ icon, label, value, arrow, className, href, external,
       </Link>
     );
   return (
-    <button type="button" onClick={onClick} className={cls}>
+    <button type="button" onClick={onClick} disabled={disabled} className={cn(cls, "disabled:pointer-events-none disabled:[&>span:first-of-type]:text-ink-2")}>
       {body}
     </button>
   );
@@ -134,4 +134,74 @@ export function GoLink({ children, onClick, href, className }: { children: React
  */
 export function PageName({ children }: { children: ReactNode }) {
   return <h1 className="sr-only">{children}</h1>;
+}
+
+/** A pill field (56px, the report note's grammar): a visible short label above, never a placeholder-only field. */
+export function PillField({
+  label,
+  value,
+  onChange,
+  inputMode,
+  autoComplete,
+  maxLength,
+  error,
+  autoFocus,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  inputMode?: "text" | "tel";
+  autoComplete?: string;
+  maxLength?: number;
+  error?: string | null;
+  autoFocus?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="text-label font-medium text-ink-2">{label}</span>
+      <input
+        value={value}
+        maxLength={maxLength}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
+        autoFocus={autoFocus}
+        aria-invalid={error ? true : undefined}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "mt-s2 h-14 w-full rounded-[28px] bg-[color-mix(in_srgb,var(--ink)_5%,transparent)] px-gutter text-[16px] text-ink outline-offset-2",
+          error && "ring-2 ring-danger-text",
+        )}
+      />
+      {error && (
+        <span role="alert" className="mt-s2 block text-label font-medium text-danger-text">
+          {error}
+        </span>
+      )}
+    </label>
+  );
+}
+
+/** A group's quiet label (12px overline), the only heading inside a content page's row groups. */
+export function GroupLabel({ children, className }: { children: ReactNode; className?: string }) {
+  return <p className={cn("mb-s2 text-overline font-medium text-ink-2", className)}>{children}</p>;
+}
+
+/**
+ * An editable field (Your seat): a quiet label over the value, an edit mark on the right, so it reads as a control.
+ *   label 13px ink-2 · value 20px 500 ink · edit glyph 20px · 72px min · the whole row is the tap target.
+ */
+export function FieldRow({ label, value, lead, onClick, expanded }: { label: string; value: ReactNode; lead?: ReactNode; onClick: () => void; expanded?: boolean }) {
+  return (
+    <button type="button" aria-haspopup="dialog" aria-expanded={expanded} onClick={onClick} className={cn("seat-field", HOVER)}>
+      {lead}
+      <span className="min-w-0 flex-1">
+        <span className="seat-field-label">{label}</span>
+        <span className="seat-field-value">{value}</span>
+      </span>
+      <span className="seat-field-edit">
+        <Icon name="edit" size={20} />
+        <span className="sr-only">Edit {label}</span>
+      </span>
+    </button>
+  );
 }

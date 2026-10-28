@@ -10,7 +10,7 @@ export function InlineStage({ podId, className }: { podId: string; className?: s
   const api = usePodTable();
   const st = usePlanStage(podId, { onTalk: api?.openTalk, unread: api?.unread, inline: true });
   return (
-    <div className={`pt-inline ${className ?? ""}`}>
+    <div className={`pt-inline ${className ?? ""}`} data-moment={st.moment}>
       {st.head && <div className="pt-inline-head">{st.head}</div>}
       <div className="pt-inline-obj">{st.object}</div>
       {st.foot && <div className="pt-inline-foot">{st.foot}</div>}

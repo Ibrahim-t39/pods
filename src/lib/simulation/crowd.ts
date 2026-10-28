@@ -9,6 +9,7 @@
 import { useSyncExternalStore } from "react";
 import { useStore } from "@/lib/db/store";
 import { nowISO, nowMs } from "@/lib/time/clock";
+import { DEMO } from "@/config/demo";
 import { hash32 } from "@/lib/ids";
 import { applyVote } from "@/lib/db/local/hangouts";
 import type { DbState, ID } from "@/lib/types";
@@ -173,6 +174,8 @@ export function startCrowd(): () => void {
     }
     for (const h of Object.values(d.hangouts)) {
       if (h.status !== "upcoming" || seeded?.hangouts.has(h.id)) continue;
+      // Video script beat 6: the demo hangout reads exactly "4 of 8 in. Locked." after the user's tap, so no top-up there.
+      if (h.suggestion_id === DEMO.hoopers.suggestionId) continue;
       const going = d.rsvps.filter((r) => r.hangout_id === h.id && r.status === "going").length;
       const candidates = botsIn(d, h.pod_id).filter((b) => !d.rsvps.some((r) => r.hangout_id === h.id && r.user_id === b));
       candidates.slice(0, Math.max(0, 6 - going)).forEach((bot, i) =>

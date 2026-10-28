@@ -21,10 +21,10 @@ export interface ThreeCircleArtProps {
 }
 
 const RAMP: Record<PodHueName, { bg0: string; bg1: string; a: string; b: string; c: string; deep: string }> = {
-  // pod families (COLOR_LIFE §4): key "ember" = tide (blue + teal), "grove" = grove (green + teal), "signal" = dusk (ember + plum + blue)
+  // pod families: key "ember" = blue-led tide, "grove" = green-led grove, "signal" = ember-led glow (no plum: it read muddy)
   ember: { bg0: "var(--color-signal-soft)", bg1: "var(--color-signal-soft-border)", a: "var(--signal-500)", b: "var(--teal-300)", c: "var(--teal-500)", deep: "var(--teal-800)" },
   grove: { bg0: "var(--color-grove-soft)", bg1: "var(--color-grove-soft-border)", a: "var(--grove-500)", b: "var(--teal-300)", c: "var(--teal-500)", deep: "var(--teal-900)" },
-  signal: { bg0: "var(--color-ember-soft)", bg1: "var(--color-signal-soft-border)", a: "var(--ember-500)", b: "var(--signal-400)", c: "var(--plum)", deep: "var(--plum)" },
+  signal: { bg0: "var(--color-ember-soft)", bg1: "var(--color-signal-soft-border)", a: "var(--ember-500)", b: "var(--ember-300)", c: "var(--signal-400)", deep: "var(--ember-700)" },
 };
 
 export function ThreeCircleArt({

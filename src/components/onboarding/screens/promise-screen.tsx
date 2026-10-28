@@ -1,12 +1,13 @@
-// B07 Promise (4 of 4). "Show up. Be kind." and one ring toggle, "Let Claude plan from free times.", on by default
-// and explicit (I #2; Apple 5.1.2(i)): this is the only consent line before the first plan. "I promise" is a tap,
-// never a hold (PB 3.5). The table on the right closes: your disc takes its seat and the ring fills, 4 of 4.
+// B07 Promise (5 of 6). The promise is the line, "Show up. Be kind.", and the one button keeps it: "I promise" (a
+// tap, never a hold; PB 3.5). The AI consent is its own row with a real switch, on by default and explicit (I #2;
+// Apple 5.1.2(i)), so it never reads as part of the promise (QA round 1). The table closes: your disc takes its seat.
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Line } from "@/components/brand/line";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useRepo } from "@/lib/db/hooks";
 import type { User } from "@/lib/types";
 import { FlowStep, Sub, useTableSize } from "../flow";
@@ -49,14 +50,18 @@ function PromiseStep({ me }: { me: User }) {
       label="Promise"
       head={
         <>
-          <Line size="lg" className="max-w-[7ch]">
-            Show up. Be kind.
+          <Line size="lg">
+            <span className="whitespace-nowrap">Show up.</span> <span className="whitespace-nowrap">Be kind.</span>
           </Line>
-          <button type="button" role="switch" aria-checked={claudeOk} onClick={() => set({ claudeOk: !claudeOk })} className="pods-ob-toggle pressable mt-s8">
-            <i aria-hidden />
-            Let Claude plan from free times.
-          </button>
-          <Sub live className="min-h-6 text-label">
+          <Sub className="text-[17px]">Your promise to your pod.</Sub>
+          <label className="pods-ob-consent">
+            <span>
+              AI plans your hangouts
+              <small>From your free times</small>
+            </span>
+            <Switch checked={claudeOk} onCheckedChange={(v) => set({ claudeOk: v })} aria-label="AI plans your hangouts" />
+          </label>
+          <Sub live className="min-h-6 text-[15px]">
             {err ? "Not saved. Try again." : ""}
           </Sub>
         </>

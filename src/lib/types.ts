@@ -190,7 +190,10 @@ export interface HangoutSuggestion {
   starts_at: ISODateTime;
   status: "suggested" | "accepted" | "replaced" | "pending_review";
   created_at: ISODateTime;
-  source: "claude" | "fallback" | "seed" | "admin";
+  /** + "member": a hangout a member proposed by hand (Platform §F3), shown as "Proposed by <name>". */
+  source: "claude" | "fallback" | "seed" | "admin" | "member";
+  /** + who proposed it when source is "member". */
+  proposed_by?: ID | null;
   round: number;
   option_index: 0 | 1 | 2;
   trace: PlannerStep[];
@@ -236,13 +239,75 @@ export interface Message {
   user_id: ID | null; // null = system host
   text: string;
   created_at: ISODateTime;
-  kind: "text" | "host" | "plan_card" | "checkin_prompt" | "vote" | "run_it_back" | "system";
+  /** + "poll": a member poll; ref_id is the Poll id (Platform §F2). */
+  kind: "text" | "host" | "plan_card" | "checkin_prompt" | "vote" | "run_it_back" | "system" | "poll";
   ref_id: ID | null;
   client_id: string | null;
   pinned: boolean;
   delivery: "sending" | "sent" | "failed";
   /** + host quick replies (BLUEPRINT AP-02). */
   quick_replies?: string[];
+  /** + Platform §F2: the message this one answers (same pod). */
+  reply_to?: ID | null;
+  /** + Platform §F2: reaction key -> user ids, in the order they reacted. Keys come from REACTIONS. */
+  reactions?: Record<string, ID[]>;
+}
+
+/** + Platform §F2: the fixed reaction set (labels, not emoji, live in the UI; the key is stored). */
+export const REACTIONS = ["heart", "laugh", "fire", "thumbs", "eyes"] as const;
+export type ReactionKey = (typeof REACTIONS)[number];
+
+/** + Platform §F2: a member poll inside a pod chat. One vote per member; votes can change until it closes. */
+export interface Poll {
+  id: ID;
+  pod_id: ID;
+  created_by: ID;
+  question: string; // 1-120 chars
+  options: { id: ID; label: string }[]; // 2-4, 1-40 chars each
+  votes: Record<ID /*user*/, ID /*option*/>;
+  created_at: ISODateTime;
+  closes_at: ISODateTime | null;
+  status: "open" | "closed";
+  message_id: ID; // the chat line that carries it
+}
+
+/** + Platform §F2: a shared memory in a pod (a note, optionally with one photo). Members only; removable by its author. */
+export interface Memory {
+  id: ID;
+  pod_id: ID;
+  hangout_id: ID | null;
+  user_id: ID;
+  caption: string; // 0-200 chars
+  photo_url: string | null; // data:image/* (local build) or a storage URL later; null = note only
+  created_at: ISODateTime;
+  removed_at: ISODateTime | null;
+}
+
+/** + Platform §F7: an invite link. pod_id null = invite to Pods; set = "save them a seat" in that pod (still placed). */
+export interface Invite {
+  id: ID;
+  code: string; // 8 chars, url-safe
+  inviter_id: ID;
+  pod_id: ID | null;
+  created_at: ISODateTime;
+  redeemed_by: ID[];
+}
+
+/** + Platform §F5 Discover: a request to join one more pod (interest pods only; community pods go through Likes). */
+export interface PodRequest {
+  id: ID;
+  user_id: ID;
+  pod_id: ID;
+  created_at: ISODateTime;
+  status: "pending" | "joined" | "waitlisted" | "cancelled";
+}
+
+/** + Platform §F9 Safety: one trusted contact per person, device-local, never shown to members. */
+export interface TrustedContact {
+  user_id: ID;
+  name: string; // 1-40
+  phone: string; // E.164-ish digits
+  updated_at: ISODateTime;
 }
 
 // ── Safety ──────────────────────────────────────────────────────────────
@@ -368,7 +433,10 @@ export interface AppNotification {
     | "next_scheduled"
     | "plan_locked"
     | "run_it_back_reveal"
-    | "report_update";
+    | "report_update"
+    | "poll_opened" // + Platform §F2
+    | "pod_request" // + Platform §F5
+    | "reply"; // + Platform §F2: someone answered your message
   title: string;
   body: string;
   href: string;
@@ -408,6 +476,9 @@ export interface ClockState {
   real_at: number; // epoch ms, client only
 }
 
+/** + Platform §M: Demo = the scripted Chanda world (Director, pinned clock). Live = your own account, real clock. */
+export type AppMode = "demo" | "live";
+
 // ── The whole local DB ─────────────────────────────────────────────────
 export interface DbState {
   rev: number;
@@ -434,6 +505,12 @@ export interface DbState {
   placementRuns: PlacementRun[];
   notifications: AppNotification[];
   plannerCache: Record<string /* `${pod_id}:${job}` */, PlannerCacheEntry>;
+  // + Platform foundation (PLATFORM_SPEC §D). Older persisted blobs get these from freshDb() on merge.
+  polls: Record<ID, Poll>;
+  memories: Record<ID, Memory>;
+  invites: Record<ID, Invite>;
+  podRequests: PodRequest[];
+  trustedContacts: Record<ID /*user*/, TrustedContact>;
   clock: ClockState;
   config: AppConfig;
 }

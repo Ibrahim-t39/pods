@@ -67,7 +67,7 @@ export function Segmented<T extends string>({ options, value, onChange, label, s
             {o.icon}
             {o.label}
             {o.count != null && (
-              <span className={cn("tabular rounded-pill px-1.5 text-[11.5px]", on ? "bg-primary-soft text-primary-soft-text" : "bg-border text-fg-muted")}>{o.count}</span>
+              <span className={cn("tabular rounded-pill px-1.5 text-[12px]", on ? "bg-primary-soft text-primary-soft-text" : "bg-border text-fg-muted")}>{o.count}</span>
             )}
           </button>
         );

@@ -32,10 +32,10 @@ export function Tooltip({ content, children, side = "top", shortcut, className }
             side={side}
             sideOffset={8}
             collisionPadding={12}
-            className={cn("pods-pop z-tooltip flex max-w-64 items-center gap-2 rounded-sm bg-ink px-2.5 py-1.5 text-[12.5px] font-medium text-white shadow-md dark:bg-neutral-800", className)}
+            className={cn("pods-pop z-tooltip flex max-w-64 items-center gap-2 rounded-sm bg-ink px-2.5 py-1.5 text-[13px] font-medium text-white shadow-md dark:bg-neutral-800", className)}
           >
             {content}
-            {shortcut && <span className="font-mono text-[11px] text-neutral-400">{shortcut}</span>}
+            {shortcut && <span className="font-mono text-[12px] text-neutral-400">{shortcut}</span>}
             <RTooltip.Arrow width={10} height={5} className="fill-[var(--pods-ink)] dark:fill-[var(--neutral-800)]" />
           </RTooltip.Content>
         </RTooltip.Portal>

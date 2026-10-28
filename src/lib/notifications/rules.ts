@@ -21,6 +21,9 @@ export const TRIGGER_GROUP: Record<AppNotification["trigger"], NotificationGroup
   checkin: "runItBack",
   run_it_back_reveal: "runItBack",
   report_update: "safety",
+  poll_opened: "podChat",
+  reply: "podChat",
+  pod_request: "news",
 };
 
 export function inQuietHours(iso: string): boolean {

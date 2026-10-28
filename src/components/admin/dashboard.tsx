@@ -1,29 +1,33 @@
-// Overview (V3_SPEC 6.6): four numbers from the store, each with its definition as one label. No KPI cards, no
-// sparklines, no deltas. Numbers are Plus Jakarta Sans Bold, tabular. The headline count carries the calm logo
-// gradient (tide: blue into teal, AA as large text); each pod is its two logo circles meeting (PodPair): filled once it
-// met again, dashed while it waits. The open-reports number is the one way out: it goes to the queue.
+// Overview (V3_SPEC 6.6; QA admin r1). Work first: "Needs you" is the queue of what an operator acts on today (open
+// reports, urgent first; plans waiting for review; plans short of the lock that start within 3 days), each row a way
+// into its screen. Below it, three labelled numbers in equal columns and the repeat line with its dot key. Every
+// figure comes from facts.ts / metricsAt on the same store, so Overview, Pods and Hangouts always agree.
+// No hero number, no KPI cards, no sparklines, no deltas.
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { motion } from "motion/react";
 import { formatInTimeZone } from "date-fns-tz";
 import { useDb, useHydrated } from "@/lib/db/hooks";
-import { cn } from "@/lib/cn";
 import { metricsAt } from "@/lib/metrics/compute";
-import { Icon } from "@/components/icons";
 import { DUR, EASE as EASES, SNAPPY } from "@/components/brand/motion";
-import { AdminPage, PodPair } from "./admin-shell";
-import { AdminLoading } from "./states";
-import { goingCount, hueOf, seated } from "./facts";
+import { AdminPage, AdminRow, PodPair, StatusChip } from "./admin-shell";
+import { AdminLoading, Quiet } from "./states";
+import { REASON, age, goingCount, hueOf, openPlan, seated, weekday } from "./facts";
+import { usePodLabel } from "./reveal";
 import { useAdminNow } from "./use-admin-now";
 
 const EASE = EASES.out;
+const SOON_MS = 3 * 24 * 3_600_000;
 
+type Item = { id: string; hue: ReturnType<typeof hueOf>; title: string; meta: string; chip?: "urgent" | "review"; href: string; mark: "dot" | "ring"; waiting?: boolean };
 
 export function Dashboard() {
   const hydrated = useHydrated();
   const db = useDb((d) => d);
+  const router = useRouter();
+  const label = usePodLabel(db);
   const { date: now } = useAdminNow();
   const t = now.getTime();
 
@@ -33,86 +37,118 @@ export function Dashboard() {
     const lock = db.config.planner.lockThreshold;
     const locked = Object.values(db.hangouts).filter((h) => h.status !== "cancelled" && Date.parse(h.ends_at) > t && goingCount(db, h.id) >= lock).length;
     const repeat = metricsAt(db, t).repeat;
-    // the same definition as metricsAt.repeat, kept per pod so each ring can take its pod's hue
+    // the same definition as metricsAt.repeat, kept per pod so each pair can take its pod's hue
     const done = (h: { status: string; ends_at: string }) => h.status !== "cancelled" && Date.parse(h.ends_at) <= t;
     const hs = Object.values(db.hangouts);
     const starters = [...new Set(hs.filter((h) => h.sequence === 1 && done(h)).map((h) => h.pod_id))];
     const again = new Set(hs.filter((h) => h.sequence >= 2 && done(h) && db.rsvps.some((x) => x.hangout_id === h.id && x.checked_in)).map((h) => h.pod_id));
-    const rings = starters.map((id) => ({ id, hue: hueOf(db.pods[id]), again: again.has(id) })).sort((a, b) => Number(b.again) - Number(a.again));
+    const pairs = starters.map((id) => ({ id, hue: hueOf(db.pods[id]), again: again.has(id) })).sort((a, b) => Number(b.again) - Number(a.again));
+
+    // the work queue
+    const queue: Item[] = [];
+    const open = Object.values(db.reports)
+      .filter((r) => r.status === "open")
+      .sort((a, b) => Number(b.urgent) - Number(a.urgent) || a.created_at.localeCompare(b.created_at));
+    for (const r of open) {
+      const pod = r.pod_id ? db.pods[r.pod_id] : undefined;
+      queue.push({ id: r.id, hue: hueOf(pod), title: REASON[r.reason], meta: `Report · ${label(pod)} · ${age(r.created_at, t)}`, chip: r.urgent ? "urgent" : undefined, href: `/admin/reports?r=${r.id}`, mark: "dot" });
+    }
+    for (const s of Object.values(db.suggestions).filter((x) => x.status === "pending_review")) {
+      queue.push({ id: s.id, hue: hueOf(db.pods[s.pod_id]), title: label(db.pods[s.pod_id]), meta: `Plan to review · ${weekday(s.starts_at)}`, chip: "review", href: "/admin/hangouts", mark: "ring", waiting: true });
+    }
+    for (const pod of live) {
+      const plan = openPlan(db, pod.id);
+      if (!plan) continue;
+      const start = Date.parse(plan.s.starts_at);
+      if (start <= t || start - t > SOON_MS || plan.going >= lock) continue;
+      queue.push({ id: plan.s.id, hue: hueOf(pod), title: label(pod), meta: `Not locked · ${plan.going} of ${seated(db, pod.id)} in · ${weekday(plan.s.starts_at)}`, href: "/admin/hangouts", mark: "ring", waiting: true });
+    }
+
     return {
+      pods: live.length,
       seated: live.reduce((s, p) => s + seated(db, p.id), 0),
       locked,
       repeat,
-      rings,
-      reports: Object.values(db.reports).filter((r) => r.status === "open").length,
+      pairs,
+      queue,
     };
-  }, [db, t, hydrated]);
+  }, [db, t, hydrated, label]);
 
   if (!n) return <AdminLoading />;
 
   const r = n.repeat;
-  const small = [
-    { k: "seated", v: n.seated, label: "seated" },
-    { k: "locked", v: n.locked, label: "locked ahead" },
-    { k: "reports", v: n.reports, label: "open reports", href: "/admin/reports" },
+  const stats = [
+    { k: "pods", v: n.pods, label: "Open pods" },
+    { k: "seated", v: n.seated, label: "Members seated" },
+    { k: "locked", v: n.locked, label: "Hangouts locked ahead" },
   ];
 
   return (
     <AdminPage title="Overview" sub={formatInTimeZone(now, "America/Chicago", "EEEE, MMM d")}>
-      <section aria-label="Pods that met again">
-        <p className="flex items-baseline gap-s2">
-          <motion.span
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: DUR.light, ease: EASE }}
-            className="tabular bg-[image:var(--grad-tide)] bg-clip-text pb-[0.06em] text-[88px] leading-[0.9] font-bold tracking-[-0.05em] text-transparent lg:text-[128px]"
-          >
-            {r.num}
-          </motion.span>
-          <span className="tabular text-[22px] font-semibold text-ink-2 lg:text-[28px]">of {r.den}</span>
-        </p>
-        <p className="mt-s3 text-[16px] font-medium text-ink-2">pods met again after #1</p>
-        <ul aria-hidden className="mt-s6 flex flex-wrap gap-s2">
-          {n.rings.map((p, i) => (
-            <motion.li
-              key={p.id}
-              initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ ...SNAPPY, delay: 0.15 + i * 0.035 }}
-            >
-              <PodPair hue={p.hue} held={p.again ? 2 : 1} waiting={!p.again} size={32} />
-            </motion.li>
-          ))}
-        </ul>
+      <section aria-labelledby="ov-needs">
+        <h2 id="ov-needs" className="flex items-baseline justify-between pt-s3 text-[15px] font-semibold text-ink">
+          Needs you
+          <span className="tabular text-[14px] font-medium text-ink-2">{n.queue.length}</span>
+        </h2>
+        {n.queue.length === 0 ? (
+          <Quiet>All quiet.</Quiet>
+        ) : (
+          <ul className="mt-s1">
+            {n.queue.map((it, i) => (
+              <AdminRow
+                key={it.id}
+                index={i}
+                hue={it.hue}
+                mark={it.mark}
+                waiting={it.waiting}
+                title={it.title}
+                meta={it.meta}
+                chip={it.chip === "urgent" ? <StatusChip tone="open">urgent</StatusChip> : it.chip === "review" ? <StatusChip tone="open">review</StatusChip> : undefined}
+                onClick={() => router.push(it.href)}
+              />
+            ))}
+          </ul>
+        )}
       </section>
 
-      <ul className="mt-s8 grid grid-cols-3 border-t border-line pt-s6 lg:mt-s12 lg:pt-s8">
-        {small.map((it, i) => {
-          const body = (
-            <>
-              <span className="flex items-center gap-s2">
-                <span className={cn("tabular text-[40px] leading-none font-bold tracking-[-0.04em] lg:text-[48px]", it.href && it.v > 0 ? "text-info-text" : "text-ink")}>{it.v}</span>
-                {it.href && <Icon name="arrow" size={20} className="text-teal transition-transform group-hover:translate-x-1" />}
-              </span>
-              <span className="mt-s2 text-[14px] font-medium text-ink-2">{it.label}</span>
-            </>
-          );
-          return (
-            <motion.li
-              key={it.k}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: DUR.settle, ease: EASE, delay: 0.3 + i * 0.06 }}
-            >
-              {it.href ? (
-                <Link href={it.href} className="group pressable flex min-h-11 flex-col">{body}</Link>
-              ) : (
-                <div className="flex flex-col">{body}</div>
-              )}
-            </motion.li>
-          );
-        })}
+      <ul aria-label="This week" className="mt-s6 grid grid-cols-3 gap-s6 border-t border-line pt-s6">
+        {stats.map((it, i) => (
+          <motion.li
+            key={it.k}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: DUR.settle, ease: EASE, delay: 0.2 + i * 0.06 }}
+            className="flex min-w-0 flex-col"
+          >
+            <span className="tabular text-[32px] leading-none font-semibold tracking-[-0.03em] text-ink lg:text-[40px]">{it.v}</span>
+            <span className="mt-s2 text-[14px] leading-snug font-medium text-ink-2">{it.label}</span>
+          </motion.li>
+        ))}
       </ul>
+
+      <section aria-labelledby="ov-again" className="mt-s6 border-t border-line pt-s6">
+        <h2 id="ov-again" className="flex items-baseline justify-between gap-s4 text-[15px] font-semibold text-ink">
+          Met again after hangout #1
+          {r.den > 0 && <span className="tabular shrink-0 text-[15px] font-semibold text-ink">{r.num} of {r.den} pods</span>}
+        </h2>
+        {r.den === 0 ? (
+          <p className="mt-s2 text-[14px] text-ink-2">No hangout held yet.</p>
+        ) : (
+          <>
+            <ul aria-hidden className="mt-s4 flex flex-wrap gap-s2">
+              {n.pairs.map((p, i) => (
+                <motion.li key={p.id} initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...SNAPPY, delay: 0.15 + i * 0.03 }}>
+                  <PodPair hue={p.hue} held={p.again ? 2 : 1} waiting={!p.again} size={32} />
+                </motion.li>
+              ))}
+            </ul>
+            <p className="mt-s3 flex flex-wrap items-center gap-x-s4 gap-y-s1 text-[13px] font-medium text-ink-2">
+              <span className="inline-flex items-center gap-s1"><PodPair hue="ember" held={2} size={20} />met again</span>
+              <span className="inline-flex items-center gap-s1"><PodPair hue="ember" waiting size={20} />not yet</span>
+            </p>
+          </>
+        )}
+      </section>
     </AdminPage>
   );
 }

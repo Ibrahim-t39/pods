@@ -3,11 +3,11 @@
 // what the PDFs show.
 //
 // Rules carried from the wireframes:
-// - Seat 0 is always yours, at 6 o'clock over the thumb (PB 2.1, 6.4). You are the ember spark; everyone else wears
+// - Seat 0 is always yours, at 6 o'clock over the thumb (PB 2.1, 6.4). You are the ink bead (--you); everyone else wears
 //   their own logo colour (blue, green or teal, stable per person; COLOR_LIFE §4).
 // - Until it locks a table has exactly `n` seats (default 4), and its ring is n segments: a segment turns solid in
 //   that person's colour when they say yes, so a full ring is the logo's colours closing. The count IS the form.
-// - The table top carries the pod's two-circle wash (tide, grove or dusk). It deepens with every hangout held
+// - The table top is a glass orb (COLOR_LIFE §15) carrying the pod's two-circle wash (tide, grove or dusk). It deepens with every hangout held
 //   (data-depth from `worn`: what they share grows; COLOR_LIFE §5.3) and is tinted when locked.
 // - First names sit inside the table, facing each seat (place cards). Initials are data, not copy.
 // - The whole table is ONE target (onClick = what it opens, e.g. Talk); seats are not separate buttons (designer R1 #1).
@@ -86,13 +86,12 @@ export function TableRing({
   const seg = (2 * Math.PI) / n;
   const gap = 0.16;
   const H = POD_SOLID[hue];
-  const tableTop = night
-    ? "rgba(255,255,255,.07)"
-    : fill
-      ? `${POD_WASH[hue]}, color-mix(in srgb, ${H} 9%, var(--table))`
-      : `${POD_WASH[hue]}, var(--table)`;
+  // the table top is a glass orb (COLOR_LIFE §15): the pod's wash in a clear body, a rim in the pod's hue, one window.
+  // On the moment it is dark glass so the names keep lamp contrast.
+  // (images only: a bare colour may only be the last background layer)
+  const orbWash = fill ? `${POD_WASH[hue]}, linear-gradient(color-mix(in srgb, ${H} 9%, transparent), color-mix(in srgb, ${H} 9%, transparent))` : POD_WASH[hue];
   const dashed = night ? "rgba(242,255,250,.34)" : "var(--ink-3)";
-  /** each seat's colour: you = spark; others = their own logo colour */
+  /** each seat's colour: you = ink (--you); others = their own logo colour */
   const seatColor = (k: number) => {
     const st = seats[k];
     if (k === 0 || st?.ink) return YOU_COLOR;
@@ -146,19 +145,19 @@ export function TableRing({
       {/* printed shadow + the top */}
       <span
         aria-hidden
-        style={{ position: "absolute", left: pad + 4, top: pad + 12, width: S, height: S, borderRadius: "50%", background: night ? "rgba(0,0,0,.22)" : "rgba(14,26,34,.06)", filter: "blur(6px)", opacity: dim ? 0.4 : 1 }}
+        style={{ position: "absolute", left: pad + 4, top: pad + 12, width: S, height: S, borderRadius: "50%", background: night ? "transparent" : "rgba(14,26,34,.06)", filter: "blur(6px)", opacity: dim ? 0.4 : 1 }}
       />
       <span
         aria-hidden
+        className={night ? "orb-night" : "orb-solid"}
         style={{
           position: "absolute",
           left: pad,
           top: pad,
           width: S,
           height: S,
-          borderRadius: "50%",
-          background: tableTop,
-          boxShadow: night ? "inset 0 0 0 1px rgba(242,255,250,.12)" : `inset 0 0 0 ${Math.round(S * 0.04)}px rgba(255,255,255,.7), 0 0 0 1px rgba(14,26,34,.05)`,
+          ["--orb" as string]: H,
+          ["--orb-wash" as string]: orbWash,
           transition: "background var(--dur-light) var(--ease-paper)",
         }}
       />
@@ -206,7 +205,9 @@ export function TableRing({
         const discBg = col.bg;
         const discFg = col.fg;
         const nm = st.name ?? (you ? "you" : "");
-        const rr = R - ds / 2 - (Math.abs(Math.sin(a)) > 0.5 ? 18 : 34);
+        // names sit inside the table; at the moment (night) each name is anchored just outside its own disc, on the
+        // same radius, so it never collides with the ring (QA r1)
+        const rr = night ? R + ds / 2 + (Math.abs(Math.sin(a)) > 0.5 ? 14 : 44) : R - ds / 2 - (Math.abs(Math.sin(a)) > 0.5 ? 18 : 34);
         return (
           <span key={k} aria-hidden>
             {st.here && (
@@ -221,7 +222,7 @@ export function TableRing({
                   animate={{ scale: 1, opacity: dim ? 0.55 : 1 }}
                   transition={reduce ? { duration: 0.16 } : { ...SNAPPY, delay: k * 0.06 }}
                   className="grid place-items-center rounded-full font-serif leading-none"
-                  style={{ width: ds, height: ds, background: discBg, color: discFg, fontSize: Math.round(ds * 0.5), boxShadow: you && night ? "0 0 0 2px var(--lamp)" : undefined }}
+                  style={{ width: ds, height: ds, backgroundColor: discBg, backgroundImage: "var(--bead)", color: discFg, fontSize: Math.round(ds * 0.5), boxShadow: you && night ? "0 0 0 2px var(--lamp), var(--shadow-bead)" : "var(--shadow-bead)" }}
                 >
                   {st.initial}
                 </motion.span>
@@ -235,7 +236,7 @@ export function TableRing({
                 data-nc
                 layoutId="you-disc"
                 className="grid place-items-center rounded-full font-serif leading-none"
-                style={{ position: "absolute", left: x, top: y + ds + 10, width: ds, height: ds, background: YOU_COLOR.bg, color: YOU_COLOR.fg, fontSize: Math.round(ds * 0.5), boxShadow: "var(--shadow-spark)" }}
+                style={{ position: "absolute", left: x, top: y + ds + 10, width: ds, height: ds, backgroundColor: YOU_COLOR.bg, backgroundImage: "var(--bead)", color: YOU_COLOR.fg, fontSize: Math.round(ds * 0.5), boxShadow: "var(--shadow-bead), var(--shadow-spark)" }}
               >
                 {st.initial ?? ""}
               </motion.span>
@@ -250,7 +251,9 @@ export function TableRing({
                   top: c + Math.sin(a) * rr - 10,
                   width: 80,
                   textAlign: "center",
-                  color: night ? "rgba(242,255,250,.88)" : st.in ? "var(--ink)" : "var(--ink-2)",
+                  color: night ? "var(--lamp)" : st.in ? "var(--ink)" : "var(--ink-2)",
+                  textShadow: night ? "0 1px 8px rgb(2 38 52 / .7)" : undefined,
+                  fontWeight: night ? 600 : undefined,
                   opacity: dim ? 0.6 : 1,
                   overflow: "hidden",
                   textOverflow: "ellipsis",

@@ -12,12 +12,14 @@ import { Stage } from "@/components/brand/stage";
 import { TableRing, GENTLE, type Seat } from "@/components/brand/table-ring";
 import { Chrome } from "@/components/shell/chrome";
 import { ResponsiveSheet, notify } from "@/components/ui";
+import { useMediaQuery } from "@/components/ui/use-media-query";
 import { BlockSheet, ReportSheet } from "@/components/safety";
 import { GoLink, PageName, SheetFoot, SheetLine } from "@/components/profile/kit";
 import { podHue } from "@/components/profile/hue";
 import { shortLike } from "@/components/profile/words";
 import { useDb, useHydrated, useRepo } from "@/lib/db/hooks";
 import { isBlockedByMe } from "@/lib/safety/selectors";
+import { mutualPodIds } from "@/lib/platform/selectors";
 import { nowISO } from "@/lib/time/clock";
 import { displayName, toPublicMember } from "@/lib/utils";
 import "@/components/profile/seat.css";
@@ -27,6 +29,7 @@ export function PersonScreen() {
   const router = useRouter();
   const repo = useRepo();
   const hydrated = useHydrated();
+  const wide = useMediaQuery("(min-width: 1024px)");
   const [sheet, setSheet] = useState<"person" | "report" | "block">("person");
 
   // Only people you share a pod with can be seen (members stay inside their pods).
@@ -45,7 +48,11 @@ export function PersonScreen() {
       .filter(Boolean)
       .sort((a, b) => Number(myLikes.has(b.id)) - Number(myLikes.has(a.id)))
       .map((i) => shortLike(i.id, i.label));
-    const also = shared.filter((p) => p.id !== pod.id && p.type === "interest").map((p) => p.name);
+    // the other pods you share (PLATFORM_SPEC §F7, mutualPodIds); community pod names are never printed here (D10)
+    const also = mutualPodIds(db, userId)
+      .map((id) => db.pods[id])
+      .filter((p) => p && p.id !== pod.id && p.type === "interest")
+      .map((p) => p.name);
     const at = db.memberships
       .filter((m) => m.pod_id === pod.id && !m.left_at)
       .sort((a, b) => Number(b.user_id === db.me) - Number(a.user_id === db.me))
@@ -88,7 +95,7 @@ export function PersonScreen() {
     <div className="seat-pg">
       <Stage light="paper" />
       <Chrome left="back" backHref={`/app/pods/${view.pod.id}`} backLabel={view.pod.name} />
-      <div className="seat-body">
+      <div className="seat-body person-body">
         <div className="seat-col">
           <p className="text-overline text-ink-2">At the table</p>
           <Line size="lg" className="mt-s2">
@@ -97,7 +104,7 @@ export function PersonScreen() {
         </div>
         <motion.div className="person-obj" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={GENTLE}>
           {/* the same table you left: the pod's circle travels in from the pod page (MOTION_SYSTEM §4) */}
-          <TableRing size={232} seats={view.seats} hue={view.hue} worn={Math.min(3, view.held + 1)} youWaiting={false} fill />
+          <TableRing size={wide ? 360 : 232} seats={view.seats} hue={view.hue} worn={Math.min(3, view.held + 1)} youWaiting={false} fill />
         </motion.div>
       </div>
 

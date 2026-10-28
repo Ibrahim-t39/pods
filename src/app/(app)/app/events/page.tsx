@@ -1,4 +1,4 @@
-// Hangouts are no longer a section (V3_SPEC §2): the Room's list view shows what is next, by pod.
+// Hangouts live under Plans now (PLATFORM_SPEC §B): /app/events hands off to /app/plans.
 import { Suspense } from "react";
 import { ToList } from "./to-list";
 

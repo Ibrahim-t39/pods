@@ -149,8 +149,8 @@ export async function* runPlanner(input: PlannerInput, deps: PlannerDeps, job: "
 
   // ── Draft ─────────────────────────────────────────────────────────
   const model = input.rules.model;
-  const draftLabel = useClaude ? "Drafting the plan with Claude" : "Drafting the plan";
-  yield { type: "step", id: "draft", status: "running", label: draftLabel, detail: useClaude ? "Written by Claude" : input.cachedDraft ? "Planned ahead" : "Planned from free times" };
+  const draftLabel = useClaude ? "Drafting the plan with AI" : "Drafting the plan";
+  yield { type: "step", id: "draft", status: "running", label: draftLabel, detail: useClaude ? "Written by AI" : input.cachedDraft ? "Planned ahead" : "Planned from free times" };
 
   const vctx = {
     candidates: ordered, allVenues: input.venues, date, budgetMax: input.budgetMax, starter: input.hangoutNumber === 1,
@@ -210,7 +210,7 @@ export async function* runPlanner(input: PlannerInput, deps: PlannerDeps, job: "
   } else {
     yield {
       type: "step", id: "draft", status: "done", label: draftLabel,
-      detail: source === "claude" ? "Written by Claude" : source === "seed" ? "Planned ahead" : "Planned from free times",
+      detail: source === "claude" ? "Written by AI" : source === "seed" ? "Planned ahead" : "Planned from free times",
     };
   }
 

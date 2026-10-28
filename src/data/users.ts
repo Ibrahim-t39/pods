@@ -31,12 +31,12 @@ const R = (name: string, dob: string, pro: Row["pro"], bio: string, p: [PK, stri
 
 export const ROSTER: Row[] = [
   // ── Hoopers (7): the demo pod. Six are free Sunday afternoons; Marcus is Saturday mornings only. ──
-  R("Malik", "2003-05-02", "he/him", "Moved here in August for an engineering job. Left-handed, slow, and I will set a screen for you.", [["ask_me_about", "Why my knees are older than I am"], ["perfect_saturday", "Early run, long breakfast, pickup after"]], "UA,W", 1),
-  R("Ama", "2004-08-19", "she/her", "Nursing student, night owl, plays like a guard but is secretly a post.", [["ask_me_about", "Surviving clinical rotations"], ["hot_take", "Zone defense at the rec level is a crime"]], "UA,W", 1),
-  R("Tobi", "2002-11-30", "he/him", "Barely out of undergrad and trying to find a run that is not all 6'5\" guys.", [["currently_learning", "A left-hand finish that is not embarrassing"], ["ask_me_about", "The best tacos under $10"]], "UA,W", 2),
-  R("Jordan", "2003-01-12", null, "New in town, plays whatever is open. Will bring the speaker if nobody objects.", [["perfect_saturday", "Pickup, then a nap I did not earn"], ["hot_take", "Winners stay on, always"]], "UA,SM", 2),
-  R("Dre", "2001-09-07", "he/him", "Fourth quarter guy. Works in logistics, plays like it: always in the right spot.", [["ask_me_about", "Why a good pick beats a good shot"], ["currently_learning", "Slowing down on defense"]], "UA,W", 3),
-  R("Kayla", "2004-02-25", "she/her", "Hooper, runner, reluctant cook. I just want a Sunday that is not just laundry.", [["perfect_saturday", "Farmers market, then a run"], ["hot_take", "Rebounding is the most underrated skill"]], "UA,W", 3),
+  R("Malik", "2003-05-02", "he/him", "Moved here in August for an engineering job. Left-handed, slow, and I will set a screen for you.", [["ask_me_about", "Why my knees are older than I am"], ["perfect_saturday", "Early run, long breakfast, pickup after"]], "SM,W", 1),
+  R("Ama", "2004-08-19", "she/her", "Nursing student, night owl, plays like a guard but is secretly a post.", [["ask_me_about", "Surviving clinical rotations"], ["hot_take", "Zone defense at the rec level is a crime"]], "SM,W", 1),
+  R("Tobi", "2002-11-30", "he/him", "Barely out of undergrad and trying to find a run that is not all 6'5\" guys.", [["currently_learning", "A left-hand finish that is not embarrassing"], ["ask_me_about", "The best tacos under $10"]], "SM,UA", 2),
+  R("Jordan", "2003-01-12", null, "New in town, plays whatever is open. Will bring the speaker if nobody objects.", [["perfect_saturday", "Pickup, then a nap I did not earn"], ["hot_take", "Winners stay on, always"]], "SM,UA", 2),
+  R("Dre", "2001-09-07", "he/him", "Fourth quarter guy. Works in logistics, plays like it: always in the right spot.", [["ask_me_about", "Why a good pick beats a good shot"], ["currently_learning", "Slowing down on defense"]], "SM,W", 3),
+  R("Kayla", "2004-02-25", "she/her", "Hooper, runner, reluctant cook. I just want a Saturday that is not just laundry.", [["perfect_saturday", "Farmers market, then a run"], ["hot_take", "Rebounding is the most underrated skill"]], "SM,W", 3),
   R("Marcus", "2002-06-15", "he/him", "Teaches middle school math. Saturdays are for sleeping in, mornings are for the gym.", [["ask_me_about", "Pi day, I will not stop"], ["perfect_saturday", "Gym at 9, lunch with anyone"]], "SM", 4),
   // ── Guitar & jam (5): Chanda's second interest; on deck for her ──
   R("Eli", "2003-03-21", "he/him", "Bass player who got talked into learning guitar. Plays by ear, reads slowly.", [["currently_learning", "Fingerstyle, badly, daily"], ["ask_me_about", "A cheap amp that actually sounds good"]], "W", 2),

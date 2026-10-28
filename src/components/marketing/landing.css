@@ -1,0 +1,348 @@
+/* The landing (/), components/marketing/landing.tsx. Spacing on the 4pt scale (DESIGN §4), each step one job:
+   8 inside a row · 12 headline to line · 16 inside a group (kicker, line, sub) · 32 copy to control and copy to object
+   (phone) · 48 table to headline (hero) · 64 copy to object (laptop) · 96 between sections (48 + 48) · gutter 20
+   phone / 64 laptop, and the fixed 64px header is inset by the same gutter. Between-group gaps are always >= 2x
+   within-group gaps. Reveals reuse the story's keyframe (ls-rise, story.css). Bubbles only on people and pods
+   (COLOR_LIFE §15.5). Colour from tokens only. */
+
+.lp {
+  --gut: 20px;
+  --max: 1200px;
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  /* the page's own light: clean logo hues only (no plum, so no muddy greys behind the bubbles) */
+  background:
+    radial-gradient(circle 240px at 96% 120px, color-mix(in oklch, var(--pods-signal) 11%, transparent) 0 50%, transparent 100%),
+    radial-gradient(circle 200px at 104% 420px, color-mix(in oklch, var(--pods-grove) 10%, transparent) 0 45%, transparent 100%),
+    radial-gradient(circle 200px at -6% 640px, color-mix(in oklch, var(--pods-ember) 7%, transparent) 0 40%, transparent 100%),
+    var(--paper);
+  background-repeat: no-repeat;
+  color: var(--ink);
+  overflow-x: clip;
+}
+@media (min-width: 1024px) {
+  .lp {
+    --gut: 64px;
+    background:
+      radial-gradient(circle 620px at 80% 300px, color-mix(in oklch, var(--pods-signal) 11%, transparent) 0 50%, transparent 100%),
+      radial-gradient(circle 460px at 100% 680px, color-mix(in oklch, var(--pods-grove) 10%, transparent) 0 45%, transparent 100%),
+      radial-gradient(circle 380px at 4% 820px, color-mix(in oklch, var(--pods-ember) 7%, transparent) 0 40%, transparent 100%),
+      var(--paper);
+    background-repeat: no-repeat;
+  }
+}
+
+/* ── header: one fixed 64px bar (QA r1). Glass over the page, a hairline once anything sits under it, so text
+   that scrolls beneath is veiled, never overlapping. Inset = the page gutter. Laptop: anchors centred. ─────────── */
+html:has(.lp) { scroll-padding-top: 88px; }
+.lp-nav {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  height: 64px;
+  background: color-mix(in oklch, var(--paper) 90%, transparent);
+  box-shadow: 0 1px 0 var(--line);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+.lp-nav-in {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  height: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gut);
+}
+.lp-nav-logo { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; justify-self: start; }
+.lp-nav-mid { display: none; }
+.lp-nav-end { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
+.lp-nav-a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 12px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  transition: background-color var(--dur-tap) var(--ease-out);
+}
+.lp-nav-a:hover { background: color-mix(in oklch, var(--ink) 6%, transparent); }
+.lp-nav-a:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+@media (min-width: 1024px) {
+  .lp-nav-in { grid-template-columns: 1fr auto 1fr; }
+  .lp-nav-mid { display: flex; align-items: center; gap: 8px; }
+}
+.lp-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--color-primary) 40%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 5px;
+}
+.lp-link:hover { text-decoration-color: currentColor; }
+
+/* ── type ────────────────────────────────────────────────────────────────────────────────────────────────── */
+.lp-h1, .lp-h2 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.lp-h1 { font-size: clamp(2.75rem, 1.9rem + 3.6vw, 6rem); line-height: 1.02; }
+.lp-h1 span { display: inline-block; color: var(--color-signal-text); }
+.lp-h2 { font-size: var(--text-heading-xl-size); line-height: 1.06; max-width: 13ch; }
+@media (min-width: 1024px) { .lp-h2 { font-size: var(--text-display-lg-size); max-width: 15ch; } }
+.lp-lede, .lp-sub { margin: 0; font-size: 18px; line-height: 1.45; color: var(--ink-2); max-width: 30ch; text-wrap: pretty; }
+@media (min-width: 1024px) { .lp-lede { font-size: 22px; } .lp-sub { font-size: 20px; } }
+.lp-kicker { margin: 0 0 -8px; font-size: 15px; font-weight: 600; color: var(--color-signal-text); }
+@media (min-width: 1024px) { .lp-kicker { font-size: 17px; } }
+
+/* ── hero ────────────────────────────────────────────────────────────────────────────────────────────────── 
+   Phone: table, 48, headline, 12, line, 32, pill. Laptop: copy left, table right, both centred on the first
+   viewport's optical middle (below the 64px bar). */
+.lp-hero {
+  display: grid;
+  align-content: center;
+  gap: 48px;
+  min-height: 100svh;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding: 88px var(--gut) 40px;
+}
+.lp-hero-copy { display: grid; gap: 12px; align-content: start; }
+.lp-hero-cta { margin-top: 20px; }
+@media (min-width: 1024px) {
+  .lp-hero { grid-template-columns: 6fr 5fr; gap: 64px; align-items: center; padding-block: 112px 64px; }
+  .lp-hero-copy { order: -1; gap: 24px; }
+  .lp-hero-cta { margin-top: 8px; }
+}
+
+/* the table: three people seated, one open seat (yours). Positions in % of a square box; none overlap the seat. */
+.lp-table {
+  position: relative;
+  width: min(100%, 300px, 34svh);
+  aspect-ratio: 1;
+  margin-bottom: 24px; /* room for the seat's label */
+  justify-self: center;
+}
+@media (min-width: 1024px) { .lp-table { width: min(100%, 520px, 62svh); margin-bottom: 32px; } }
+.lp-seat { position: absolute; display: block; }
+.lp-s1 { left: 4%; top: 4%; width: 46%; height: 46%; }
+.lp-s2 { left: 52%; top: 0; width: 38%; height: 38%; }
+.lp-s3 { left: 52%; top: 42%; width: 46%; height: 46%; }
+.lp-you { left: 10%; top: 56%; width: 36%; height: 36%; cursor: pointer; border-radius: 999px; }
+.lp-open {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px dashed var(--color-ember-text);
+  background: radial-gradient(circle at 50% 46%, color-mix(in oklch, var(--pods-ember) 8%, transparent) 0 60%, color-mix(in oklch, var(--pods-ember) 18%, transparent) 100%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lp-you .lp-open { animation: pods-breathe-all 3.2s var(--ease-in-out) infinite; }
+}
+.lp-you-b { position: absolute; inset: 0; display: block; }
+.lp-you-tag {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  translate: -50% 100%;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ember-text);
+}
+@media (min-width: 1024px) { .lp-you-tag { font-size: 17px; bottom: -12px; } }
+
+/* ── sections ────────────────────────────────────────────────────────────────────────────────────────────── */
+.lp-sec {
+  display: grid;
+  gap: 32px;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding: 48px var(--gut);
+}
+.lp-head { display: grid; gap: 16px; align-content: start; }
+@media (min-width: 1024px) {
+  .lp-sec { grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; padding-block: 96px; }
+}
+
+/* the loop: four steps on a rail, the last one returns to the first */
+.lp-steps {
+  --sb: 56px;
+  position: relative;
+  display: grid;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 1024px) { .lp-steps { --sb: 80px; } }
+.lp-steps::before {
+  /* the rail */
+  content: "";
+  position: absolute;
+  left: calc(var(--sb) / 2 - 1px);
+  top: calc(var(--sb) / 2);
+  bottom: calc(var(--sb) / 2);
+  width: 2px;
+  background: linear-gradient(var(--pods-ember), var(--pods-signal), var(--pods-grove), var(--pods-teal));
+  opacity: .35;
+  border-radius: 2px;
+}
+.lp-step { position: relative; display: flex; align-items: center; gap: 16px; }
+.lp-step-n { font-size: 20px; }
+@media (min-width: 1024px) { .lp-step-n { font-size: 26px; } .lp-step-t b { font-size: 24px !important; } .lp-step-t span { font-size: 17px !important; } }
+.lp-step-t { display: grid; gap: 2px; }
+.lp-step-t b { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.lp-step-t span { font-size: 15px; color: var(--ink-2); }
+.lp-again {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 32px;
+  color: var(--color-primary);
+}
+@media (min-width: 1024px) {
+  .lp-loop { grid-template-columns: 1fr; gap: 64px; min-height: 0; }
+  .lp-steps { grid-template-columns: repeat(4, 1fr) 56px; gap: 24px; align-items: start; }
+  .lp-steps::before { left: calc(var(--sb) / 2); right: 56px; top: calc(var(--sb) / 2 - 1px); bottom: auto; width: auto; height: 2px; background: linear-gradient(90deg, var(--pods-ember), var(--pods-signal), var(--pods-grove), var(--pods-teal)); }
+  .lp-step { display: grid; justify-items: start; gap: 16px; }
+  .lp-again { height: var(--sb); }
+}
+
+/* where you meet: the plan sheet, as the app draws it */
+.lp-sheet {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 420px);
+  justify-self: center;
+  padding: 12px 16px 16px;
+  border-radius: 28px;
+  background: var(--lit);
+  box-shadow: var(--shadow-float);
+}
+.lp-grab { justify-self: center; width: 36px; height: 4px; border-radius: 4px; background: var(--line-2); margin-bottom: 8px; }
+.lp-row { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.lp-row + .lp-row { border-top: 1px solid var(--line); }
+.lp-ico {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: var(--color-safe);
+  background: var(--color-safe-soft);
+  flex: none;
+}
+.lp-row-t { display: grid; gap: 2px; }
+.lp-row-t b { font-size: 16px; font-weight: 600; }
+.lp-row-t span { font-size: 14px; color: var(--ink-2); }
+.lp-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.lp-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+}
+.lp-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: start;
+  min-height: 44px;
+  margin-top: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.lp-go svg { color: var(--color-safe); }
+
+/* who it's for: pods as glass bubbles in an open field (positions in % of the field) */
+.lp-field {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 1 / 1.02;
+  justify-self: center;
+}
+.lp-pod { position: absolute; display: block; }
+.lp-pod-n { display: block; font-size: clamp(13px, 3.6vw, 17px); padding-inline: 4px; }
+.lp-pod-a { left: 2%; top: 4%; width: 40%; aspect-ratio: 1; }
+.lp-pod-b { left: 44%; top: 0; width: 32%; aspect-ratio: 1; }
+.lp-pod-c { left: 74%; top: 18%; width: 25%; aspect-ratio: 1; }
+.lp-pod-d { left: 34%; top: 32%; width: 30%; aspect-ratio: 1; }
+.lp-pod-e { left: 4%; top: 52%; width: 42%; aspect-ratio: 1; }
+.lp-pod-f { left: 50%; top: 56%; width: 44%; aspect-ratio: 1; }
+@media (min-width: 1024px) { .lp-pod-n { font-size: 18px; } }
+
+/* close: the mark lands above the line (fixed slot, so nothing overlaps it), then the one pill */
+.lp-open-sec { justify-items: center; text-align: center; gap: 24px; padding-block: 64px 96px; }
+@media (min-width: 1024px) { .lp-open-sec { grid-template-columns: 1fr; gap: 32px; padding-block: 128px; } }
+.lp-open-sec .lp-h2 { max-width: 12ch; }
+.lp-close-mark { display: grid; place-items: center; width: 88px; height: 88px; }
+.lp-close-logo { display: block; width: 100%; height: 100%; }
+@media (min-width: 1024px) { .lp-close-mark { width: 120px; height: 120px; } }
+.lp-open-cta { display: grid; justify-items: center; gap: 8px; margin-top: 8px; }
+
+/* footer: logo, then the four links on a 2-column grid (phone) or one row (laptop), then the year */
+.lp-foot {
+  display: grid;
+  gap: 16px;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding: 40px var(--gut) 48px;
+  border-top: 1px solid var(--line);
+}
+.lp-foot-links { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.lp-foot-a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.lp-foot-a:hover { text-decoration: underline; text-underline-offset: 5px; }
+.lp-foot-c { margin: 0; font-size: 13px; color: var(--ink-2); }
+@media (min-width: 1024px) {
+  .lp-foot { grid-template-columns: auto 1fr auto; align-items: center; gap: 32px; }
+  .lp-foot-links { display: flex; justify-content: center; gap: 32px; }
+}
+
+/* ── reveals: one rise per group, finished by cover 22% so a still frame never shows it ghosted ──────────── */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .lp-in {
+      animation: ls-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+  }
+}
+
+@media (min-width: 1024px) {
+  .lp-sheet { width: 480px; padding: 16px 24px 24px; border-radius: 32px; }
+  .lp-row { min-height: 72px; gap: 16px; }
+  .lp-ico { width: 48px; height: 48px; }
+  .lp-row-t b { font-size: 18px; }
+  .lp-row-t span { font-size: 15px; }
+  .lp-chip { min-height: 52px; font-size: 16px; }
+}

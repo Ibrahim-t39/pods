@@ -11,13 +11,13 @@ import { SNAPPY } from "@/components/brand/table-ring";
 import { useDb, useMe, useRepo } from "@/lib/db/hooks";
 import { faithLadder, faithNode, heritageLadder, heritageNode } from "@/data/taxonomy";
 import type { FaithValue, HeritageValue, Slot } from "@/lib/types";
-import { BlockedList, PrivacyCenter, SafetyCenter } from "@/components/safety";
-import { Apart, PageName, ChoiceRow, Rows, SheetFoot, SheetLine, SheetRow, GoLink, RingMark } from "./kit";
+import { BlockedList, PrivacyCenter } from "@/components/safety";
+import { PageName, ChoiceRow, Rows, SheetFoot, SheetLine, GoLink, RingMark } from "./kit";
 import { useSeatPrefs } from "./local-prefs";
 import { TEXT_KINDS, shortLike } from "./words";
 
-export type SeatSheet = "likes" | "free" | "community" | "texts" | "claude" | "more" | "help" | "privacy" | "blocked" | "delete";
-export const SEAT_SHEETS: SeatSheet[] = ["likes", "free", "community", "texts", "claude", "more", "help", "privacy", "blocked", "delete"];
+export type SeatSheet = "likes" | "free" | "community" | "texts" | "ai" | "more" | "privacy" | "blocked" | "delete";
+export const SEAT_SHEETS: SeatSheet[] = ["likes", "free", "community", "texts", "ai", "more", "privacy", "blocked", "delete"];
 
 type SheetProps = { open: boolean; onClose: () => void };
 const done = (onClose: () => void) => <SheetFoot right={<Button onClick={onClose}>Done</Button>} />;
@@ -236,54 +236,27 @@ export function TextsSheet({ open, onClose }: SheetProps) {
   );
 }
 
-/* ── Claude plans (I #2, Apple 5.1.2(i)): one line, one ring ──────────────────────────────────────────────────── */
+/* ── AI plans (I #2, Apple 5.1.2(i)): one line, one ring. Users see "AI"; the privacy page names the model. ───── */
 
-export function ClaudeSheet({ open, onClose }: SheetProps) {
+export function AiSheet({ open, onClose }: SheetProps) {
   const { prefs, save } = useSeatPrefs();
   return (
-    <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="Claude plans" footer={done(onClose)}>
+    <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="AI plans" footer={done(onClose)}>
       <PageName>Your seat</PageName>
       <SheetLine className="-mt-s3 mb-s4">Picks a time and place from free times.</SheetLine>
-      <Rows label="Claude plans">
+      <Rows label="AI plans">
         <ChoiceRow safe on={prefs.claude} label={prefs.claude ? "On" : "Off"} onToggle={() => save({ ...prefs, claude: !prefs.claude })} />
       </Rows>
     </ResponsiveSheet>
   );
 }
 
-/* ── More (Y06), Help, Privacy, Blocked ────────────────────────────────────────────────────────────────────────── */
-
-export function MoreSheet({ open, onClose, go, onSignOut }: SheetProps & { go: (s: SeatSheet) => void; onSignOut: () => void }) {
-  return (
-    <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="More">
-      <PageName>Your seat</PageName>
-      <Rows label="More">
-        <SheetRow icon="help" label="Help" arrow onClick={() => go("help")} />
-        <SheetRow icon="why" label="Privacy and terms" arrow onClick={() => go("privacy")} />
-        <SheetRow icon="back" tone="quiet" label="Sign out" onClick={onSignOut} />
-      </Rows>
-      <Apart>
-        <Rows>
-          <SheetRow icon="block" tone="quiet" label="Delete my seat" onClick={() => go("delete")} />
-        </Rows>
-      </Apart>
-    </ResponsiveSheet>
-  );
-}
-
-export function HelpSheet({ open, onClose, go }: SheetProps & { go: (s: SeatSheet) => void }) {
-  return (
-    <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="If something’s off">
-      <PageName>Your seat</PageName>
-      <SafetyCenter onBlocked={() => go("blocked")} />
-    </ResponsiveSheet>
-  );
-}
+/* ── Privacy, Blocked (opened from /app/settings). Help is its own page (/app/safety, "If something's off"). ─────── */
 
 export function PrivacySheet({ open, onClose }: SheetProps) {
   return (
     <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="Privacy and terms">
-      <PageName>Your seat</PageName>
+      <PageName>Settings</PageName>
       <PrivacyCenter />
     </ResponsiveSheet>
   );
@@ -292,7 +265,7 @@ export function PrivacySheet({ open, onClose }: SheetProps) {
 export function BlockedSheet({ open, onClose }: SheetProps) {
   return (
     <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="Blocked">
-      <PageName>Your seat</PageName>
+      <PageName>Settings</PageName>
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={SNAPPY}>
         <BlockedList />
       </motion.div>

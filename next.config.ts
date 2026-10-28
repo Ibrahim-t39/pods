@@ -10,6 +10,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // QA r1: the dev badge sat on the nav and the progress dots in every recording.
+  devIndicators: false,
   partialPrefetching: true,
   turbopack: {
     root: path.resolve(__dirname),
@@ -19,6 +21,14 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+  // QA r1: reference prototypes (/concepts) and dev pages (/dev) are never served by a production build.
+  async redirects() {
+    if (process.env.NODE_ENV !== "production") return [];
+    return [
+      { source: "/concepts/:path*", destination: "/", permanent: false },
+      { source: "/dev/:path*", destination: "/", permanent: false },
+    ];
   },
   async headers() {
     return [

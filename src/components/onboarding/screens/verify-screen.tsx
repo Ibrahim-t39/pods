@@ -14,7 +14,7 @@ import type { User } from "@/lib/types";
 import { FlowStep, GoLink, Sub, useTableSize } from "../flow";
 import { CheckSeat } from "../objects";
 import { Guarded } from "../guard";
-import { STEP_ROUTE } from "../steps";
+import { DOT, STEP_ROUTE } from "../steps";
 import { CameraView } from "../camera-capture";
 import { CONTACT_HREF } from "@/components/legal/contact";
 
@@ -71,9 +71,14 @@ function Verify({ me }: { me: User }) {
           <Line size="lg" className="max-w-[8ch]">
             {line}
           </Line>
-          <Sub live className="min-h-6">
-            {state === "failed" ? "Your answers are kept." : state === "idle" ? "A quick look. Nothing is kept." : ""}
+          <Sub live className="min-h-6 max-w-[30ch] text-[17px]">
+            {state === "failed" ? "Your answers are kept." : state === "idle" ? "A live look confirms it's you. No photo is saved." : ""}
           </Sub>
+          {state === "idle" && (
+            <Button size="lg" variant="secondary" onClick={() => check(false)} className="mt-s4">
+              Without the camera
+            </Button>
+          )}
         </>
       }
       object={
@@ -81,11 +86,16 @@ function Verify({ me }: { me: User }) {
           {cam ? <CameraView facing="user" mirror on onError={() => setCam(false)} /> : null}
         </CheckSeat>
       }
-      status={state === "idle" ? <GoLink onClick={() => check(false)}>Without the camera</GoLink> : state === "failed" ? <GoLink href={CONTACT_HREF}>Write to us</GoLink> : undefined}
+      dot={DOT.verify}
+      status={
+        state === "failed" ? (
+          <GoLink href={CONTACT_HREF}>Write to us</GoLink>
+        ) : undefined
+      }
       action={
         state === "idle" || state === "failed" ? (
           <Button size="xl" onClick={() => check(state === "idle")}>
-            {state === "failed" ? "Try again" : "Start"}
+            {state === "failed" ? "Try again" : "Use the camera"}
           </Button>
         ) : undefined
       }

@@ -234,7 +234,8 @@ export async function fetchLine(
 }
 
 /** Caption that follows the source (BLUEPRINT §6.6). */
-export function sourceCaption(source: PlannerSource | "admin" | null | undefined, kind: "plan" | "line" = "plan"): string {
+export function sourceCaption(source: PlannerSource | "admin" | "member" | null | undefined, kind: "plan" | "line" = "plan"): string {
+  if (source === "member") return "Proposed by a member";
   if (source === "claude" || source === "seed") return kind === "plan" ? "Planned with Claude" : "Written with Claude";
   if (source === "local") return "On-device rule-based plan";
   if (source === "admin") return "Planned by the Pods team";

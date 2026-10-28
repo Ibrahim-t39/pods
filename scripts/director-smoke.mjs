@@ -14,7 +14,13 @@ const state = () => page.evaluate(() => JSON.parse(localStorage.getItem("pods:v1
 await page.goto(base + "/app?director=1&fast=1&sw=1", { waitUntil: "networkidle" });
 await page.waitForTimeout(1500);
 await page.screenshot({ path: "shots/director.mobile.png" });
-const click = async (id) => { await page.getByTestId(id).click(); await page.waitForTimeout(700); };
+// beat actions fold the panel to its pill: unfold it before the next action
+const click = async (id) => {
+  const pill = page.getByRole("button", { name: "Open director panel" });
+  if (await pill.isVisible().catch(() => false)) await pill.click();
+  await page.getByTestId(id).click();
+  await page.waitForTimeout(700);
+};
 await click("dir-skip");
 await page.waitForTimeout(1500);
 let d = await state();

@@ -407,20 +407,26 @@ export function roomTables(db: DbState, nowMs: number): RoomTable[] {
   });
 }
 
-/** The label under a table's name in the Room: "Sun 1pm · in", "planning", "after #1". Two to three words. */
-export function tableState(t: RoomTable, nowMs?: number): string {
+/** What opens a pod that is not yet yours: your first hangout ("Opens after Sat"), else "Opens soon" (QA core r1). */
+export function opensAfter(tables: RoomTable[], nowMs?: number): string {
+  const first = tables.filter((t) => t.open).map((t) => t.row.plan?.startsAt).filter((x): x is string => !!x).sort()[0];
+  return first ? `Opens after ${shortDay(first, nowMs)}` : "Opens soon";
+}
+
+/** The label under a table's name in the Room: "Sat · 10am · in", "planning", "Opens after Sat". Two to three words. */
+export function tableState(t: RoomTable, nowMs?: number, closed = "Opens soon"): string {
   const { row } = t;
-  if (!t.open) return "after #1";
+  if (!t.open) return closed;
   switch (row.status) {
     case "checkin_due":
     case "run_it_back":
-      return "run it back?";
+      return "Run it back?";
     case "vote_open":
-      return "pick a time";
+      return "Pick a time";
     case "happening_now":
-      return "now";
+      return "Now";
     case "forming":
-      return "filling";
+      return "Filling";
     default:
       break;
   }
@@ -428,7 +434,7 @@ export function tableState(t: RoomTable, nowMs?: number): string {
     const when = `${shortDay(row.plan.startsAt, nowMs)} · ${shortTime(row.plan.startsAt)}`;
     return row.plan.imIn ? `${when} · in` : when;
   }
-  return "planning";
+  return "Planning";
 }
 
 /** The Room's one line: what is next, in five words or fewer ("Hoopers, Sunday 1pm."). */

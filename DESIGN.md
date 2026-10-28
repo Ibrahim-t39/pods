@@ -90,32 +90,24 @@ Counterexamples:
 - the v3 tan paper with coral and black pills, which said "assistant", not "people" (`PODS/v3/color/r1-clear-water/before-390.png`);
 - "Clear Water" (round 1): correct hues, but corner light with no meaning and too pale to feel alive (`PODS/v3/color/r1-clear-water/winner-390.png`).
 
-## 3. Type (founder 2026-10-28; `PODS/v3/type/TYPE_RESEARCH.md`)
+## 3. Type (founder 2026-10-28: "use the same font as the logo")
 
-One sans: **Plus Jakarta Sans** (next/font, `--font-jakarta`). `--font-display`, `--font-serif` and `--font-ui` all resolve to it, so older class names keep working. Instrument Serif and Figtree are gone. The OG image uses `public/og/fonts/PlusJakartaSans-Bold.woff`.
+One family: **Archivo**, the typeface the "pods." wordmark is drawn from (`PODS/brand/BRAND.md` §2). Loaded with next/font (`--font-archivo`, wdth axis available but **not used**: normal width only). `--font-display`, `--font-serif` and `--font-ui` all resolve to it, so older class names keep working. Plus Jakarta Sans, Instrument Serif and Figtree are gone. The OG image uses `public/og/fonts/Archivo-SemiBold.woff` (fontsource, OFL).
 
-**Why this font.**
-- Its rounded-geometric forms rhyme with the three circles without copying the wordmark.
-- It looks classy and confident in bold, and stays legible at 13-16 px.
-- It has tabular figures and is OFL.
-- Runner-up: Mona Sans.
-- The research covered 19 products, a 12-font specimen and five fonts in-app (`PODS/v3/type/`).
+**Why.** The founder's call: the UI and the logo speak in one voice. Archivo at 800+ and wide was "way too thick" (`PODS/v3/type/weights/cmp-home.png`), so headlines are 600 at normal width with tight tracking; that keeps the grotesque's confidence without shouting.
 
-**Headlines are bold.** Weights, by job:
+**Weights, by job. Never 700 or above, never 300 or below.**
 
 | Weight | Job |
 |-|-|
-| 700 | display and page lines (`.line`, `text-display-*`) |
-| 600 | headings, buttons, sheet titles, initials in discs |
+| 600 | display lines, page lines, headings, sheet titles, buttons, initials in discs |
 | 500 | labels and captions |
 | 400 | body only |
 
-Never use 300 or below. No italics anywhere: inputs, placeholders and emphasised words included.
-
 | Class | Size | Weight / tracking | Used for |
 |-|-|-|-|
-| `text-display-2xl` | 64-168 | 700 / -0.035em | the cropped day word (lamp on the moment; over a circle it is large text, 3:1 or better) |
-| `text-display-xl` | 56-112 | 700 / -0.03em | plan and "Run it back?" |
+| `text-display-2xl` | 64-168 | 600 / -0.035em | the day word on the lock (lamp on the moment; sized to fit, never cropped) |
+| `text-display-xl` | 56-112 | 600 / -0.03em | plan and "Run it back?" |
 | `text-display-lg` | 48-72 | 600 / -0.025em | page lines |
 | `text-heading-xl` | 40-56 | 600 / -0.02em | settings lines |
 | `text-heading-lg` | 32 | 600 / -0.015em | sheet titles |
@@ -126,28 +118,42 @@ Never use 300 or below. No italics anywhere: inputs, placeholders and emphasised
 | `text-caption` | 12/16 | 500 | captions |
 
 **Rules.**
-- (T1) One line per screen carries it: left-anchored, 2-5 words, bold, `text-wrap: balance`.
+- (T1) One line per screen carries it: left-anchored, 2-5 words, 600, tracking -0.025 to -0.03em, `text-wrap: balance`.
 - (T2) Times, dates and counts use `tabular-nums` (`.fig` or `tabular`).
 - (T3) Headline measure is 20-45 characters; body is 45-70.
 - (T4) No widows on lines: use `<br/>` or `max-w-[Nch]`.
 - (T5) Long venue names step the line down one size rather than leaving one word alone (wireframe D14).
-- (T6) Emphasis is weight or colour, never italic. The `text-logo` gradient word is allowed once per moment.
-- (T7) Type is ink on every light surface and lamp on the moment. Hue is never used for running text except links (blue) and safety (teal).
+- (T6) Emphasis is weight or colour, never italic. No serif anywhere. The `text-logo` gradient word is allowed once per moment.
+- (T7) Type is ink on every light surface and lamp on the moment. Hue never carries running text except links (blue) and safety (teal).
+- (T8) No `font-stretch`, no `font-bold`/`font-extrabold`, no `fontWeight: 700+` (grep before merge).
 
-## 4. Colour: what we share grows (`PODS/v3/color/COLOR_LIFE.md`, "Overlap")
+## 4. Colour: what we share grows (`PODS/v3/color/COLOR_LIFE.md`, "Overlap", finished as glass bubbles)
 
-Colour follows the thesis, not a swatch list. The logo is three people (three circles) and what they share (the overlaps, darker where more meet; the centre is the pod). Friendship needs Fit and Repeat, so colour shows people meeting and their overlap deepening each time they meet again. "Overlap" won a 5-voice panel against Porch Light, Saturday Park and Lights On, all rendered on the same real screens (`PODS/v3/color/directions.png`, `directions-1440.png`).
+Colour follows the thesis, not a swatch list. The logo is three people (three circles, each with its white dot: the person) and what they share (the overlaps; the centre is the pod; the blue period is the plan, settled). Friendship needs Fit and Repeat, so colour shows people meeting and their overlap deepening each time they meet again. "Overlap" won a 5-voice panel against Porch Light, Saturday Park and Lights On on the same real screens (`PODS/v3/color/directions.png`). A second round tested the founder's bubble idea (COLOR_LIFE §15): **glass orbs won** and are the finish for every circle that is a person, a pod or the moment.
 
 **Roles (each hue has one meaning).**
 
 | Hue | Value | Means | Where |
 |-|-|-|-|
 | signal blue | `#0161DD` (light `#1B78FE`) | the plan, settled (the blue period of "pods.") | the commit button, links, focus, chosen and active states (`--select`, `bg-select`), the planning light, people |
-| ember | `#FD6123` | you, and the warm yes | your disc, "I'm in", "Run it back", the lock spark. **Never a field, never text, never white on ember (3.0:1).** |
+| ember | `#FD6123` | you, and the warm yes | your bead, "I'm in", "Run it back", the lock's top orb. **Never a field, never text, never white on ember (3.0:1).** |
 | grove | `#19C185` (text `#03684A`) | confirmed, OK | success, the verified mark (`#05A771`), community pods, people |
 | teal | `#01627E` (blue x green overlap) | trust where people meet | safety centre icons and text (`--color-safe`), check-in ring, switches |
 | plum | `#40313F` (ember x blue overlap) | dusk | the second interest pod's family, after-hangout light |
 | red | `#C50B3A` | destroying something | delete account, admin remove, "Call 911" text. Never a normal safety state. |
+
+**Bubbles (COLOR_LIFE §15).** Only circles that are people, pods or the moment. Never cards, buttons, chips, sheets, lists or text blocks.
+
+| Object | Finish | Use |
+|-|-|-|
+| a person (disc, seat, rim dot, you) | **bead**: solid hue body (keeps the initial AA) + window, rim, under-light | `<Disc>` does it; elsewhere `backgroundImage: "var(--bead)"`, `boxShadow: "var(--shadow-bead)"` |
+| your pod / a table top | **orb**: clear body carrying the pod wash, rim denser in the pod hue (Fresnel), lit 1px edge, one window | `.orb` (over colour) or `.orb-solid` (white body); set `--orb` (hue) and `--orb-wash` (images only) |
+| a pod not yet yours | dashed rim (or `.orb-ghost`) | the bubble arrives when you join |
+| the table on the moment | **dark glass** so lamp names keep 10:1+ | `.orb-night` (TableRing `night`) |
+| the moment (lock, #2 is on) | three glass orbs converge on the deep field | `--moment` via `bg-night` / `html[data-light="night"]` |
+| the Doorway, OG, splash | the logo as three orbs, each carrying its white dot at the mark.svg placement | `VennStory`, `opengraph-image.tsx` |
+
+Rules: (B1) overlaps blend **normal**, never multiply: where worlds meet it is brighter, never muddy. (B2) One window per orb, top-left, ellipse ≤ 34% x 20% of the diameter; never over an initial. (B3) No rainbow/iridescent rims, no chrome, no drop-shadowed cartoon highlights ("Soap" lost, §15). (B4) Bubbles float only at arrival (motion director's `POP`/`GENTLE`); nothing loops.
 
 **People.**
 - Everyone wears their own logo colour: blue, green or teal, stable per person via `personColor()` in `disc.tsx`. Pass `seed`.
@@ -162,20 +168,14 @@ Colour follows the thesis, not a swatch list. The logo is three people (three ci
 | `grove` | community pod | grove: green x ember | moss |
 | `signal` | second interest pod | dusk: ember x blue | plum |
 
-- Use `POD_SOLID`, `POD_WASH` and `POD_GRAD` (or `bg-pod-grad`, `bg-pod-wash`).
-- **Repeat is visible:** `data-depth="1|2|3"` on any ancestor deepens every wash under it (alphas x1, x1.45, x1.9).
+- Use `POD_SOLID`, `POD_WASH` and `POD_GRAD` (or `bg-pod-grad`, `bg-pod-wash`). Inside an orb, pass the wash as `--orb-wash`.
+- **Repeat is visible:** `data-depth="1|2|3"` on any ancestor deepens every wash under it (alphas x1, x1.45, x1.9), so the orb fills with colour as the pod meets again.
 
-**Gradients (the signature):**
-- only the logo's circles and their overlaps; at most 3 circles in a field;
-- a circle keeps a recognisable edge (solid to 58-64% of its radius, then fades) so it reads as a circle, not a fog; size it as `circle Npx`, never a %-sized ellipse;
-- grained; never behind body text;
-- they move only by cross-fading lights and, at the lock, by the circles converging once.
+**Fields (page light).** Only the logo's circles; at most 3 in a field; a circle keeps an edge (`circle Npx`, never %-sized ellipses); grained; never behind body text; they move only by cross-fading lights and, at the lock, by the orbs converging once. Tokens: `--grad-logo`, `--grad-tide`, `--grad-grove`, `--grad-dusk`, `--grad-venn`, the `-soft` washes, `--mesh-page`, `--moment`, `--bead`, `--orb-window`, `--orb-kick`.
 
-Tokens: `--grad-logo`, `--grad-tide`, `--grad-grove`, `--grad-dusk`, `--grad-venn`, the `-soft` washes, `--mesh-page`, `--moment`.
+**Buttons.** One filled commit per screen: blue `<Button>` (5.6:1). Warm commits ("I'm in", "Run it back", "Vote" once picked) are `variant="spark"`, ember with ink text (5.8:1). On the moment: `variant="glass"` (lamp, 15.5:1). Quiet and destructive are outlined in ink. Buttons keep the `sheen`; they are never bubbles.
 
-**Buttons.** One filled commit per screen: blue `<Button>` (5.6:1). Warm commits ("I'm in", "Run it back", "Vote" once picked) are `variant="spark"`, ember with ink text (5.8:1). On the moment: `variant="glass"` (lamp, 15.5:1). Quiet and destructive are outlined in ink.
-
-**Plan states (Scene 5 beats 4 and 6; COLOR_LIFE §13).** The planned card wears the plan halo in the logo's three hues (people, never "AI violet"). "I'm in" is spark. "3 of 8 in" is ink; at 4 the word "Locked" arrives as a blue pill (`bg-select text-on-select`, 5.6:1) and the halo settles to blue. Seats: 8 per pod, people in their colours, open seats dashed; the first 4 form the lock arc.
+**Plan states (Scene 5 beats 4 and 6; COLOR_LIFE §13).** The planned card wears the plan halo in the logo's three hues (people, never "AI violet"); its line reads "Planned by AI". "I'm in" is spark. "3 of 8 in" is ink; at 4 the word "Locked" arrives as a blue pill (`bg-select text-on-select`, 5.6:1) and the halo settles to blue. Seats: 8 per pod, people as beads in their colours, open seats dashed; the first 4 form the lock arc.
 
 **Status.** Words still carry state (§1 principle 3); colour helps: success grove, info blue, safety teal, caution a quiet amber word, danger red text. AA is checked for every pair (COLOR_LIFE §9).
 

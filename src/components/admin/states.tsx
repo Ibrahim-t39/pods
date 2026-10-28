@@ -10,7 +10,7 @@ import { ARRIVE } from "@/components/brand/motion";
 
 export function AdminLoading() {
   return (
-    <div aria-busy="true" className="lg:grid lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)] lg:gap-s24">
+    <div aria-busy="true" className="lg:grid lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:gap-s16">
       <div className="flex items-center gap-s4">
         <CirclesLoader size={48} label="Loading" />
         <span aria-hidden className="skeleton h-10 w-40 lg:h-14" />

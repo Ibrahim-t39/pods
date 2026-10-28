@@ -19,9 +19,9 @@ export function Stat({ label, value, suffix, caption, icon, className }: StatPro
         {icon}
         {label}
       </span>
-      <span className="flex items-baseline gap-1 font-display text-[34px] leading-none font-black tracking-[-0.03em] text-fg [font-stretch:112%]">
+      <span className="flex items-baseline gap-1 font-display text-[34px] leading-none font-semibold tracking-[-0.03em] text-fg">
         {typeof value === "number" ? <NumberTicker value={value} /> : value}
-        {suffix && <span className="text-[18px] font-bold text-fg-muted">{suffix}</span>}
+        {suffix && <span className="text-[18px] font-semibold text-fg-muted">{suffix}</span>}
       </span>
       {caption && <span className="text-caption text-fg-muted">{caption}</span>}
     </div>

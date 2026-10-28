@@ -33,7 +33,7 @@ export function AlertDialog({ open, onOpenChange, trigger, title, description, i
           {icon && (
             <div className={cn("mb-4 grid size-12 place-items-center rounded-[14px] [&_svg]:size-6", destructive ? "bg-danger-soft text-danger-text" : "bg-primary-soft text-primary-soft-text")}>{icon}</div>
           )}
-          <RAlert.Title className="font-display text-[21px] leading-tight font-extrabold tracking-[-0.015em] [font-stretch:112%]">{title}</RAlert.Title>
+          <RAlert.Title className="font-display text-[21px] leading-tight font-semibold tracking-[-0.015em]">{title}</RAlert.Title>
           {description && <RAlert.Description className="mt-2 text-body text-fg-muted">{description}</RAlert.Description>}
           <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
             <RAlert.Cancel className={buttonVariants({ variant: "secondary", size: "lg", className: "sm:h-11" })}>{cancelLabel}</RAlert.Cancel>

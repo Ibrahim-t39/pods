@@ -21,8 +21,8 @@ export const STEP_ROUTE: Record<StepId, string> = {
   placing: "/app/placing",
 };
 
-/** The four dots: You, Likes, Free, Promise. The number is a held seat, not a step. */
-export const DOT: Partial<Record<StepId, number>> = { you: 1, likes: 2, free: 3, promise: 4 };
+/** Six dots, one per step a person acts on, so the count never stops or lies (QA round 1): You, Likes, Free, Keep your seat (number and code), Promise, Check. */
+export const DOT: Partial<Record<StepId, number>> = { you: 1, likes: 2, free: 3, seat: 4, promise: 5, verify: 6 };
 
 export const BACK: Partial<Record<StepId, string>> = {
   you: "/",
@@ -47,7 +47,7 @@ export function resumeRoute(me: User | null, d: Draft = useDraft.getState()): st
   }
   switch (me.onboarding_step) {
     case "done":
-      return "/app/pods";
+      return "/app/home";
     case "verify": // verified, not placed yet
       return STEP_ROUTE.placing;
     case "placing": // promised, not checked yet

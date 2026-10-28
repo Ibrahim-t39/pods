@@ -22,7 +22,7 @@ export interface Draft {
   faith: string | null;
   /** City picked in the one picker ("Not here?"); null = the number's region (the first metro city). */
   city: string | null;
-  /** "Let Claude plan from free times." (B07, Apple 5.1.2(i)). Explicit, on by default. */
+  /** "Let AI plan from free times." (B07, Apple 5.1.2(i)). Explicit, on by default. */
   claudeOk: boolean;
   /** Under-18 hard stop for this browser (B01e). */
   minorBlocked: boolean;
@@ -111,11 +111,20 @@ export function useResetWatcher(onReset?: () => void) {
 }
 
 /**
- * A birth date that makes `age` true today: the day after today's date, `age + 1` years ago. Pods asks the age,
- * not the birthday (B01); the ID check confirms it.
+ * A birth date that keeps `age` true for the next six months: `age` years and six months before today's date.
+ * Pods asks the age, not the birthday (B01); the ID check confirms it. The old "day after today, age + 1 years ago"
+ * turned 22 into 23 the moment the demo clock moved a day forward (the Director's jump), so the profile disagreed
+ * with what was typed. Reads the calendar date straight off the ISO string (the clock is Chicago local time), so no
+ * UTC shift can move it by a day either.
  */
 export function dobForAge(age: number, nowISO: string): string {
-  const now = new Date(nowISO);
-  const d = new Date(Date.UTC(now.getUTCFullYear() - age - 1, now.getUTCMonth(), now.getUTCDate() + 1));
-  return d.toISOString().slice(0, 10);
+  const [y, m, d] = nowISO.slice(0, 10).split("-").map(Number);
+  let month = m - 6;
+  let year = y - age;
+  if (month < 1) {
+    month += 12;
+    year -= 1;
+  }
+  const day = Math.min(d, 28);
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }

@@ -132,7 +132,7 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
         startHHMM: isStrings ? "17:00" : undefined,
         title: isHoopers ? DEMO.hoopers.title : isSA ? "Sunday picnic at Big Spring Park" : undefined,
         reasonOverride: isHoopers ? `Chosen because ${DEMO.hoopers.reason}.` : undefined,
-        costText: isHoopers ? "Cost to confirm" : isSA ? "Free" : undefined,
+        costText: isHoopers || isSA ? "Free" : undefined,
       });
       const onDeckPod = !isHoopers && !isSA; // Strings + Adventist: on deck for the persona, so no live plan yet (BLUEPRINT D4)
       const sugId = isHoopers ? DEMO.hoopers.suggestionId : isSA ? "sug_southern_african_1" : `sug_${def.id.replace(/^pod_/, "")}_1`;
@@ -157,10 +157,10 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
       }
       const a1 = author("d1"); const a2 = author("d2", a1.id); const a3 = author("d3", a2.id);
       if (isHoopers) {
-        pushMsg(null, "Malik, Ama and Tobi are in for Sunday", at(NOV1, "12:40"), "system");
+        pushMsg(null, "Malik, Ama and Tobi are in for Saturday", at(NOV1, "12:40"), "system");
         pushMsg(botId("Malik"), "I'll grab the far court if we're early", at(NOV1, "12:42"));
         pushMsg(botId("Tobi"), "Same! Tacos after?", at(NOV1, "12:47"));
-        pushMsg(botId("Marcus"), "Sunday is a no for me this week, Saturday mornings are the only thing I've got. Next one?", at("2026-11-02", "08:15"));
+        pushMsg(botId("Marcus"), "Saturday mornings are my thing. Let me check and I'll tap in", at("2026-11-02", "08:15"));
         pushMsg(botId("Ama"), "I'll bring a ball and a pump, mine's a little flat", at("2026-11-02", "19:30"));
         pushMsg(botId("Kayla"), "Cool, I'll be the one in the pink socks", at("2026-11-03", "20:05"));
       } else if (onDeckPod) {
@@ -352,13 +352,13 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
   cache("pod_adventist_young_adults", "widen_explainer", { body: "No widening needed: your community already has a group of 8 in Huntsville." });
   // Job 3: option 3 for Hoopers' hangout #2 (options 1-2 are rule-based, see DEMO.hangout2Options).
   const o3 = buildPlan({
-    podId: DEMO.hoopers.podId, podName: "Huntsville Hoopers", topicKey: "basketball", interestTopic: "basketball", members: 8, slot: "sunday-afternoon", free: 7,
-    topTwo: [{ slot: "sunday-afternoon", free: 7 }], date: "2026-11-29", title: "Sunday run, then coffee downtown", costText: "Cost to confirm",
+    podId: DEMO.hoopers.podId, podName: "Hoopers", topicKey: "basketball", interestTopic: "basketball", members: 8, slot: "saturday-morning", free: 7,
+    topTwo: [{ slot: "saturday-morning", free: 7 }], date: "2026-11-28", title: "Saturday run, then coffee downtown", costText: "Free",
     reasonOverride: "Chosen because the chat kept coming back to food after.",
   });
   o3.plan.schedule = [
-    { time: "1:00 PM", item: "Meet at the entrance" }, { time: "1:15 PM", item: "Shootaround, pick teams" }, { time: "1:30 PM", item: "Games, winners stay on" },
-    { time: "2:45 PM", item: "Cool down" }, { time: "3:15 PM", item: "Optional coffee downtown at Honest Coffee Roasters" },
+    { time: "10:00 AM", item: "Meet at the courts" }, { time: "10:15 AM", item: "Shootaround, pick teams" }, { time: "10:30 AM", item: "Games, winners stay on" },
+    { time: "11:45 AM", item: "Cool down" }, { time: "12:15 PM", item: "Optional coffee downtown at Honest Coffee Roasters" },
   ];
   cache(DEMO.hoopers.podId, "next_options", { options: [o3.plan], reasons: ["Keeps what worked and adds the food-after people asked for."] });
   return w;

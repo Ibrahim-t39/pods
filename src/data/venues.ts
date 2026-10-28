@@ -149,13 +149,14 @@ export const VENUES: Venue[] = [
   },
   // ── Not confirmed: kept in the list but never planned (active: false) ──
   {
-    id: "venue_brahan_spring_park", name: "Brahan Spring Park (outdoor courts)", short_name: "Brahan Spring Park",
+    // Demo default (video script, Scene 5): Saturday pickup on the outdoor courts, Brahan Spring Rec Center as the rain plan.
+    id: "venue_brahan_spring_park", name: "Brahan Spring Park", short_name: "Brahan Spring Park",
     address: "500 Drake Ave SW, Huntsville, AL 35805", type: "park", is_public: true, city: "Huntsville",
     lat: 34.705, lng: -86.585, indoor: false, cost_per_person: 0, alcohol_centered: false,
-    good_for: [],
-    hours_note: "The address is confirmed, but outdoor basketball courts are NOT. Used only by the park_courts demo variant after the D2 phone check.",
-    parking: null, meet_note: null, accessibility: null,
-    source_url: "https://www.huntsville.org/listing/brahan-spring-park/1676/", verified_at: null, active: false,
+    good_for: ["basketball"],
+    hours_note: "Outdoor courts. If it rains, the run moves next door to Brahan Spring Rec Center.",
+    parking: null, meet_note: "Meet at the courts.", accessibility: null,
+    source_url: "https://www.huntsville.org/listing/brahan-spring-park/1676/", verified_at: V, active: true,
   },
   {
     id: "venue_sandra_moon", name: "Sandra Moon Community Complex", short_name: "Sandra Moon Complex",

@@ -1,0 +1,23 @@
+import { chromium } from "playwright";
+const CHROME = `${process.env.HOME}/Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
+const b = await chromium.launch({ executablePath: CHROME });
+const tag=process.argv[2]||"m";
+const vp=tag==="m"?{viewport:{width:390,height:844},isMobile:true,hasTouch:true}:{viewport:{width:1440,height:900}};
+const ctx=await b.newContext({...vp,timezoneId:"America/Chicago"}); const p=await ctx.newPage();
+const errs=[]; p.on("pageerror",e=>errs.push(e.message));
+const D="/Users/ibrahimtraore/Documents/PROPEL/PODS/v3/audit/r1/";
+let i=0;
+const snap=async(n)=>{i++;await p.waitForTimeout(1000);await p.screenshot({path:`${D}j-${tag}-${String(i).padStart(2,"0")}-${n}.png`});
+ const t=await p.evaluate(()=>({u:location.pathname,w:document.body.innerText.replace(/\s+/g," ").slice(0,260),taps:[...document.querySelectorAll("button,a,input,[role=button]")].filter(e=>e.offsetParent||getComputedStyle(e).position==="fixed").map(e=>(e.innerText||e.placeholder||e.getAttribute("aria-label")||"").replace(/\s+/g," ").trim().slice(0,30)).join("|"),sx:document.documentElement.scrollWidth>innerWidth}));
+ console.log(`## ${i} ${n} ${t.u} sx=${t.sx}\n  ${t.w}\n  TAP ${t.taps}`)};
+await p.goto("http://localhost:3000/app/onboarding/about"); await snap("about");
+await p.locator("input:visible").nth(0).fill("Chanda"); await p.locator("input:visible").nth(1).fill("22"); await snap("about-f");
+await p.getByRole("button",{name:"Next",exact:true}).click(); await snap("interests");
+for(const k of ["basketball","guitar"]) await p.getByText(k,{exact:true}).first().click(); await snap("interests-sel");
+await p.getByText("Community pods",{exact:true}).first().click(); await snap("comm");
+const sel=async(t)=>{await p.getByText(t,{exact:false}).first().click().catch(e=>console.log("noclick",t))};
+await sel("Zambian"); await sel("Seventh"); await snap("comm-sel");
+await p.getByRole("button",{name:/Next|Done/}).and(p.locator(":visible")).first().click().catch(()=>console.log("no next")); await snap("after-comm");
+for(let k=0;k<8;k++){ const nb=p.getByRole("button",{name:/^(Next|Done|Continue|Send code|Place me|Take your seat|Keep|Skip|I promise|Yes)/}).and(p.locator(":visible")).first(); if(!(await nb.count()))break; if(p.url().includes("account")){await p.locator("input:visible").first().fill("2565550123").catch(()=>{});} await snap("pre"+k); await nb.click().catch(()=>console.log("fail click")); await p.waitForTimeout(1500); if(/\/app$|pods|placing/.test(p.url())) {await snap("end"+k);break;} }
+console.log("ERR",errs);
+await b.close();
