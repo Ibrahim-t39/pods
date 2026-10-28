@@ -375,14 +375,12 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
     const h = view.hangout;
     const { seats } = seatsFor(m, { all: true });
     return {
-      light: "night",
+      light: "clear",
       head: null,
       object: null,
       foot: null,
       overlay: (
-        <motion.div className="fixed inset-0 z-overlay bg-night" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduce ? 0.16 : 0.7, ease: [0.2, 0.8, 0.2, 1] }}>
-          <LockMoment round={h.sequence} day={weekday(h.starts_at)} when={`${hm(h.starts_at)} · ${placeWord(m.venue)}`} seats={seats} hue={m.hue} onDone={() => setLock(false)} />
-        </motion.div>
+        <LockMoment round={h.sequence} day={weekday(h.starts_at)} when={`${hm(h.starts_at)} · ${m.venue?.short_name ?? m.venue?.name ?? placeWord(m.venue)}`} seats={seats} hue={m.hue} onDone={() => setLock(false)} />
       ),
       title: `${m.name} #${h.sequence}`,
       view,

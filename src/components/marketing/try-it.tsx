@@ -1,0 +1,389 @@
+// <TryIt />: the landing's playable story (STORY.md §2, beats 2-6). No account, nothing stored; "Start over" resets.
+// Fit (pick interests) -> Pod (circles move together, the pod lands) -> Plan (AI shows its work, the card assembles)
+// -> I'm in (3 of 8 ticks to 4, Locked, the four move together) -> Repeat (run it back, overlaps deepen).
+// Every beat also plays on its own: no interest picked = Basketball, the demo pod. Plan facts come from the seed
+// (data/plans TOPICS + venues), so the page and the app agree. The one sticky element is the progress rail.
+"use client";
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useInView } from "motion/react";
+import { Button } from "@/components/ui/button";
+import { InCount } from "@/components/brand/in-count";
+import { PlanHalo } from "@/components/brand/plan-halo";
+import { SNAPPY, useCalmMotion } from "@/components/brand/motion";
+import { TOPICS, VENUE_BY_ID } from "@/data/plans";
+import { Converge, Huddle } from "./converge";
+
+type Key = "basketball" | "guitar" | "running" | "hiking" | "books" | "soccer";
+
+const INTERESTS: { k: Key; label: string; pod: string; what: string; when: string; free: string; rain: string; next: string }[] = [
+  { k: "basketball", label: "Basketball", pod: "Hoopers", what: "Pickup basketball", when: "Sat 10am", free: "7 of 8 free Saturday morning", rain: "", next: "Sat, Nov 21 · 10am" },
+  { k: "guitar", label: "Guitar", pod: "Strings", what: "Acoustic hang", when: "Thu 7pm", free: "6 of 8 free Thursday evening", rain: "Indoors already", next: "Thu, Nov 19 · 7pm" },
+  { k: "running", label: "Running", pod: "Striders", what: "Easy run or walk", when: "Sun 8am", free: "6 of 8 free Sunday morning", rain: "", next: "Sun, Nov 22 · 8am" },
+  { k: "hiking", label: "Hiking", pod: "Wanderers", what: "Trail walk", when: "Sat 9am", free: "6 of 8 free Saturday morning", rain: "Moves to Sunday", next: "Sat, Nov 21 · 9am" },
+  { k: "books", label: "Books", pod: "Page Turners", what: "Book swap", when: "Sun 2pm", free: "7 of 8 free Sunday afternoon", rain: "Indoors already", next: "Sun, Nov 22 · 2pm" },
+  { k: "soccer", label: "Soccer", pod: "Kickabout", what: "Pickup soccer", when: "Sat 4pm", free: "6 of 8 free Saturday afternoon", rain: "Moves to Sunday", next: "Sat, Nov 21 · 4pm" },
+];
+const MEMBERS = ["Jordan", "Amara", "Theo", "Nia", "Malik", "Sofia", "Dev"];
+const STEPS = [
+  { id: "fit", label: "Fit" },
+  { id: "pod", label: "Pod" },
+  { id: "plan", label: "Plan" },
+  { id: "in", label: "I'm in" },
+  { id: "repeat", label: "Repeat" },
+] as const;
+type StepId = (typeof STEPS)[number]["id"];
+
+function factsFor(k: Key) {
+  const i = INTERESTS.find((x) => x.k === k)!;
+  const t = TOPICS[k];
+  const place = VENUE_BY_ID[t.venue]?.short_name ?? "";
+  const rainVenue = t.rainVenue ? VENUE_BY_ID[t.rainVenue]?.short_name : null;
+  return { ...i, place, bring: t.bring.slice(0, 2).join(" · "), rain: rainVenue ?? i.rain };
+}
+
+interface Try {
+  picked: Key[];
+  toggle: (k: Key) => void;
+  pod: ReturnType<typeof factsFor>;
+  others: string[];
+  run: number;
+  done: Record<StepId, boolean>;
+  mark: (s: StepId) => void;
+  n: 3 | 4;
+  locked: boolean;
+  imIn: () => void;
+  votes: ("yes" | "no")[];
+  vote: (v: "yes" | "no") => void;
+  reset: () => void;
+}
+const Ctx = createContext<Try | null>(null);
+const useTry = () => useContext(Ctx)!;
+
+export function TryIt() {
+  const calm = useCalmMotion();
+  const [picked, setPicked] = useState<Key[]>([]);
+  const [run, setRun] = useState(0);
+  const [done, setDone] = useState<Record<StepId, boolean>>({ fit: false, pod: false, plan: false, in: false, repeat: false });
+  const [n, setN] = useState<3 | 4>(3);
+  const [locked, setLocked] = useState(false);
+  const [votes, setVotes] = useState<("yes" | "no")[]>([]);
+  const timers = useRef<number[]>([]);
+  const later = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, calm ? 0 : ms));
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const mark = useCallback((s: StepId) => setDone((d) => (d[s] ? d : { ...d, [s]: true })), []);
+  const toggle = (k: Key) =>
+    setPicked((p) => (p.includes(k) ? p.filter((x) => x !== k) : p.length >= 3 ? [...p.slice(1), k] : [...p, k]));
+  const lead = picked[0] ?? "basketball";
+  const pod = useMemo(() => factsFor(lead), [lead]);
+  const others = picked.slice(1).map((k) => INTERESTS.find((i) => i.k === k)!.pod);
+
+  const imIn = () => {
+    if (n === 4) return;
+    setN(4);
+    later(() => {
+      setLocked(true);
+      mark("in");
+    }, 700);
+  };
+  const vote = (v: "yes" | "no") => {
+    if (votes.length) return;
+    // you first, then the other three answer; one of them can't say yes, and it still goes ahead at 3 of 4
+    const seq: ("yes" | "no")[] = v === "yes" ? ["yes", "yes", "yes", "yes"] : ["no", "yes", "yes", "yes"];
+    seq.forEach((x, i) => later(() => setVotes((cur) => [...cur, x]), 250 + i * 420));
+    later(() => mark("repeat"), 250 + 4 * 420);
+  };
+  const reset = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setPicked([]);
+    setN(3);
+    setLocked(false);
+    setVotes([]);
+    setDone({ fit: false, pod: false, plan: false, in: false, repeat: false });
+    setRun((r) => r + 1);
+    document.getElementById("fit")?.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" });
+  };
+
+  const value: Try = { picked, toggle, pod, others, run, done, mark, n, locked, imIn, votes, vote, reset };
+  return (
+    <Ctx.Provider value={value}>
+      <section id="try" className="tr" aria-labelledby="tr-h">
+        <h2 id="tr-h" className="sr-only">
+          Try it
+        </h2>
+        <Rail />
+        <Fit />
+        <Pod />
+        <Plan />
+        <ImIn />
+        <Repeat />
+      </section>
+    </Ctx.Provider>
+  );
+}
+
+/* ── the rail: progress, always visible while trying (the page's one sticky element) ──────────────────────── */
+function Rail() {
+  const { done } = useTry();
+  const [active, setActive] = useState<StepId>("fit");
+  useEffect(() => {
+    const els = STEPS.map((s) => document.getElementById(s.id)).filter(Boolean) as HTMLElement[];
+    if (typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (es) => {
+        for (const e of es) if (e.isIntersecting) setActive(e.target.id as StepId);
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+  return (
+    <nav className="tr-rail" aria-label="Try it, steps">
+      <ol>
+        {STEPS.map((s, i) => (
+          <li key={s.id}>
+            <a href={`#${s.id}`} className="tr-step" data-on={active === s.id ? "" : undefined} data-done={done[s.id] ? "" : undefined} aria-current={active === s.id ? "step" : undefined}>
+              <i aria-hidden />
+              <span>
+                <span className="tr-num tabular">{i + 1}</span>
+                {s.label}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
+function Head({ k, line, sub }: { k: string; line: React.ReactNode; sub?: React.ReactNode }) {
+  return (
+    <div className="tr-head">
+      <p className="tr-k">{k}</p>
+      <h3 className="tr-line">{line}</h3>
+      {sub && <p className="tr-sub">{sub}</p>}
+    </div>
+  );
+}
+
+/* ── 1 Fit ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+function Fit() {
+  const { picked, toggle, mark } = useTry();
+  const go = () => {
+    mark("fit");
+    document.getElementById("pod")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  return (
+    <div id="fit" className="tr-beat">
+      <Head k="Fit" line="What do you like?" sub="Pick up to three." />
+      <div className="tr-obj tr-fit">
+        <div className="tr-chips" role="group" aria-label="Interests">
+          {INTERESTS.map((i) => {
+            const on = picked.includes(i.k);
+            return (
+              <button key={i.k} type="button" className="tr-chip pressable" aria-pressed={on} onClick={() => toggle(i.k)}>
+                <i aria-hidden />
+                {i.label}
+              </button>
+            );
+          })}
+        </div>
+        <Button size="lg" onClick={go} disabled={!picked.length}>
+          Find my pod
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ── 2 Pod: "Finding your pods" — the circles move together and the pod lands in the centre ───────────────── */
+function Pod() {
+  const { pod, others, picked, mark, run, done } = useTry();
+  const calm = useCalmMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const seen = useInView(ref, { amount: 0.5 });
+  const [played, setPlayed] = useState(false);
+  useEffect(() => {
+    if (seen && !played) {
+      setPlayed(true);
+      mark("pod");
+    }
+  }, [seen, played, mark]);
+  useEffect(() => setPlayed(false), [run]);
+  const key = `${pod.k}-${run}-${played}`;
+  return (
+    <div id="pod" className="tr-beat">
+      <Head k="Pod" line={<>Your pod: <span className="tr-pod">{pod.pod}</span>.</>} sub={others.length ? `And ${others.join(", ")}.` : "8 people who fit. Same pod each time."} />
+      <div className="tr-obj tr-podobj" ref={ref}>
+        <Converge key={key} from={0} to={played ? 1 : 0} duration={2} delay={0.15} className="tr-cv" center={<span className="tr-cv-l">{pod.pod}</span>} />
+        <ul className="tr-members" aria-label={`${pod.pod}, 8 people`}>
+          <li className="tr-m tr-m-you">
+            <i aria-hidden />
+            You
+          </li>
+          {MEMBERS.map((m, i) => (
+            <motion.li
+              key={`${m}-${key}`}
+              className="tr-m"
+              initial={{ opacity: 0, y: 6 }}
+              animate={played ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+              transition={calm ? { duration: 0 } : { ...SNAPPY, delay: 1.6 + i * 0.07 }}
+            >
+              <i aria-hidden />
+              {m}
+            </motion.li>
+          ))}
+        </ul>
+        {!picked.length && !done.fit && <p className="tr-note">Showing basketball. Pick yours above.</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ── 3 Plan: AI shows its work in three lines, then the card assembles ─────────────────────────────────────── */
+const WORK = ["Finding when you're free", "Picking a public place", "Checking the weather"];
+
+function Plan() {
+  const { pod, mark, run, locked } = useTry();
+  const calm = useCalmMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const seen = useInView(ref, { amount: 0.4 });
+  const [t, setT] = useState(0); // 0 idle, 1..3 work lines, 4 card
+  const [go, setGo] = useState(0);
+  useEffect(() => setT(0), [run, pod.k]);
+  // start once per run/pod when the card is in view; the timers live outside t so ticking never cancels them
+  useEffect(() => {
+    if (seen && t === 0) setGo((g) => g + 1);
+  }, [seen, t]);
+  useEffect(() => {
+    if (!go) return;
+    if (calm) {
+      setT(4);
+      mark("plan");
+      return;
+    }
+    const ids = [1, 2, 3, 4].map((s) =>
+      window.setTimeout(() => {
+        setT(s);
+        if (s === 4) mark("plan");
+      }, s * 520),
+    );
+    return () => ids.forEach(clearTimeout);
+  }, [go, calm, mark]);
+
+  const rows: [string, string][] = [
+    ["When", pod.when],
+    ["Where", `${pod.place} · Free`],
+    ["Bring", pod.bring],
+    ["If it rains", pod.rain || "Same place"],
+  ];
+  return (
+    <div id="plan" className="tr-beat">
+      <Head k="Plan" line="AI plans the first hangout." sub="You just show up." />
+      <div className="tr-obj" ref={ref}>
+        <PlanHalo state={t < 4 ? "off" : locked ? "locked" : "waiting"} radius={28} className="tr-card-wrap">
+          <div className="tr-card">
+            <AnimatePresence mode="wait" initial={false}>
+              {t < 4 ? (
+                <motion.ul key="work" className="tr-work" exit={{ opacity: 0 }} transition={{ duration: 0.2 }} aria-live="polite">
+                  {WORK.map((w, i) => (
+                    <li key={w} data-on={t > i ? "" : undefined} data-now={t === i + 1 ? "" : undefined}>
+                      <i aria-hidden />
+                      {w}
+                    </li>
+                  ))}
+                </motion.ul>
+              ) : (
+                <motion.div key="card" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
+                  <p className="tr-card-over">
+                    <span>{pod.pod}</span>
+                    <span className="tr-ai">Planned by AI</span>
+                  </p>
+                  <p className="tr-card-what">{pod.what}</p>
+                  <p className="tr-card-why">{pod.free}</p>
+                  <dl className="tr-rows">
+                    {rows.map(([a, b], i) => (
+                      <motion.div
+                        key={a}
+                        className="tr-row"
+                        initial={calm ? false : { opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ ...SNAPPY, delay: 0.15 + i * 0.12 }}
+                      >
+                        <dt>{a}</dt>
+                        <dd className={a === "When" ? "tabular" : undefined}>{b}</dd>
+                      </motion.div>
+                    ))}
+                  </dl>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </PlanHalo>
+      </div>
+    </div>
+  );
+}
+
+/* ── 4 I'm in: you tap it; 3 of 8 ticks to 4; it locks and the four move together ──────────────────────────── */
+function ImIn() {
+  const { n, locked, imIn, pod } = useTry();
+  return (
+    <div id="in" className="tr-beat">
+      <Head k="I'm in" line={locked ? "Locked. It's on." : "Four in locks it."} sub={locked ? `${pod.what}, ${pod.when}.` : "Three already said yes."} />
+      <div className="tr-obj tr-inobj">
+        <Huddle n={n} close={locked ? 1 : 0} names={["Jordan", "Amara", "Theo", "You"]} className="tr-hd" />
+        <div className="tr-in-row">
+          <InCount n={n} of={8} locked={locked} className="tr-count" />
+          {!locked && (
+            <Button variant="spark" size="lg" onClick={imIn} disabled={n === 4}>
+              I&apos;m in
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── 5 Repeat: run it back; the other three answer; same people again, overlaps deepen ─────────────────────── */
+function Repeat() {
+  const { votes, vote, reset, pod } = useTry();
+  const yes = votes.filter((v) => v === "yes").length;
+  const all = votes.length === 4;
+  return (
+    <div id="repeat" className="tr-beat">
+      <Head k="Repeat" line={all ? "Hangout #2 is on." : "After: run it back?"} sub={all ? `Same people. ${pod.next}.` : "Pods asks, so nobody has to."} />
+      <div className="tr-obj tr-repobj">
+        <Huddle n={4} close={all ? 1.4 : 1} names={["Jordan", "Amara", "Theo", "You"]} className="tr-hd tr-hd-sm" />
+        <div className="tr-vote">
+          <span className="tr-votes" aria-hidden>
+            {[0, 1, 2, 3].map((i) => (
+              <motion.i key={i} initial={false} animate={i < votes.length ? { scale: 1, opacity: 1 } : { scale: 0.5, opacity: 0.25 }} transition={SNAPPY} data-no={votes[i] === "no" ? "" : undefined} />
+            ))}
+          </span>
+          <span className="tr-vote-n tabular" role="status">
+            {votes.length ? `${yes} of 4 yes` : "0 of 4"}
+          </span>
+        </div>
+        {!votes.length ? (
+          <div className="tr-vote-btns">
+            <Button variant="spark" size="lg" onClick={() => vote("yes")}>
+              Run it back
+            </Button>
+            <Button variant="secondary" size="lg" onClick={() => vote("no")}>
+              Not this time
+            </Button>
+          </div>
+        ) : (
+          <button type="button" className="tr-again pressable" onClick={reset} disabled={!all}>
+            Start over
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

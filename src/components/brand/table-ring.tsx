@@ -56,6 +56,8 @@ export interface TableRingProps {
   /** accessible name for the whole table (what tapping it does) */
   label?: string;
   className?: string;
+  /** larger name chips (the lock moment) */
+  big?: boolean;
 }
 
 export function TableRing({
@@ -74,6 +76,7 @@ export function TableRing({
   onClick,
   label,
   className,
+  big,
 }: TableRingProps) {
   const reduce = useReducedMotion();
   const S = size;
@@ -205,9 +208,11 @@ export function TableRing({
         const discBg = col.bg;
         const discFg = col.fg;
         const nm = st.name ?? (you ? "you" : "");
-        // names sit inside the table; at the moment (night) each name is anchored just outside its own disc, on the
-        // same radius, so it never collides with the ring (QA r1)
-        const rr = night ? R + ds / 2 + (Math.abs(Math.sin(a)) > 0.5 ? 14 : 44) : R - ds / 2 - (Math.abs(Math.sin(a)) > 0.5 ? 18 : 34);
+        // QA r1 (core): every name sits on a glass chip directly under its own disc, the same offset for every seat,
+        // so names never drift from their disc or collide with the ring. Yours sits under your waiting disc until you
+        // are in. Only people who are in (or you) are named.
+        const waitingYou = you && !st.in && youWaiting && !st.open;
+        const chipTop = waitingYou ? y + ds + 10 + ds + 4 : y + ds + 4;
         return (
           <span key={k} aria-hidden>
             {st.here && (
@@ -241,26 +246,40 @@ export function TableRing({
                 {st.initial ?? ""}
               </motion.span>
             )}
-            {names && nm && (
+            {names && nm && (st.in || you) && (
               <span
                 data-nc
-                className="text-label"
                 style={{
                   position: "absolute",
-                  left: c + Math.cos(a) * rr - 40,
-                  top: c + Math.sin(a) * rr - 10,
-                  width: 80,
-                  textAlign: "center",
-                  color: night ? "var(--lamp)" : st.in ? "var(--ink)" : "var(--ink-2)",
-                  textShadow: night ? "0 1px 8px rgb(2 38 52 / .7)" : undefined,
-                  fontWeight: night ? 600 : undefined,
+                  left: x + ds / 2 - 48,
+                  top: chipTop,
+                  width: 96,
+                  display: "flex",
+                  justifyContent: "center",
+                  pointerEvents: "none",
                   opacity: dim ? 0.6 : 1,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
                 }}
               >
-                {nm}
+                <span
+                  style={{
+                    maxWidth: 96,
+                    padding: big ? "3px 10px" : "1px 8px",
+                    borderRadius: 999,
+                    background: "rgb(255 255 255 / .86)",
+                    boxShadow: "inset 0 0 0 1px rgb(255 255 255 / .9), 0 1px 2px rgb(14 26 34 / .08), 0 4px 12px -6px rgb(14 26 34 / .18)",
+                    WebkitBackdropFilter: "blur(8px)",
+                    backdropFilter: "blur(8px)",
+                    color: st.in ? "var(--ink)" : "var(--ink-2)",
+                    fontSize: big ? 15 : 13,
+                    lineHeight: big ? "20px" : "18px",
+                    fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {nm}
+                </span>
               </span>
             )}
           </span>

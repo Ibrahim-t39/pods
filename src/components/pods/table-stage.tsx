@@ -16,6 +16,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { LockMoment } from "@/components/planner/table/lock-moment";
 import { GENTLE, InCount, Line, PlanHalo, Shared, Stage, TableRing, sharedName, tableBox, type PodHueKey, type Seat, type StageLight } from "@/components/brand";
 import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -165,8 +166,9 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
   const live = view.phase === "happening_now";
 
   const center = (
-    <span className="flex items-center gap-s1 text-select">
-      <Icon name="talk" size={26} />
+    <span className="glass flex items-center gap-s2 rounded-full py-s2 pr-s4 pl-s3 text-[15px] font-semibold text-select">
+      <Icon name="talk" size={22} />
+      Talk
       {table && table.unread > 0 && (
         <span className="fig grid h-6 min-w-6 place-items-center rounded-full bg-select px-1.5 text-[13px] font-semibold text-on-select">{table.unread}</span>
       )}
@@ -298,7 +300,7 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
   const overlay = moment ? (
     <LockMoment
       day={day}
-      when={`${shortTime(startsAt)}${place ? ` · ${place}` : ""}`}
+      when={`${shortTime(startsAt)}${placeName ? ` · ${placeName}` : ""}`}
       seats={seats.map((st) => (st && st.open ? null : st))}
       n={n}
       hue={hue}
@@ -325,8 +327,8 @@ function FitTable({ podId, children }: { podId: string; children: (size: number)
     if (!el) return;
     const ro = new ResizeObserver(([e]) => {
       const { width, height } = e.contentRect;
-      // box = 1.34 × size + 40, plus your waiting disc below (0.17 × size + 10)
-      const byH = (height - 50) / 1.51;
+      // box = 1.34 × size + 40, plus your waiting disc below (0.17 × size + 10) and its name chip (~26)
+      const byH = (height - 80) / 1.51;
       const byW = (width - 40) / 1.34;
       setSize(Math.round(Math.max(140, Math.min(width >= 600 ? 400 : 260, byH, byW))));
     });
@@ -349,57 +351,3 @@ function FitTable({ podId, children }: { podId: string; children: (size: number)
   );
 }
 
-/** D05: the room goes dark, one lamp on the table, the day word set as large as fits (never cropped: "Wednesday"
- *  fits at 390). Stays until tapped. Phone: "It's on." top-left, the table in the lamp pool, the day, the foot.
- *  Laptop: the text column on the left (line, day, foot), the table in the lamp pool on the right (PB 1.1). */
-function LockMoment({ day, when, seats, n, hue, worn, onDone }: { day: string; when: string; seats: (Seat | null)[]; n: number; hue: PodHueKey; worn: number; onDone: () => void }) {
-  const reduce = useReducedMotion();
-  return (
-    <AnimatePresence>
-      <motion.div
-        role="dialog"
-        aria-modal
-        aria-label="It's on"
-        className="fixed inset-0 z-overlay overflow-hidden bg-night text-lamp"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: reduce ? 0.16 : 0.7 }}
-      >
-        <Stage light="night" />
-        <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto_auto] px-gutter pt-[calc(env(safe-area-inset-top)+76px)] lg:grid-cols-[520px_minmax(0,1fr)] lg:grid-rows-[auto_1fr_auto] lg:gap-x-s24 lg:px-s16 lg:pt-[160px] lg:pb-s16">
-          <p className="font-display text-[32px] leading-none font-semibold tracking-[-0.03em] lg:col-start-1 lg:row-start-1">It&apos;s on.</p>
-          <motion.div
-            className="relative grid place-items-center lg:col-start-2 lg:row-span-3 lg:row-start-1"
-            initial={reduce ? false : { scale: 0.92, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ ...GENTLE, delay: reduce ? 0 : 0.15 }}
-          >
-            <span aria-hidden className="pointer-events-none absolute inset-[-20%]" style={{ background: "radial-gradient(closest-side, color-mix(in srgb, var(--lamp) 16%, transparent), transparent)" }} />
-            <span className="lg:hidden">
-              <TableRing size={200} seats={seats} n={n} hue={hue} worn={worn} fill night youWaiting={false} />
-            </span>
-            <span className="hidden lg:block">
-              <TableRing size={340} seats={seats} n={n} hue={hue} worn={worn} fill night youWaiting={false} />
-            </span>
-          </motion.div>
-          <motion.p
-            aria-hidden
-            className="font-display self-end text-[16vw] leading-[0.9] font-semibold tracking-[-0.035em] whitespace-nowrap text-lamp lg:col-start-1 lg:row-start-2 lg:text-[min(6.2vw,88px)]"
-            initial={reduce ? false : { x: 160, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ ...GENTLE, delay: reduce ? 0 : 0.45 }}
-          >
-            {day}
-          </motion.p>
-          <div className="flex min-h-[120px] items-center justify-between gap-s4 pt-s8 pb-[calc(32px+env(safe-area-inset-bottom))] lg:col-start-1 lg:row-start-3 lg:min-h-0 lg:flex-row-reverse lg:justify-end lg:gap-s8 lg:pt-s12 lg:pb-0">
-            <span className="text-[17px] lg:text-[20px]">{when}</span>
-            <Button variant="glass" size="xl" onClick={onDone} autoFocus>
-              See you there
-            </Button>
-          </div>
-        </div>
-      </motion.div>
-    </AnimatePresence>
-  );
-}
