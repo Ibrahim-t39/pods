@@ -101,7 +101,8 @@ function Finding({ initial }: { initial: string }) {
     void run();
   }, [run]);
 
-  const S = wide ? 340 : Math.min(Math.round(size * 0.98), 190);
+  // tablet tables are larger (useTableSize), so the found pods grow with them and their names fit on the glass
+  const S = wide ? 340 : Math.min(Math.round(size * 0.98), size > 212 ? 240 : 190);
   const line = state === "failed" ? "Not quite." : state === "filling" ? "Your pod is filling." : state === "placed" ? "Your pods." : "Finding your pods.";
 
   return (

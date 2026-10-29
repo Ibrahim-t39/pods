@@ -1,7 +1,7 @@
 // B05 / B06 / B06e Keep your seat, and Y04 / Y05 Welcome back (sign in). The number is the first check: a text code
 // (H #3). "Keep your seat." with the number in one large field, then "Code sent." with six circles that fill as you
 // type (PB 2.7; SF 19). Six digits submit on their own. Wrong: "Not that one." and a shake (designer R1 #5).
-// No password, no "any 6 digits" hint, no provider buttons. The city comes from the number; "Not here?" opens the
+// No password, no "any 6 digits" hint in Demo (Live says it: no texts in beta), no provider buttons. The city comes from the number; "Not here?" opens the
 // one city picker (V3_SPEC §6.2).
 // On the code: the draft (name, age, likes, free, community) is committed through the Repo, then Promise.
 "use client";
@@ -10,12 +10,13 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Line } from "@/components/brand/line";
 import { Button } from "@/components/ui/button";
-import { useDb, useRepo } from "@/lib/db/hooks";
+import { useDb, useMode, useRepo } from "@/lib/db/hooks";
 import type { User } from "@/lib/types";
 import { FlowStep, GoLink, Sub, useTableSize } from "../flow";
 import { SeatTable } from "../objects";
 import { useDraft } from "../draft";
 import { Guarded } from "../guard";
+import { codeHint } from "./seat-copy";
 import { BACK, DOT, STEP_ROUTE, commitDraft, firstOpenDraftStep, resumeRoute } from "../steps";
 
 export function SeatScreen({ signin }: { signin?: boolean }) {
@@ -36,6 +37,8 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
   const { size, wide } = useTableSize();
   const draft = useDraft();
   const metro = useDb((db) => db.config.placement.metro);
+  // Live has no texting yet (beta): say plainly how to pass the code, or a real person is stuck at step 4.
+  const live = useMode() === "live";
   const [stage, setStage] = useState<"number" | "code">("number");
   const [digits, setDigits] = useState("");
   const [challenge, setChallenge] = useState("");
@@ -130,7 +133,7 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
         label="Code"
         head={
           <>
-            <Line size="lg">{bad ? "Not that one." : "Code sent."}</Line>
+            <Line size="lg">{bad ? "Not that one." : live ? "Enter a code." : "Code sent."}</Line>
             <Sub className="text-[17px]">
               {bad ? (
                 "Try again, or get a new code."
@@ -186,7 +189,7 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
           </>
         }
         dot={DOT.seat}
-        hint={code.length < 6 && !busy ? "Six digits, sent by text." : undefined}
+        hint={code.length < 6 && !busy ? codeHint(live) : undefined}
         action={
           <Button size="xl" disabled={code.length !== 6 || ok} loading={busy && !ok} onClick={() => void verify(code)}>
             Confirm
@@ -211,7 +214,7 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
           <Line size="lg" className="max-w-[9ch]">
             {signin ? "Welcome back." : "Add your number."}
           </Line>
-          {!signin && <Sub>We text you a code to confirm it. Nobody else sees it.</Sub>}
+          {!signin && <Sub>{live ? "It keeps your seat. Nobody else sees it." : "We text you a code to confirm it. Nobody else sees it."}</Sub>}
           <label className="mt-s8 block">
             <span className="pods-ob-phone-label">Mobile number</span>
             <input

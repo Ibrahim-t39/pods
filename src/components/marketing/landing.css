@@ -38,8 +38,8 @@ html:has(.lp) { scroll-padding-top: 140px; }
   height: 64px;
   background: var(--paper);
   box-shadow: 0 1px 0 var(--line);
-  backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
 }
 .lp-nav-in {
   display: grid;
@@ -476,3 +476,25 @@ html:has(.lp) { scroll-padding-top: 140px; }
 .tr-sphere { display: grid; justify-items: center; gap: 12px; }
 .tr-sphere-l { font-size: 17px; font-weight: 600; color: var(--ink); }
 
+
+/* /try: the floating film nav sits in a near-opaque band, and the step bar docks right under it, so scrolled content
+   never reads through the nav or the steps (390 QA) */
+.lp-try::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 35;
+  height: 76px;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  pointer-events: none;
+}
+.lp-try .fm-nav[data-tone="light"] { background: rgb(255 255 255 / .92); }
+.lp-try .tr-rail {
+  top: 76px;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+}
+@media (min-width: 1024px) { .lp-try::before { height: 84px; } .lp-try .tr-rail { top: 84px; } }

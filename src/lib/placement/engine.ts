@@ -99,7 +99,8 @@ export function candidatesFor(
   }
   const communities: Candidate[] = [];
   if (identity?.heritage) communities.push(communityCandidate("heritage", identity.heritage.code, tax));
-  if (identity?.faith) communities.push(communityCandidate("faith", identity.faith.code, tax));
+  // "Other" (a faith not listed) is kept for the person but never forms a pod.
+  if (identity?.faith && identity.faith.code !== "other_faith") communities.push(communityCandidate("faith", identity.faith.code, tax));
   return out.concat(communities.slice(0, cfg.maxCommunityPods));
 }
 

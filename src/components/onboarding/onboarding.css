@@ -370,7 +370,11 @@
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.01em;
-  color: var(--ink);
+  /* white on the glass with a soft shadow (sweep 10/29): ink wrapped "Adventist young adults" to three lines */
+  width: max-content;
+  max-width: 12ch;
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(14 26 34 / 0.28), 0 2px 12px rgb(14 26 34 / 0.32);
   text-wrap: balance;
 }
 .pods-ob-found-note {
@@ -378,8 +382,11 @@
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.25;
-  color: var(--ink-2);
-  max-width: 13ch;
+  color: rgb(255 255 255 / 0.9);
+  max-width: 16ch;
+}
+@media (min-width: 640px) {
+  .pods-ob-found-name { max-width: 14ch; }
 }
 @media (min-width: 1024px) {
   .pods-ob-found-name { font-size: 18px; }
@@ -728,3 +735,26 @@
   opacity: 0.38;
 }
 .pods-ob-stepname { color: var(--ink-2); }
+
+/* Tablet (640-1023, sweep 10/29): one centred column, ~560px, the head, the object and the foot held together and
+   balanced on the height, instead of a stretched phone layout with an empty lower half. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .pods-ob .pods-pg-body {
+    width: 100%;
+    max-width: calc(560px + 2 * var(--gutter));
+    margin: 0 auto;
+    grid-template-rows: auto auto auto;
+    align-content: safe center;
+    padding-bottom: var(--s12);
+  }
+  .pods-ob .pods-pg-head {
+    padding-top: var(--s16);
+  }
+  .pods-ob .pods-pg-obj {
+    justify-content: center;
+    padding: var(--s12) 0 var(--s8);
+  }
+  .pods-ob .pods-pg-foot {
+    padding: var(--s8) 0 env(safe-area-inset-bottom);
+  }
+}

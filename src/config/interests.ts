@@ -1,4 +1,4 @@
-// [U2 owns] The fixed launch interest list: exactly BLUEPRINT D9's 14, four sections.
+// [U2 owns] The fixed launch interest list: BLUEPRINT D9's 14 plus five common asks, four sections.
 // Emoji are allowed inside interest chips only (D5).
 import type { Interest } from "@/lib/types";
 
@@ -17,6 +17,12 @@ export const INTERESTS: Interest[] = [
   { id: "art", label: "Art & making", icon: "🎨", category: "creative", section: "make", active: true },
   { id: "photography", label: "Photography", icon: "📷", category: "creative", section: "make", active: true },
   { id: "volunteering", label: "Volunteering", icon: "🤝", category: "learning", section: "learn_give", active: true },
+  // + common asks heard in first run (sweep 10/29): no seeded pod yet, so placement starts or fills one.
+  { id: "cooking", label: "Cooking", icon: "🍳", category: "food", section: "make", active: true },
+  { id: "coffee", label: "Coffee", icon: "☕", category: "food", section: "learn_give", active: true },
+  { id: "gym_yoga", label: "Gym & yoga", icon: "🧘", category: "wellness", section: "move", active: true },
+  { id: "dancing", label: "Dancing", icon: "💃", category: "creative", section: "move", active: true },
+  { id: "gaming", label: "Gaming", icon: "🎮", category: "games", section: "play", active: true },
 ];
 
 export const INTEREST_SECTIONS = [

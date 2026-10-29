@@ -194,7 +194,9 @@ export const useStore = create<StoreState>()(
           return { ...current, db: freshDb(current.mode) };
         }
         // Fill any top-level keys a newer build added, keep everything persisted.
-        return { ...current, db: { ...freshDb(current.mode), ...persisted.db } };
+        // Interests are config: a saved browser also gets ones a newer build added (cooking, coffee, ...).
+        const fresh = freshDb(current.mode);
+        return { ...current, db: { ...fresh, ...persisted.db, interests: { ...fresh.interests, ...persisted.db.interests } } };
       },
       onRehydrateStorage: () => (state, error) => {
         if (error) pendingResetToast = true;

@@ -12,8 +12,9 @@ import { CirclesLoader } from "@/components/brand/circles-loader";
 import { NewPodCard } from "@/components/placement/new-pod";
 import { SNAPPY } from "@/components/brand/table-ring";
 import { useDb, useMe, useRepo } from "@/lib/db/hooks";
-import { faithLadder, faithNode, heritageLadder, heritageNode } from "@/data/taxonomy";
-import type { FaithValue, HeritageValue, Slot } from "@/lib/types";
+import { faithLabel, faithValue, heritageLabel, heritageValue } from "@/components/onboarding/community";
+import { CommunityFields } from "@/components/onboarding/community-fields";
+import type { Slot } from "@/lib/types";
 import { BlockedList, PrivacyCenter } from "@/components/safety";
 import { PageName, ChoiceRow, Rows, SheetFoot, SheetLine, GoLink } from "./kit";
 import "./you.css";
@@ -235,30 +236,6 @@ function FreeRow({ label, children }: { label: string; children: React.ReactNode
 
 /* ── Community pods (B03s): opt-in, members only, never shown to anyone else ──────────────────────────────────── */
 
-type Opt = { key: string; label: string; heritage?: HeritageValue; faith?: FaithValue };
-/** One row per community pod family. A pick that sits under a row is shown in its own words ("Zambian" under
- *  Southern African, "Seventh-day Adventist" under Christian), so the sheet says back exactly what you chose. */
-const COMMUNITY: Opt[] = [
-  { key: "southern_african", label: "Southern African", heritage: { level: "region", code: "southern_african" } },
-  { key: "west_african", label: "West African", heritage: { level: "region", code: "west_african" } },
-  { key: "east_african", label: "East African", heritage: { level: "region", code: "east_african" } },
-  { key: "caribbean", label: "Caribbean", heritage: { level: "region", code: "caribbean" } },
-  { key: "christian", label: "Christian", faith: { level: "religion", code: "christian" } },
-  { key: "islam", label: "Muslim", faith: { level: "religion", code: "islam" } },
-];
-
-/** Does a stored value sit under this option (Zambian under Southern African, Seventh-day Adventist under Christian)? */
-function under(code: string | undefined, key: string, kind: "heritage" | "faith") {
-  if (!code) return false;
-  return (kind === "heritage" ? heritageLadder(code) : faithLadder(code)).some((n) => n.code === key);
-}
-
-/** The words for a row: your own pick when it sits under it, else the family. */
-function ownLabel(o: Opt, code: string | undefined) {
-  if (!code || !under(code, o.key, o.heritage ? "heritage" : "faith")) return o.label;
-  return (o.heritage ? heritageNode(code)?.label : faithNode(code)?.label) ?? o.label;
-}
-
 export function CommunitySheet({ open, onClose }: SheetProps) {
   const [asking, setAsking] = useState(false);
   return (
@@ -275,7 +252,7 @@ export function CommunitySheet({ open, onClose }: SheetProps) {
   );
 }
 
-/** Community pod families as ring rows; adding one proposes its pod inline. Shared by the sheet and the edit page. */
+/** The two-field community picker (same as first run); adding one proposes its pod inline. Shared by the sheet and the edit page. */
 export function CommunityPicker({ onAsking }: { onAsking?: (asking: boolean) => void }) {
   const repo = useRepo();
   // Only the signed-in person's own identity is read here (never a member view).
@@ -292,25 +269,19 @@ export function CommunityPicker({ onAsking }: { onAsking?: (asking: boolean) => 
   const asking = !!(match && match.status === "new");
   useEffect(() => onAsking?.(asking), [asking, onAsking]);
 
-  async function pick(o: Opt) {
+  // Each tap saves (Edit profile has no Done for this card). Clearing a field removes only that field.
+  async function save(kind: "heritage" | "faith", code: string | null) {
     const before = known;
-    const isH = !!o.heritage;
-    const on = isH ? under(h?.code, o.key, "heritage") : under(f?.code, o.key, "faith");
-    const r = on
-      ? await repo.deleteIdentityField(isH ? "heritage" : "faith")
-      : await repo.setIdentity({ heritage: isH ? o.heritage : h, faith: isH ? f : o.faith, consent: true });
+    const r = code
+      ? await repo.setIdentity({ heritage: kind === "heritage" ? heritageValue(code) : h, faith: kind === "faith" ? faithValue(code) : f, consent: true })
+      : await repo.deleteIdentityField(kind);
     if (!r.ok) notify.error("Not saved. Try again.");
-    else setAsked(on ? null : { kind: isH ? "heritage" : "faith", before });
+    else setAsked(code ? { kind, before } : null);
   }
 
   return (
     <>
-      <Rows label="Community pods">
-        {COMMUNITY.map((o) => {
-          const on = o.heritage ? under(h?.code, o.key, "heritage") : under(f?.code, o.key, "faith");
-          return <ChoiceRow key={o.key} on={on} hue="grove" label={ownLabel(o, o.heritage ? h?.code : f?.code)} onToggle={() => pick(o)} />;
-        })}
-      </Rows>
+      <CommunityFields heritage={h?.code ?? null} faith={f?.code ?? null} onHeritage={(c) => save("heritage", c)} onFaith={(c) => save("faith", c)} />
       {match && (
         <div aria-live="polite" className="mt-s6">
           <NewPodCard key={match.id} match={match} variant="inline" onSkipped={() => setAsked(null)} />
@@ -324,8 +295,8 @@ export function CommunityPicker({ onAsking }: { onAsking?: (asking: boolean) => 
 export function useMyCommunities(): string[] {
   const ident = useDb((db) => (db.me ? (db.identities[db.me] ?? null) : null));
   const out: string[] = [];
-  if (ident?.heritage?.code) out.push(heritageNode(ident.heritage.code)?.label ?? ident.heritage.code);
-  if (ident?.faith?.code) out.push(faithNode(ident.faith.code)?.label ?? ident.faith.code);
+  if (ident?.heritage?.code) out.push(heritageLabel(ident.heritage.code) ?? ident.heritage.code);
+  if (ident?.faith?.code) out.push(faithLabel(ident.faith.code) ?? ident.faith.code);
   return out;
 }
 

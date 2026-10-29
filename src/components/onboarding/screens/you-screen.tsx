@@ -9,11 +9,14 @@ import { useRouter } from "next/navigation";
 import { Line } from "@/components/brand/line";
 import { Button } from "@/components/ui/button";
 import { useDb } from "@/lib/db/hooks";
-import { FlowStep, InlineField, Sub, useTableSize } from "../flow";
+import { FlowStep, GoLink, InlineField, Sub, useTableSize } from "../flow";
 import { SeatTable } from "../objects";
 import { useDraft } from "../draft";
 import { Guarded } from "../guard";
 import { BACK, DOT, STEP_ROUTE } from "../steps";
+
+/** Over the age range: the waitlist's age variant ("We'll text you if that changes."), so a 30-year-old has a way on. */
+export const AGE_WAITLIST = "/waitlist?reason=age";
 
 export function YouScreen() {
   return <Guarded need="none">{() => <You />}</Guarded>;
@@ -100,14 +103,19 @@ function You() {
             </span>
           </Line>
           <Sub live className="min-h-6 text-[17px]">
-            {young ? "Pods is 18 and up." : old ? `Pods is ${minAge} to ${maxAge}.` : ""}
+            {young ? "Pods is 18 and up." : old ? `Pods is ${minAge} to ${maxAge} for now.` : ""}
           </Sub>
+          {old && (
+            <GoLink href={AGE_WAITLIST} className="mt-s1">
+              Tell me when Pods opens to my age
+            </GoLink>
+          )}
           <button type="submit" hidden />
         </form>
       }
       object={<SeatTable size={size} initial={initial} />}
       dot={DOT.you}
-      hint={ok ? undefined : !name.trim() ? "Type your first name." : n === null ? "Add your age." : undefined}
+      hint={ok || old ? undefined : !name.trim() ? "Type your first name." : n === null ? "Add your age." : undefined}
       action={
         <Button size="xl" disabled={!ok} onClick={next}>
           Next

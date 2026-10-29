@@ -59,7 +59,7 @@ function PromiseStep({ me }: { me: User }) {
               AI plans your hangouts
               <small>From your free times</small>
             </span>
-            <Switch checked={claudeOk} onCheckedChange={(v) => set({ claudeOk: v })} aria-label="AI plans your hangouts" />
+            <Switch className="data-[state=checked]:before:bg-signal" checked={claudeOk} onCheckedChange={(v) => set({ claudeOk: v })} aria-label="AI plans your hangouts" />
           </label>
           <Sub live className="min-h-6 text-[15px]">
             {err ? "Not saved. Try again." : ""}

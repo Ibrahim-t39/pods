@@ -17,7 +17,7 @@ describe("U0 slice", () => {
     expect(db.config.flags.podsAtStart).toBe(2);
     expect(db.config.planner.claudeBudgetMs).toBe(8000);
     expect(db.config.planner.lockThreshold).toBe(4);
-    expect(Object.keys(db.interests)).toHaveLength(14);
+    expect(Object.keys(db.interests)).toHaveLength(19);
     expect(SLOTS).toContain("sunday-afternoon");
     const s = db.suggestions[DEMO.hoopers.suggestionId];
     expect(s.plan_json.starts_at).toBe("2026-11-07T10:00:00-06:00");

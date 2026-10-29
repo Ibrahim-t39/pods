@@ -14,6 +14,8 @@ import { SNAPPY, useCalmMotion } from "@/components/brand/motion";
 import { TOPICS, VENUE_BY_ID } from "@/data/plans";
 import { PodSphere } from "@/components/brand/pod-sphere";
 import { PERSON_COLORS } from "@/components/brand/disc";
+import { lockRule } from "@/lib/planner/lock";
+import { lockLine } from "./film-data";
 
 type Key = "basketball" | "guitar" | "running" | "hiking" | "books" | "soccer";
 
@@ -40,7 +42,9 @@ function factsFor(k: Key) {
   const t = TOPICS[k];
   const place = VENUE_BY_ID[t.venue]?.short_name ?? "";
   const rainVenue = t.rainVenue ? VENUE_BY_ID[t.rainVenue]?.short_name : null;
-  return { ...i, place, bring: t.bring.slice(0, 2).join(" · "), rain: rainVenue ?? i.rain };
+  // the plan's own lock number, from the same rule the app uses (Hoopers: 4 for 2v2)
+  const lockAt = lockRule({ key: k, size: 8 }).min_to_lock;
+  return { ...i, place, bring: t.bring.slice(0, 2).join(" · "), rain: rainVenue ?? i.rain, lockAt };
 }
 
 interface Try {
@@ -51,7 +55,8 @@ interface Try {
   run: number;
   done: Record<StepId, boolean>;
   mark: (s: StepId) => void;
-  n: 3 | 4;
+  /** people in: everyone but you before you tap, the lock number after */
+  n: number;
   locked: boolean;
   imIn: () => void;
   votes: ("yes" | "no")[];
@@ -66,7 +71,7 @@ export function TryIt() {
   const [picked, setPicked] = useState<Key[]>([]);
   const [run, setRun] = useState(0);
   const [done, setDone] = useState<Record<StepId, boolean>>({ fit: false, pod: false, plan: false, in: false, repeat: false });
-  const [n, setN] = useState<3 | 4>(3);
+  const [inn, setIn] = useState(false);
   const [locked, setLocked] = useState(false);
   const [votes, setVotes] = useState<("yes" | "no")[]>([]);
   const timers = useRef<number[]>([]);
@@ -80,9 +85,10 @@ export function TryIt() {
   const pod = useMemo(() => factsFor(lead), [lead]);
   const others = picked.slice(1).map((k) => INTERESTS.find((i) => i.k === k)!.pod);
 
+  const n = pod.lockAt - 1 + (inn ? 1 : 0);
   const imIn = () => {
-    if (n === 4) return;
-    setN(4);
+    if (inn) return;
+    setIn(true);
     later(() => {
       setLocked(true);
       mark("in");
@@ -99,7 +105,7 @@ export function TryIt() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
     setPicked([]);
-    setN(3);
+    setIn(false);
     setLocked(false);
     setVotes([]);
     setDone({ fit: false, pod: false, plan: false, in: false, repeat: false });
@@ -295,7 +301,7 @@ function Plan() {
   ];
   return (
     <div id="plan" className="tr-beat">
-      <Head k="Plan" line="AI plans the first hangout." sub="You just show up." />
+      <Head k="Plan" line="The AI plans it." sub="You just say yes." />
       <div className="tr-obj" ref={ref}>
         <PlanHalo state={t < 4 ? "off" : locked ? "locked" : "waiting"} radius={28} className="tr-card-wrap">
           <div className="tr-card">
@@ -341,21 +347,22 @@ function Plan() {
   );
 }
 
-/* ── 4 I'm in: you tap it; 3 of 8 ticks to 4; it locks and the four move together ──────────────────────────── */
+/* ── 4 I'm in: you tap it; the count ticks to the plan's lock number (Hoopers: 3 of 8 to 4) and it locks ──────────────────────────── */
 function ImIn() {
   const { n, locked, imIn, pod } = useTry();
+  const wait = lockLine(pod.lockAt);
   return (
     <div id="in" className="tr-beat">
-      <Head k="I'm in" line={locked ? "Locked. It's on." : "It locks when four are in."} sub={locked ? `${pod.what}, ${pod.when}.` : "Three already said yes."} />
+      <Head k="I'm in" line={locked ? "Locked. It's on." : wait.line} sub={locked ? `${pod.what}, ${pod.when}.` : wait.sub} />
       <div className="tr-obj tr-inobj">
         <div className="tr-sphere" data-locked={locked ? "" : undefined}>
           <PodSphere hue="ember" people={8} inCount={n} size={220} float={locked} />
         </div>
-        <Faces names={["You", "Jordan", "Amara", "Theo"]} lit={n} />
+        <Faces names={["You", ...MEMBERS.slice(0, pod.lockAt - 1)]} youIn={n >= pod.lockAt} />
         <div className="tr-in-row">
           <InCount n={n} of={8} locked={locked} className="tr-count" />
           {!locked && (
-            <Button variant="spark" size="lg" onClick={imIn} disabled={n === 4}>
+            <Button variant="spark" size="lg" onClick={imIn} disabled={n >= pod.lockAt}>
               I&apos;m in
             </Button>
           )}
@@ -406,8 +413,10 @@ function Repeat() {
   );
 }
 
-/* the four who said yes: one distinct colour and initial each (you first) */
-function Faces({ names, lit }: { names: string[]; lit: number }) {
+/* the people it locks with: one distinct colour and initial each (you first) */
+function Faces({ names, youIn }: { names: string[]; youIn: boolean }) {
+  // the others already said yes; you light up when you tap
+  const lit = names.length - (youIn ? 0 : 1);
   return (
     <ul className="tr-faces" aria-label={`${lit} in`}>
       {names.map((m, i) => (
@@ -416,7 +425,7 @@ function Faces({ names, lit }: { names: string[]; lit: number }) {
           className="tr-face"
           data-you={m === "You" ? "" : undefined}
           aria-label={m}
-          style={m === "You" ? { opacity: i < lit ? 1 : 0.3 } : { background: PERSON_COLORS[(i - 1) % 3].bg, color: PERSON_COLORS[(i - 1) % 3].fg, opacity: i < lit ? 1 : 0.3 }}
+          style={m === "You" ? { opacity: youIn ? 1 : 0.3 } : { background: PERSON_COLORS[(i - 1) % 3].bg, color: PERSON_COLORS[(i - 1) % 3].fg }}
         >
           {m === "You" ? "You" : m[0]}
         </li>

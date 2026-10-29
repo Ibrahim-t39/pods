@@ -119,7 +119,9 @@ export function FlowStep({ screen, light = "dawn", back, head, object, dot, stat
 export function useTableSize(): { size: number; wide: boolean } {
   const wide = useMediaQuery("(min-width: 1024px)");
   const short = useMediaQuery("(max-height: 740px)");
-  return { size: wide ? 400 : short ? 176 : 212, wide };
+  // tablet (centred column, tall screen): a larger table so the column is balanced, not a phone stretched
+  const tablet = useMediaQuery("(min-width: 640px) and (min-height: 900px)");
+  return { size: wide ? 400 : short ? 176 : tablet ? 272 : 212, wide };
 }
 
 /**

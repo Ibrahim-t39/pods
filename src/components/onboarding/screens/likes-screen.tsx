@@ -5,7 +5,7 @@
 // to non-members (I #3, K D4). The words "faith" and "heritage" are not on the step itself.
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { Line } from "@/components/brand/line";
@@ -13,7 +13,6 @@ import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { ResponsiveSheet } from "@/components/ui/sheet";
 import { useDb } from "@/lib/db/hooks";
-import { FAITH_NODES, HERITAGE_NODES, faithNode, heritageNode } from "@/data/taxonomy";
 import { cn } from "@/lib/cn";
 import { FlowStep, GoLink, Sub, useTableSize } from "../flow";
 import { RingTable } from "../objects";
@@ -21,6 +20,8 @@ import { useDraft } from "../draft";
 import { Guarded } from "../guard";
 import { BACK, DOT, STEP_ROUTE } from "../steps";
 import { joinWords, LIKE_WORD } from "../words";
+import { faithLabel, heritageLabel } from "../community";
+import { CommunityFields } from "../community-fields";
 
 const PAGE = 5;
 
@@ -56,8 +57,8 @@ function Likes({ openCommunity }: { openCommunity: boolean }) {
   const picks = draft.interests;
   const shown = ids.slice(page * PAGE, page * PAGE + PAGE);
   const community = !!(draft.heritage || draft.faith);
-  const from = draft.heritage ? (heritageNode(draft.heritage)?.label ?? null) : null;
-  const faith = draft.faith ? (FAITHS.find((x) => x.code === draft.faith)?.label ?? faithNode(draft.faith)?.label ?? null) : null;
+  const from = heritageLabel(draft.heritage);
+  const faith = faithLabel(draft.faith);
 
   const toggle = (id: string) => {
     if (picks.includes(id)) return draft.set({ interests: picks.filter((x) => x !== id) });
@@ -174,25 +175,10 @@ function Likes({ openCommunity }: { openCommunity: boolean }) {
   );
 }
 
-const FAITH_SHOWN = 5;
-const REGIONS = HERITAGE_NODES.filter((n) => n.level === "region");
-const COUNTRIES = HERITAGE_NODES.filter((n) => n.level === "country");
-const FAITHS = FAITH_NODES.filter((n) => n.level === "denomination").map((n) => ({
-  code: n.code,
-  label: n.label.replace("Non-denominational Christian", "Non-denominational").replace("Muslim (Sunni)", "Sunni Muslim").replace("Muslim (Shia)", "Shia Muslim"),
-}));
-
-/** The region a heritage code sits in (a country's parent, or the region itself). */
-const regionOf = (code: string | null) => {
-  if (!code) return null;
-  const n = heritageNode(code);
-  return n?.level === "country" ? n.parent : (n?.code ?? null);
-};
-
 /**
  * B03s. "Community pods" / "Only members see you there." Two fields of words, one pick each, tap again to clear.
  * From: tap a region and the other regions step aside for its countries (two taps to "Zambian"; the region alone
- * is a valid answer). Faith: the denominations, full names. Nothing is saved until Done, and nothing at all when
+ * is a valid answer). Faith: the religions; Christian and Muslim open their denominations. Nothing is saved until Done, and nothing at all when
  * nothing is picked (edge case 5). Chosen = --select, like every chosen thing in first run (COLOR_LIFE §13 beat 1).
  */
 function CommunitySheet({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
@@ -206,9 +192,6 @@ function CommunitySheet({ open, onOpenChange }: { open: boolean; onOpenChange: (
     }
     onOpenChange(o);
   };
-  const [allFaiths, setAllFaiths] = useState(false);
-  const region = regionOf(h);
-  const countries = region ? COUNTRIES.filter((c) => c.parent === region) : [];
   return (
     <ResponsiveSheet
       open={open}
@@ -241,61 +224,9 @@ function CommunitySheet({ open, onOpenChange }: { open: boolean; onOpenChange: (
         </>
       }
     >
-      <div className="flex flex-col gap-s8 pb-s6">
-        <Field label="From">
-          {(region ? REGIONS.filter((r) => r.code === region) : REGIONS).map((r) => (
-            <Chip key={r.code} on={h === r.code} near={region === r.code && h !== r.code} onClick={() => setH(h === r.code || region === r.code ? null : r.code)}>
-              {r.label}
-            </Chip>
-          ))}
-          {countries.map((c, k) => (
-            <Chip key={c.code} on={h === c.code} onClick={() => setH(h === c.code ? region : c.code)} delay={k * 0.03}>
-              {c.label}
-            </Chip>
-          ))}
-        </Field>
-        <Field label="Faith">
-          {(allFaiths || (f && FAITHS.findIndex((o) => o.code === f) >= FAITH_SHOWN) ? FAITHS : FAITHS.slice(0, FAITH_SHOWN)).map((o) => (
-            <Chip key={o.code} on={f === o.code} onClick={() => setF(f === o.code ? null : o.code)}>
-              {o.label}
-            </Chip>
-          ))}
-          {!allFaiths && FAITHS.length > FAITH_SHOWN && !(f && FAITHS.findIndex((o) => o.code === f) >= FAITH_SHOWN) && (
-            <button type="button" className="pods-ob-like pressable" data-dashed="" onClick={() => setAllFaiths(true)}>
-              More
-            </button>
-          )}
-        </Field>
+      <div className="pb-s6">
+        <CommunityFields heritage={h} faith={f} onHeritage={setH} onFaith={setF} />
       </div>
     </ResponsiveSheet>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div role="group" aria-label={label}>
-      <p className="mb-s3 text-label text-ink-2">{label}</p>
-      <div className="flex flex-wrap gap-s2">{children}</div>
-    </div>
-  );
-}
-
-function Chip({ on, near, onClick, delay = 0, children }: { on: boolean; near?: boolean; onClick: () => void; delay?: number; children: ReactNode }) {
-  const reduce = useReducedMotion();
-  return (
-    <motion.button
-      layout={reduce ? false : "position"}
-      type="button"
-      aria-pressed={on}
-      onClick={onClick}
-      data-near={near ? "" : undefined}
-      className="pods-ob-like pressable"
-      initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.85 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: "spring", stiffness: 420, damping: 32, delay }}
-    >
-      {on && <span aria-hidden className="pods-ob-like-dot pods-pop-in" />}
-      {children}
-    </motion.button>
   );
 }

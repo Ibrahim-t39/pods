@@ -17,6 +17,11 @@ export const LIKE_WORD: Record<string, string> = {
   art: "art",
   photography: "photos",
   volunteering: "volunteering",
+  cooking: "cooking",
+  coffee: "coffee",
+  gym_yoga: "gym and yoga",
+  dancing: "dancing",
+  gaming: "gaming",
 };
 
 export const joinWords = (w: string[]) => w.join(", ");

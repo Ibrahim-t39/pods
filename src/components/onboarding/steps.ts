@@ -6,7 +6,7 @@
 import type { Repo } from "@/lib/db/repo";
 import type { MetroCity, User } from "@/lib/types";
 import { nowISO } from "@/lib/time/clock";
-import { heritageNode } from "@/data/taxonomy";
+import { faithValue, heritageValue } from "./community";
 import { dobForAge, useDraft, type Draft } from "./draft";
 
 export type StepId = "you" | "likes" | "free" | "seat" | "promise" | "verify" | "placing";
@@ -88,8 +88,8 @@ export async function commitDraft(repo: Repo, metro: readonly string[]): Promise
   const r2 = await repo.setInterests(d.interests);
   if (!r2.ok) return { ok: false, code: r2.error.code };
   const r3 = await repo.setIdentity({
-    heritage: d.heritage ? { level: heritageNode(d.heritage)?.level ?? "region", code: d.heritage } : null,
-    faith: d.faith ? { level: "denomination", code: d.faith } : null,
+    heritage: d.heritage ? heritageValue(d.heritage) : null,
+    faith: d.faith ? faithValue(d.faith) : null,
     consent: !!(d.heritage || d.faith),
   });
   if (!r3.ok) return { ok: false, code: r3.error.code };

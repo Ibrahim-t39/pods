@@ -9,12 +9,13 @@
 "use client";
 
 import Link from "next/link";
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
+import { createContext, Fragment, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { motion, useMotionValueEvent, useScroll, useTransform, type MotionValue } from "motion/react";
 import { Logo } from "@/components/brand/logo";
 import { PodSphere } from "@/components/brand/pod-sphere";
 import { useCalmMotion } from "@/components/brand/motion";
 import { TOPICS, VENUE_BY_ID } from "@/data/plans";
+import { WEEKS, hoursLabel } from "./film-data";
 import "./film.css";
 
 export const START = "/app";
@@ -61,6 +62,9 @@ const RAIN = (BB.rainVenue && VENUE_BY_ID[BB.rainVenue]?.short_name) || "Indoors
 type Hue = "ember" | "signal" | "grove";
 const HUES: Hue[] = ["ember", "signal", "grove"];
 const HEX: Record<Hue, string> = { ember: "var(--pods-ember)", signal: "var(--pods-signal)", grove: "var(--pods-grove)" };
+/** the colour each Fit pod renders in, as the app draws pods (POD_SOLID): yours, Hoopers, is signal blue like in the app;
+ *  ember stays for the "you" marker */
+const POD_HEX: Record<Hue, string> = { ember: HEX.signal, signal: HEX.ember, grove: HEX.grove };
 /** PodSphere's hue keys are slot names; these give the logo colour */
 const SPHERE: Record<Hue, "signal" | "ember" | "grove"> = { ember: "signal", signal: "ember", grove: "grove" };
 /** the mark's circle centres relative to its centre, in circle radii (logo-geometry.ts), and its dots */
@@ -68,17 +72,6 @@ const MARK: Record<Hue, [number, number]> = { ember: [0, -0.78], signal: [-0.74,
 const MDOT: Record<Hue, [number, number]> = { ember: [0, -0.39], signal: [-0.33, 0.155], grove: [0.33, 0.155] };
 
 /* ── geometry: every scene and the protagonist's path come from one place (px from the viewport centre) ───── */
-const WEEKS = [
-  { w: "Week 1", what: "Pickup basketball", came: 4, hrs: 2 },
-  { w: "Week 2", what: "Pickup basketball", came: 5, hrs: 6 },
-  { w: "Week 3", what: "Run, then coffee", came: 5, hrs: 11 },
-  { w: "Week 4", what: "Pickup basketball", came: 6, hrs: 17 },
-  { w: "Week 5", what: "Game night", came: 6, hrs: 24 },
-  { w: "Week 6", what: "Trail walk", came: 7, hrs: 32 },
-  { w: "Week 7", what: "Pickup basketball", came: 7, hrs: 41 },
-  { w: "Week 8", what: "Nia's birthday", came: 8, hrs: 50 },
-];
-
 function geo(w: number, h: number) {
   const phone = w <= 720;
   const stack = w < 1024;
@@ -360,15 +353,37 @@ function Chapter({ i, sref, label, tone, sky, children, className }: { i: number
   );
 }
 
-/** a headline that fades up in [a,b] and out in [c,d] */
+/** a headline that fades up in [a,b] and out in [c,d]; under reduced motion it simply stands (chapters stack theirs) */
 function Line({ p, at, children, className, as = "h2" }: { p: MotionValue<number>; at: [number, number, number, number]; children: ReactNode; className?: string; as?: "h1" | "h2" | "p" }) {
+  const calm = useCalmMotion();
   const o = useTransform(p, at, [0, 1, 1, 0]);
   const y = useTransform(p, at, [24, 0, 0, -24]);
   const M = as === "h1" ? motion.h1 : as === "p" ? motion.p : motion.h2;
   return (
-    <M className={className} style={{ opacity: o, y }}>
+    <M className={className} style={calm ? { opacity: 1 } : { opacity: o, y }}>
       {children}
     </M>
+  );
+}
+
+/** a chapter's top copy: in motion each beat has its own layer (they cross-fade in place); in calm they stack in one */
+function Copies({ calm, tones, children }: { calm: boolean; tones?: ("dark" | undefined)[]; children: ReactNode[] }) {
+  if (calm)
+    return (
+      <div className="fm-copy fm-copy-top fm-copy-stack">
+        {children.map((c, i) => (
+          <Fragment key={i}>{c}</Fragment>
+        ))}
+      </div>
+    );
+  return (
+    <>
+      {children.map((c, i) => (
+        <div key={i} className="fm-copy fm-copy-top" data-tone={tones?.[i]}>
+          {c}
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -539,7 +554,7 @@ function Person({ p, d }: { p: MotionValue<number>; d: (typeof CROWD)[number] })
   const tint = useTransform(p, [0.22, 0.34], [0, 1]);
   return (
     <motion.i className="fm-person" style={{ x, y, z, opacity: o, scale: d.s }}>
-      {d.fit && <motion.b style={{ opacity: tint, borderColor: HEX[d.fit] }} />}
+      {d.fit && <motion.b style={{ opacity: tint, borderColor: POD_HEX[d.fit] }} />}
     </motion.i>
   );
 }
@@ -558,7 +573,7 @@ function FitPod({ p, h }: { p: MotionValue<number>; h: Hue }) {
   const opacity = useTrack(p, keys, 3);
   return (
     <motion.div className="fm-at" style={{ x, y, scale, opacity, width: size, height: size }}>
-      <PodSphere hue={SPHERE[h]} people={h === "ember" ? 4 : 3} inCount={h === "ember" ? 1 : 3} you={h === "ember"} size={size} />
+      <PodSphere hue={h} people={h === "ember" ? 4 : 3} inCount={h === "ember" ? 1 : 3} you={h === "ember"} size={size} />
     </motion.div>
   );
 }
@@ -573,7 +588,7 @@ function Tag({ p, h }: { p: MotionValue<number>; h: Hue }) {
   const tr = mx < 0 ? "-80% -50%" : mx > 0 ? "-20% -50%" : "-50% -50%";
   return (
     <motion.span className="fm-tag" style={{ opacity: o, left: x, top: y, translate: tr }}>
-      <i style={{ background: HEX[h] }} />
+      <i style={{ background: POD_HEX[h] }} />
       {TAGS[h]}
     </motion.span>
   );
@@ -683,7 +698,7 @@ function Plan() {
         <motion.div className="fm-phone fm-at" style={{ left: G.P.x, top: G.P.y, y: py, rotateX: rx, rotateY: ry, opacity: ph, "--pw": `${G.pw}px` } as unknown as CSSProperties}>
           <div className="fm-screen">
             <div className="fm-scr-top">
-              <PodSphere hue="signal" people={8} inCount={3} size={G.ic} />
+              <PodSphere hue="ember" people={8} inCount={3} size={G.ic} />
               <div>
                 <b>Hoopers</b>
                 <span>8 people · near you</span>
@@ -725,6 +740,7 @@ function RingSeat({ p, k, lit }: { p: MotionValue<number>; k: number; lit: boole
 
 function ImIn() {
   const G = useGeo();
+  const calm = useCalmMotion();
   const [ref, p] = useChapter(0.7);
   const [n, setN] = useState(3);
   useMotionValueEvent(p, "change", (v) => setN(v >= 0.5 ? 4 : 3));
@@ -746,18 +762,16 @@ function ImIn() {
   const pulse = useTransform(p, [0.52, 0.58, 0.66], [1, 1.06, 1]);
   return (
     <Chapter i={3} sref={ref} label="I'm in" tone="dark" sky="night" className="fm-in">
-      <div className="fm-copy fm-copy-top">
+      <Copies calm={calm}>
         <Line p={p} at={[0.02, 0.1, 0.4, 0.46]} className="fm-h2">
-          One seat left.
+          One more yes.
         </Line>
-      </div>
-      <div className="fm-copy fm-copy-top">
         <Line p={p} at={[0.5, 0.56, 0.86, 0.94]} className="fm-h2">
           You&apos;re in.
           <br />
-          <span className="fm-dim">Enough said yes. It locks.</span>
+          <span className="fm-dim">4 of 8. It&apos;s on.</span>
         </Line>
-      </div>
+      </Copies>
       <O>
         <motion.div className="fm-ring" style={{ left: G.Rc.x, top: G.Rc.y, y: fy, scale: fs }}>
           <motion.div style={{ scaleY: fsy }}>
@@ -893,7 +907,7 @@ function Saturday() {
         <Line p={p} at={[0.2, 0.3, 0.86, 0.94]} className="fm-h2">
           Saturday.
           <br />
-          <span className="fm-dim">Everyone came.</span>
+          <span className="fm-dim">All four showed up.</span>
         </Line>
       </div>
     </Chapter>
@@ -993,7 +1007,7 @@ function Week({ p, i, wk }: { p: MotionValue<number>; i: number; wk: (typeof WEE
   return (
     <motion.article className="fm-week fm-at" style={{ left: 0, top: G.Ty, x: off, scale, opacity: o, width: G.cw, height: G.ch, "--cw": `${G.cw}px` } as unknown as CSSProperties}>
       <header>
-        <small>{wk.w}</small>
+        <small>Hangout #{wk.n}</small>
         <span>{wk.came} of 8 came</span>
       </header>
       <div className="fm-week-v" style={{ top: G.vy - G.Ty + G.ch / 2 }}>
@@ -1003,14 +1017,16 @@ function Week({ p, i, wk }: { p: MotionValue<number>; i: number; wk: (typeof WEE
       <div className="fm-hrs">
         <i style={{ width: `${(wk.hrs / 50) * 100}%` }} />
       </div>
-      <span className="fm-hrs-l">{wk.hrs === 50 ? "50 hours together" : `${wk.hrs} of ~50 hours together`}</span>
+      <span className="fm-hrs-l">{hoursLabel(wk.hrs)}</span>
     </motion.article>
   );
 }
 
 function Repeat() {
   const G = useGeo();
-  const [ref, p] = useChapter(0.86);
+  const calm = useCalmMotion();
+  // the still frame: the last hangout card centred, just before the strip gathers
+  const [ref, p] = useChapter(0.62);
   const gt = useTransform(p, gatherAt);
   // the payoff: one deep overlap (the last week's circles, grown), you at its top dot, and a text from Tobi
   const fx = useTransform(gt, [0, 1], [0, G.Vf.x]);
@@ -1020,28 +1036,36 @@ function Repeat() {
   const msg = useTransform(p, [0.76, 0.82], [0, 1]);
   const msgY = useTransform(p, [0.76, 0.82], [12, 0]);
   const bub = G.phone ? { left: 0, top: G.Vf.y + G.rvF * 1.9, translate: "-50% 0" } : { left: G.Vf.x + G.rvF * 2.2, top: G.Vf.y - 6, translate: "0 -50%" };
+  const thesis = (
+    <>
+      <Line p={p} at={[0.03, 0.1, 0.56, 0.62]} className="fm-h2">
+        Again in two weeks.
+        <br />
+        <span className="fm-dim">Same people, every time.</span>
+      </Line>
+      <Line p={p} at={[0.06, 0.13, 0.56, 0.62]} as="p" className="fm-sub">
+        Friends take about 50 hours. Nobody asks for hangout #2, so Pods does.
+      </Line>
+    </>
+  );
+  const payoff = (
+    <Line p={p} at={[0.66, 0.74, 0.96, 1.01]} className="fm-h2">
+      Fifty hours later,
+      <br />
+      <span className="fm-dim">they text you first.</span>
+    </Line>
+  );
+  // the stage sky only paints the still frame (reduced motion): day, so the stacked copy reads on light
   return (
-    <Chapter i={6} sref={ref} label="Repeat" tone="light" sky="evening" className="fm-repeat">
-      <div className="fm-copy fm-copy-top">
-        <Line p={p} at={[0.03, 0.1, 0.56, 0.62]} className="fm-h2">
-          Again next week.
-          <br />
-          <span className="fm-dim">And the week after.</span>
-        </Line>
-        <Line p={p} at={[0.06, 0.13, 0.56, 0.62]} as="p" className="fm-sub">
-          Friends take about 50 hours. Nobody asks for hangout #2, so Pods does.
-        </Line>
-      </div>
-      <div className="fm-copy fm-copy-top" data-tone="dark">
-        <Line p={p} at={[0.66, 0.74, 0.96, 1.01]} className="fm-h2">
-          Fifty hours later,
-          <br />
-          <span className="fm-dim">they text you first.</span>
-        </Line>
-      </div>
+    <Chapter i={6} sref={ref} label="Repeat" tone="light" sky="day" className="fm-repeat">
+      <Copies calm={calm} tones={[undefined, "dark"]}>
+        {calm ? [thesis] : [thesis, payoff]}
+      </Copies>
+      {/* reduced motion: the payoff stands under the cards instead of replacing the copy above them */}
+      {calm && <div className="fm-copy fm-copy-bottom fm-copy-sm">{payoff}</div>}
       <O>
         {WEEKS.map((wk, i) => (
-          <Week key={wk.w} p={p} i={i} wk={wk} />
+          <Week key={wk.n} p={p} i={i} wk={wk} />
         ))}
         <motion.div className="fm-at" style={{ left: 0, top: 0, x: fx, y: fy, scale: fs, opacity: fo }}>
           <Venn sp={1} rv={G.rvF} />

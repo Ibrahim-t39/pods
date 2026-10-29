@@ -25,7 +25,7 @@ const STEPS = [
   { k: "Pod", line: "Pods puts you in a small group that fits." },
   { k: "Plan", line: "AI plans the first hangout." },
   { k: "I'm in", line: "You tap I'm in." },
-  { k: "I'm in", line: "Four are in. It's locked." },
+  { k: "I'm in", line: "Hoopers locks at 4. Four in. It's on." },
   { k: "Repeat", line: "Two weeks later, the pod picks the next one." },
 ] as const;
 const RAIL = ["Fit", "Pod", "Plan", "I'm in", "Repeat"] as const;
@@ -123,13 +123,12 @@ export function HeroStory({ ctaRef, start, tryHref }: { ctaRef: React.RefObject<
                 <motion.div key="vote" className="hs-card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
                   <p className="hs-over">
                     <span className="hs-pod">Hoopers</span>
-                    <span className="hs-ai">Two weeks later</span>
                   </p>
                   <p className="hs-title">Run it back?</p>
                   <p className="hs-where">Same court, same people.</p>
                   <div className="hs-foot">
-                    <span className="hs-count tabular">4 of 4 yes</span>
-                    <span className="hs-done">Hangout #2 is on</span>
+                    <span className="hs-count tabular">3 of 4 said yes</span>
+                    <span className="hs-done">#2 is on</span>
                   </div>
                 </motion.div>
               )}
