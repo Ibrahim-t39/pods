@@ -170,7 +170,8 @@ html:has(.fm) { background: var(--dusk-0); }
 .fm-sub { margin: 16px auto 0; max-width: 34ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.45; color: var(--fg-2); }
 
 /* ── the protagonist: one glowing dot above every stage ─────────────────────────────────────────────────── */
-.fm-me { position: fixed; left: 50%; top: 50%; z-index: 20; width: 0; height: 0; pointer-events: none; will-change: transform; }
+/* centred on the stages' origin (50svh), not the fixed box's 50%: on phones with a collapsing toolbar the two differ */
+.fm-me { position: fixed; left: 50%; top: 50svh; z-index: 20; width: 0; height: 0; pointer-events: none; will-change: transform; }
 .fm-bead {
   position: absolute;
   left: -14px;
