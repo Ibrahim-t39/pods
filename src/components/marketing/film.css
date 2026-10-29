@@ -429,3 +429,9 @@ html:has(.fm) { background: var(--dusk-0); }
 /* reduced motion: a chapter's beats stand stacked in one block */
 .fm-copy-stack > * + * { margin-top: 14px; }
 .fm-copy-sm .fm-h2 { font-size: clamp(24px, 2.6vw, 36px); }
+
+/* phones: the hint and the footer sit above the Film/Classic pill (bottom-left, ~42px tall) */
+@media (max-width: 720px) {
+  .fm-hint { bottom: 72px; }
+  .fm-foot { left: var(--gut); right: var(--gut); bottom: 64px; text-align: center; }
+}

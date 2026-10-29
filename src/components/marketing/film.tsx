@@ -829,7 +829,7 @@ function Park() {
   const kw = 0.22 * wf;
   const kwn = 0.22 * at(yf + kd);
   const trees = [-0.44, -0.3, -0.12, 0.16, 0.34, 0.47].map((t, i) => ({ x: t * w, r: (0.024 + (i % 3) * 0.008) * Math.max(w, 700) }));
-  const sign = { x: -(G.phone ? 0.36 : 0.36) * w, y: hz + 0.05 * h };
+  const sign = { x: -(G.phone ? 0.29 : 0.36) * w, y: hz + 0.05 * h };
   return (
     <svg className="fm-park" viewBox={`${-w / 2} ${-h / 2} ${w} ${h}`} preserveAspectRatio="none" aria-hidden>
       <defs>
