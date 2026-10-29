@@ -194,11 +194,13 @@ html:has(.fm) { background: var(--dusk-0); }
 .fm-city { position: absolute; inset: auto 0 0; height: 58vh; }
 .fm-city-l { position: absolute; inset: 0; transform-origin: 50% 100%; will-change: transform; }
 .fm-city-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.fm-city-svg[data-l="far"] rect { fill: #2b1f55; }
-.fm-city-svg[data-l="mid"] rect { fill: #1d1540; }
-.fm-city-svg[data-l="near"] rect { fill: #0d0a24; }
-.fm-city-svg .fm-win { fill: #ffc58a; opacity: .75; }
-.fm-city-svg[data-l="far"] .fm-win { opacity: .4; }
+/* fills are inline on each shape; windows glow softly, far ones hazier; antenna lights blink slowly */
+.fm-city-svg .fm-win { opacity: .85; }
+.fm-city-svg[data-l="far"] .fm-win { opacity: .45; }
+.fm-city-svg[data-l="mid"] .fm-win { opacity: .7; }
+.fm-beacon { animation: fm-beacon 2.4s ease-in-out infinite; }
+@keyframes fm-beacon { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .fm-beacon { animation: none; opacity: .8; } }
 .fm-you { position: absolute; left: 50%; top: 58%; width: 0; height: 0; z-index: 4; }
 .fm-bead {
   position: absolute;

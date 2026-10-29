@@ -150,32 +150,89 @@ function Line({ p, at, children, className, as = "h2" }: { p: MotionValue<number
 }
 
 /* ── 1 · Arrival: dusk over a city that isn't yours yet; one dot ───────────────────────────────────────────── */
-function city(seed: number, n: number, minH: number, maxH: number, win: number) {
+/* a believable dusk skyline: window grids floor by floor (some lit warm, a few TV-blue, many dark), rooftops with
+   setbacks, antennas with a red light, water towers, the odd pointed top; nearer layers get bigger windows */
+type Roof = "flat" | "setback" | "antenna" | "tower" | "peak";
+type Bld = { x: number; w: number; h: number; roof: Roof; wins: { x: number; y: number; c: string }[]; ww: number; wh: number };
+const LAYER = {
+  far: { cw: 6, ch: 8, ww: 2.4, wh: 3.4, lit: 0.22 },
+  mid: { cw: 9, ch: 12, ww: 4, wh: 5.5, lit: 0.3 },
+  near: { cw: 13, ch: 17, ww: 6, wh: 8, lit: 0.34 },
+} as const;
+function city(seed: number, n: number, minH: number, maxH: number, layer: keyof typeof LAYER): Bld[] {
   const r = rng(seed);
-  const out: { x: number; w: number; h: number; wins: { x: number; y: number }[] }[] = [];
+  const L = LAYER[layer];
+  const out: Bld[] = [];
   let x = -20;
   for (let k = 0; k < n && x < 1460; k++) {
-    const w = 40 + r() * 70;
+    const w = 42 + r() * 74;
     const h = minH + r() * (maxH - minH);
-    const wins: { x: number; y: number }[] = [];
-    for (let j = 0; j < win; j++) if (r() > 0.55) wins.push({ x: x + 6 + r() * (w - 14), y: 400 - h + 10 + r() * (h - 24) });
-    out.push({ x, w, h, wins });
-    x += w + r() * 6;
+    const pick = r();
+    const roof: Roof = pick < 0.45 ? "flat" : pick < 0.65 ? "setback" : pick < 0.8 ? "antenna" : pick < 0.92 ? "tower" : "peak";
+    const wins: Bld["wins"] = [];
+    const cols = Math.max(1, Math.floor((w - 10) / L.cw));
+    const rows = Math.max(1, Math.floor((h - 14) / L.ch));
+    const x0 = x + (w - cols * L.cw) / 2 + (L.cw - L.ww) / 2;
+    const darkFloor = Math.floor(r() * rows);
+    for (let row = 0; row < rows; row++) {
+      if (row === darkFloor && rows > 3) continue; // one floor fully dark
+      for (let c = 0; c < cols; c++) {
+        if (r() > L.lit) continue;
+        const tv = r() < 0.12;
+        wins.push({ x: x0 + c * L.cw, y: 400 - h + 10 + row * L.ch, c: tv ? "#9fc4ff" : r() < 0.5 ? "#ffd9a0" : "#ffbf73" });
+      }
+    }
+    out.push({ x, w, h, roof, wins, ww: L.ww, wh: L.wh });
+    x += w + r() * 5;
   }
   return out;
 }
-const FAR = city(7, 40, 90, 230, 3);
-const MID = city(19, 34, 60, 170, 4);
-const NEAR = city(31, 26, 30, 110, 2);
+const FAR = city(7, 40, 90, 230, "far");
+const MID = city(19, 34, 60, 170, "mid");
+const NEAR = city(31, 26, 30, 110, "near");
+const FILL = { far: "#2b1f55", mid: "#1d1540", near: "#0d0a24" } as const;
+const RIM = { far: "rgb(255 170 120 / .10)", mid: "rgb(255 160 110 / .12)", near: "rgb(255 150 100 / .08)" } as const;
 
-function Skyline({ b, tone }: { b: ReturnType<typeof city>; tone: "far" | "mid" | "near" }) {
+function Roofline({ s, fill }: { s: Bld; fill: string }) {
+  const top = 400 - s.h;
+  const cx = s.x + s.w / 2;
+  switch (s.roof) {
+    case "setback":
+      return <rect x={s.x + s.w * 0.18} y={top - s.h * 0.12} width={s.w * 0.64} height={s.h * 0.12 + 1} fill={fill} />;
+    case "antenna":
+      return (
+        <>
+          <rect x={cx - 1} y={top - 34} width={2} height={34} fill={fill} />
+          <circle className="fm-beacon" cx={cx} cy={top - 35} r={2.2} fill="#ff4d4d" />
+        </>
+      );
+    case "tower":
+      return (
+        <g fill={fill}>
+          <rect x={s.x + s.w * 0.62} y={top - 16} width={14} height={11} rx={2} />
+          <rect x={s.x + s.w * 0.62 + 2} y={top - 6} width={2} height={6} />
+          <rect x={s.x + s.w * 0.62 + 10} y={top - 6} width={2} height={6} />
+        </g>
+      );
+    case "peak":
+      return <path d={`M${s.x} ${top + 1} L${cx} ${top - s.w * 0.45} L${s.x + s.w} ${top + 1} Z`} fill={fill} />;
+    default:
+      return <rect x={s.x - 2} y={top - 3} width={s.w + 4} height={4} fill={fill} />;
+  }
+}
+
+function Skyline({ b, tone }: { b: Bld[]; tone: "far" | "mid" | "near" }) {
+  const fill = FILL[tone];
   return (
     <svg viewBox="0 0 1440 400" preserveAspectRatio="xMidYMax slice" className="fm-city-svg" data-l={tone}>
       {b.map((s, k) => (
         <g key={k}>
-          <rect x={s.x} y={400 - s.h} width={s.w} height={s.h} rx={tone === "near" ? 6 : 3} />
+          <Roofline s={s} fill={fill} />
+          <rect x={s.x} y={400 - s.h} width={s.w} height={s.h} rx={tone === "near" ? 3 : 1.5} fill={fill} />
+          {/* the sun-side edge catches a little light */}
+          <rect x={s.x + s.w - 3} y={400 - s.h} width={3} height={s.h} fill={RIM[tone]} />
           {s.wins.map((w, j) => (
-            <rect key={j} className="fm-win" x={w.x} y={w.y} width={tone === "far" ? 3 : 5} height={tone === "far" ? 4 : 6} rx={1} />
+            <rect key={j} x={w.x} y={w.y} width={s.ww} height={s.wh} rx={0.6} fill={w.c} className="fm-win" />
           ))}
         </g>
       ))}
