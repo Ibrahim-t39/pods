@@ -16,6 +16,7 @@ import { Icon } from "@/components/icons";
 import { useDb, useHydrated, useMe, useRepo } from "@/lib/db/hooks";
 import { useClock } from "@/lib/time/clock";
 import { formatTime, formatWhen } from "@/lib/time/format";
+import { planWhen } from "@/components/planner/plan-display";
 import { myPlans, planShareText, smsHref } from "@/lib/platform/selectors";
 import { GoLink, PageName, PillField, SheetFoot } from "@/components/profile/kit";
 import { Card, Row, Section, TextAction, YouHead, YouPage } from "@/components/profile/you-kit";
@@ -100,13 +101,13 @@ export function SafetyPage() {
                     <>
                       <div className="yo-pad">
                         <p className="text-[13px] font-medium text-ink-2" data-nc>
-                          {soon.podName} · {soon.locked ? "Locked" : `${soon.going} going`}
+                          {soon.podName} · {soon.locked ? "Locked" : `${soon.going} in`}
                         </p>
                         <p className="mt-s1 text-[18px] font-semibold tracking-[-0.01em]" data-nc>
                           {soon.title}
                         </p>
                         <p className="mt-s1 text-[15px] text-ink-2" data-nc>
-                          {formatWhen(soon.starts_at)}
+                          {planWhen(soon.starts_at, now)}
                           {soon.venue ? ` · ${soon.venue.name}` : ""}
                         </p>
                         <div className="mt-s4 flex flex-wrap gap-s2">

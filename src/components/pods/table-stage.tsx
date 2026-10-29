@@ -137,7 +137,8 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
     const after = view.phase === "check_in" || view.phase === "ballot" || view.phase === "waiting_reveal";
     return {
       light: actions.genKind || view.phase === "vote" || view.phase === "planning_next" ? "dawn" : after ? "dusk" : "paper",
-      head: <p className="text-overline text-ink-2">{`Hangout #${round}`}</p>,
+      // the vote card carries its own "Same people · hangout #N" line; one label, not two
+      head: view.phase === "vote" && !actions.genKind ? null : <p className="text-overline text-ink-2">{`Hangout #${round}`}</p>,
       object: (
         <div className="w-full max-w-[520px] self-center">
           {card}

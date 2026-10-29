@@ -30,10 +30,10 @@ import { planTitle as planTitleOf } from "../plan-display";
 import { hm, placeWord, sourceLine, type TableModel } from "./model";
 import { lockCopy } from "@/lib/planner/lock";
 
-/** "Saturday pickup" from the plan, the same title as every other surface (plan-display). */
+/** "Pickup basketball" from the plan, the same title as every other surface (plan-display). */
 export function planTitle(m: TableModel, iso: string | null): string {
   return planTitleOf(
-    m.view.hangout?.title ?? m.plan?.summary ?? m.plan?.plan_json.summary ?? "",
+    m.plan?.plan_json.event || m.view.hangout?.title || m.plan?.summary || m.plan?.plan_json.summary || "",
     iso,
     m.pod.topic,
   );

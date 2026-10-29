@@ -6,6 +6,7 @@
 // Community pods keep their real name in the app; the inbox masks names only when in-app masking is on.
 "use client";
 
+import { planTitle } from "@/components/planner/plan-display";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -811,7 +812,7 @@ function planPane({ n, db, now, discreet, onRead }: { n: Activity; db: DbState; 
   const body = (
     <>
       <p className="text-[14px] font-medium text-ink-2">{v.locked ? "Locked" : v.phase === "vote" ? "Vote open" : v.imIn ? "You're in" : "Needs your answer"}</p>
-      <h2 className="inbx-pane-title mt-s1">{maskText(s.summary, pod, discreet)}</h2>
+      <h2 className="inbx-pane-title mt-s1">{maskText(planTitle(s.plan_json.event || s.summary), pod, discreet)}</h2>
       {n.act?.type === "vote" && (
         <div className="inbx-block mt-s4 border-t-0 pt-0">
           <h3 className="inbx-h3">Pick the next one · {n.act.total} of {v.size} voted</h3>

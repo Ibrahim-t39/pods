@@ -977,7 +977,7 @@ function PinnedPlan({
     case "locked":
     case "starting_soon":
     case "happening_now":
-      line = `${count} going`;
+      line = `${count} in`;
       action = (
         <span className="flex shrink-0 items-center gap-s1 text-[14px] font-semibold text-ink">
           <Icon name="locked" size={18} /> {view.phase === "happening_now" ? "Now" : "Locked"}

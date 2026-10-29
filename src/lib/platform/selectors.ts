@@ -5,6 +5,7 @@ import type {
 } from "@/lib/types";
 import { activeSuggestion, hangoutForSuggestion, myMemberships, myPods } from "@/lib/db/selectors";
 import { toPublicMember } from "@/lib/utils";
+import { planTitle } from "@/components/planner/plan-display";
 import { TRIGGER_GROUP, type NotificationGroup } from "@/lib/notifications/rules";
 import { joinVerdict, type JoinVerdict } from "@/lib/db/local/social";
 
@@ -50,7 +51,7 @@ export function myPlans(db: DbState, nowMs: number): { upcoming: PlanItem[]; pas
       if (h.pod_id !== pod.id || h.status === "cancelled") continue;
       const s = db.suggestions[h.suggestion_id];
       items.push({
-        id: h.id, kind: "hangout", podId: pod.id, podName: name, title: h.title, starts_at: h.starts_at, ends_at: h.ends_at,
+        id: h.id, kind: "hangout", podId: pod.id, podName: name, title: planTitle(s?.plan_json.event || h.title), starts_at: h.starts_at, ends_at: h.ends_at,
         venue: db.venues[h.venue_id] ?? null, rainVenue: s?.plan_json.rain_venue_id ? (db.venues[s.plan_json.rain_venue_id] ?? null) : null,
         locked: true, status: h.status, ...rsvpOf(db, h.id), sequence: h.sequence, source: s?.source ?? null,
       });
@@ -61,7 +62,7 @@ export function myPlans(db: DbState, nowMs: number): { upcoming: PlanItem[]; pas
       const round = Object.values(db.suggestions).filter((x) => x.pod_id === pod.id && x.round === s.round && x.status !== "replaced" && !hangoutForSuggestion(db, x.id));
       for (const o of round) {
         items.push({
-          id: o.id, kind: "plan", podId: pod.id, podName: name, title: o.summary, starts_at: o.starts_at, ends_at: o.plan_json.ends_at,
+          id: o.id, kind: "plan", podId: pod.id, podName: name, title: planTitle(o.plan_json.event || o.summary), starts_at: o.starts_at, ends_at: o.plan_json.ends_at,
           venue: db.venues[o.venue_id] ?? null, rainVenue: o.plan_json.rain_venue_id ? (db.venues[o.plan_json.rain_venue_id] ?? null) : null,
           locked: false, status: o.status, ...rsvpOf(db, o.id), sequence: null, source: o.source,
         });

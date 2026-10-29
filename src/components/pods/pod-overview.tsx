@@ -28,7 +28,8 @@ export function PodIdentity({ podId, name, hue, going, actions, open = true }: {
       <div className="min-w-0 flex-1">
         <h1 className="truncate font-display text-[24px] leading-[1.15] font-semibold tracking-[-0.02em] text-ink lg:text-[28px]">{name}</h1>
         <p className="truncate text-label text-ink-2">
-          {topic} · {size} people
+          {/* a community pod is named for its topic ("Southern African"): say the kind instead of repeating the name */}
+          {topic && topic.toLowerCase() !== name.toLowerCase() ? topic : "Community"} · {size} people
         </p>
         {together && <p className="truncate text-[13px] leading-[1.3] text-ink-3">{together}</p>}
       </div>

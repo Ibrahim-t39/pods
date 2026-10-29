@@ -450,7 +450,7 @@ export function PlanDetails({
             <span className="pd-fact-s">
               {locked
                 ? v.imIn
-                  ? "You're going"
+                  ? "You're in"
                   : "Still room for you"
                 : toLock > 0
                   ? lockCopy(toLock)

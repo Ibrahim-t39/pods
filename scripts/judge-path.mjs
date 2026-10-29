@@ -161,6 +161,9 @@ async function run(vpName, vp, mode) {
           await sheet.getByRole("button", { name: new RegExp(`^${w}$`) }).first().click();
           await wait(350);
         }
+        // Faith is religion first, then its denomination
+        await sheet.getByRole("button", { name: /^Christian$/ }).first().click();
+        await wait(350);
         await sheet.getByRole("button", { name: PERSONA.faith }).first().click();
         await wait(300);
       });
@@ -256,7 +259,8 @@ async function run(vpName, vp, mode) {
     await step("landing", async () => {
       await page.goto(base + "/", { waitUntil: "load" });
       await wait(2500);
-      await text(/Find your people/i).waitFor();
+      // the film opens on chapter 1 ("New city."); later chapters are visibility:hidden until scrolled to
+      await text(/New city|Find your people/i).waitFor();
     });
     await step("landing-story", async () => {
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight * 0.45));

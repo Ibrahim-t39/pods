@@ -8,6 +8,7 @@ import type { DbState, ID } from "@/lib/types";
 import { shortDay, shortTime } from "@/components/pods/model";
 import { listFormat } from "@/lib/platform/needs-you";
 import { lockCopy } from "@/lib/planner/lock";
+import { planTitle } from "@/components/planner/plan-display";
 
 export type Kind = "plans" | "messages" | "pods";
 
@@ -86,8 +87,8 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
       const venue = db.venues[s.venue_id]?.name;
       out.push({
         id, kind: "plans", trigger: "plan_locked", stored: false, podId: m.pod_id, podName: label, who: null,
-        title: v.imIn ? `You're in for ${maskText(s.summary, pod, discreet)}` : `Are you in for ${shortDay(s.plan_json.starts_at, nowMs)}?`,
-        body: `${maskText(s.summary, pod, discreet)} · ${shortDay(s.plan_json.starts_at, nowMs)} ${shortTime(s.plan_json.starts_at)}${venue && !s.summary.includes(venue) ? ` · ${venue}` : ""}`,
+        title: v.imIn ? `You're in for ${maskText(planTitle(s.plan_json.event || s.summary).toLowerCase(), pod, discreet)}` : `Are you in for ${shortDay(s.plan_json.starts_at, nowMs)}?`,
+        body: `${maskText(planTitle(s.plan_json.event || s.summary), pod, discreet)}${venue ? ` · ${venue}` : ""} · ${shortDay(s.plan_json.starts_at, nowMs)} ${shortTime(s.plan_json.starts_at)}`,
         href: `/app/pods/${m.pod_id}`, created_at: s.created_at, read: seen.has(id),
         act: { type: "rsvp", targetId: s.id, going: v.going.length, size: v.size, imIn: v.imIn, imOut: v.imOut },
         why: v.going.length >= v.threshold ? `${v.going.length} of ${v.size} are in.` : `${v.going.length} of ${v.size} are in. ${lockCopy(v.threshold - v.going.length)}, so your answer counts.`,
@@ -199,7 +200,7 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
       if (h) {
         const going = db.rsvps.filter((r) => r.hangout_id === h.id && r.status === "going").length;
         const label = podLabel(db.pods[n.podId], discreet);
-        out.push({ ...n, kind: "plans", podName: label, who: null, act: null, title: `${maskText(h.title, db.pods[n.podId], discreet)} is on`, body: `${shortDay(h.starts_at, nowMs)} ${shortTime(h.starts_at)} · ${going} going · the plan is locked` });
+        out.push({ ...n, kind: "plans", podName: label, who: null, act: null, title: `${maskText(h.title, db.pods[n.podId], discreet)} is on`, body: `${shortDay(h.starts_at, nowMs)} ${shortTime(h.starts_at)} · ${going} in · locked` });
         continue;
       }
     }

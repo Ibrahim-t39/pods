@@ -1,5 +1,5 @@
 // One way to name and date a plan, on every surface (Home, Pods, Plans, Inbox, People, Search, Chat, plan details).
-//   title  "Saturday pickup" / "Sunday picnic": the weekday from the start time (never trusted from the text) + a short noun
+//   title  "Pickup basketball" / "Picnic": the activity from the plan's event line, never the day (the time says that)
 //   when   "Sat 10am" within the next 7 days ("Today 10am", "Tomorrow 10am"), otherwise "Sun, Nov 15 · 1pm"
 //   span   "10am–12pm", "1–3pm", "11:30am–1pm"   (lowercase am/pm, no ":00", no trailing period)
 //   place  "Brahan Spring Park" (the venue's short name; "A public place" when none)
@@ -70,14 +70,25 @@ export function planNoun(text: string): string {
     : words;
 }
 
-/** "Saturday pickup", "Sunday picnic": the weekday from the start time + the short noun. */
+/** "Pickup basketball", "Picnic and a slow loop around the park": the activity, never the day (sweep 10-29 decision 3).
+ *  Pass the plan's event line when there is one ("Pickup basketball, rotating 5-on-5"); a summary
+ *  ("Saturday pickup at Brahan Spring Park") loses its weekday and its place. `startISO` is kept for callers, unused. */
 export function planTitle(
   text: string | null | undefined,
-  startISO: Iso | null | undefined,
+  _startISO?: Iso | null,
   fallback = "hangout",
 ): string {
-  const noun = planNoun(text ?? "") || fallback.toLowerCase();
-  const title = startISO ? `${planWeekday(startISO)} ${noun}` : noun;
+  let w = (text ?? "")
+    .trim()
+    .replace(WEEKDAY, "")
+    .split(/[,:;(—–]/)[0]
+    .replace(/\s+(at|near)\s+[A-Z].*$/, "")
+    .trim();
+  if (w.length > 44) {
+    const cut = w.slice(0, 44);
+    w = `${cut.slice(0, Math.max(cut.lastIndexOf(" "), 20)).trimEnd()}…`;
+  }
+  const title = w || fallback;
   return title.charAt(0).toUpperCase() + title.slice(1);
 }
 
