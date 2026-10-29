@@ -3,7 +3,7 @@
 // user id, exported so the Director / crowd simulation (U11) can move simulated members through the exact same rules
 // inside one ctx.commit / useStore commit (never re-implement them).
 //
-// Never-do list (§7.3): no public no-votes, no individual answers, no "X left", no number unless ≥ revealMin said Yes.
+// Never-do list (§7.3): no public no-votes, no individual answers, no "X left", no number unless the pod is going again.
 import type { Draft } from "immer";
 import type { RepoCtx } from "./context";
 import { ok, err, type RepoPart } from "@/lib/db/repo";
@@ -12,6 +12,7 @@ import type { AppNotification, DbState, HangoutSuggestion, ID, NextHangoutVote, 
 import { podMembers } from "@/lib/db/selectors";
 import { displayName } from "@/lib/utils";
 import { isFirstHangout, lockBounds, lockMinFor, lockRuleForPod } from "@/lib/planner/lock";
+import { ribAgain, ribShouldReveal } from "@/lib/planner/run-it-back";
 
 type D = Draft<DbState>;
 const HOUR = 3_600_000;
@@ -159,18 +160,20 @@ export function runItBackTally(db: DbState, hangoutId: ID): RunItBackTally {
   };
 }
 
-/** Reveal: a number only when Yes ≥ revealMin (denominator = people who answered); otherwise "Planning your next one". */
+/** Reveal (lib/planner/run-it-back): once Yes ≥ max(floor, majority of who answered), or once everyone who checked in
+ *  has answered. A number only when the pod is going again; otherwise "Not this round". `force` reveals now. */
 export function revealRunItBack(d: D, hangoutId: ID, now: string, force = false): boolean {
   const rib = (d.runItBack[hangoutId] ??= { hangout_id: hangoutId, responses: {}, revealed_at: null });
   if (rib.revealed_at) return false;
   const t = runItBackTally(d as DbState, hangoutId);
-  const min = d.config.planner.runItBackRevealMin;
-  if (t.yes < min && !force) return false;
+  const floor = d.config.planner.runItBackRevealMin;
+  if (!force && !ribShouldReveal(t, floor)) return false;
   const h = d.hangouts[hangoutId];
   if (!h) return false;
   rib.revealed_at = now;
-  hostMessage(d, h.pod_id, t.yes >= min ? `${t.yes} of ${t.answered} want to run it back.` : "Planning your next one.", now, "run_it_back", hangoutId);
-  if (t.yes >= min) notifyMembers(d, h.pod_id, "run_it_back_reveal", podLabelForNotice(d, h.pod_id), "Your pod wants to run it back. Pick the next one.", `/app/pods/${h.pod_id}`, now);
+  const again = ribAgain(t.yes, t.answered, floor);
+  hostMessage(d, h.pod_id, again ? `${t.yes} of ${t.answered} want to run it back.` : "Not this round. The pod stays.", now, "run_it_back", hangoutId);
+  if (again) notifyMembers(d, h.pod_id, "run_it_back_reveal", podLabelForNotice(d, h.pod_id), "Your pod wants to run it back. Pick the next one.", `/app/pods/${h.pod_id}`, now);
   return true;
 }
 

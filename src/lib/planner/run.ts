@@ -253,7 +253,18 @@ export async function* runPlanner(input: PlannerInput, deps: PlannerDeps, job: "
   for (const o of base) o.source = deps.mode === "local" ? "local" : "fallback";
   for (const o of [...base, third]) o.plan = withLock(o.plan, input, o.venue);
   yield validateStep(third.venue, input, rejected, firstErrors);
-  yield { type: "options", options: [...base, third], analysis, forecast };
+  yield { type: "options", options: withoutRepeats([...base, third]), analysis, forecast };
+}
+
+/** A vote never shows the same slot twice: an option at the same start and venue as an earlier one is dropped. */
+export function withoutRepeats(options: NextOption[]): NextOption[] {
+  const seen = new Set<string>();
+  return options.filter((o) => {
+    const key = `${o.plan.starts_at.slice(0, 16)}|${o.venue.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function shortLabel(summary: string): string {

@@ -1,7 +1,7 @@
 // /app/settings (redesign r2; PLATFORM_SPEC §F10): one clean grouped list, inset-grouped cards (Delphi / iOS).
 //   Account          you (photo, name, phone) → Edit profile
 //   Mode             Live / Demo as two radio cards, right here (easy to find; data-allow-mode)
-//   Notifications    Texts · AI plans (sheets shared with the profile)
+//   Notifications    Reminders · AI plans (sheets shared with the profile)
 //   Privacy, safety  Privacy and terms · Blocked · If something's off
 //   Help             Guidelines · Write to us
 //   Sign out, then Delete my seat (its own confirm flow)
@@ -15,17 +15,18 @@ import { Disc } from "@/components/brand/disc";
 import { GENTLE, STAGGER } from "@/components/brand/motion";
 import { notify } from "@/components/ui";
 import { useHydrated, useMe } from "@/lib/db/hooks";
-import { signOut } from "@/lib/safety/sign-out";
+import { SIGNED_OUT_HREF, signOut } from "@/lib/safety/sign-out";
 import { displayName } from "@/lib/utils";
-import { DeleteAccountFlow, WRITE_TO_US, useBlockedPeople } from "@/components/safety";
+import { DeleteAccountFlow, useBlockedPeople } from "@/components/safety";
+import { CONTACT } from "@/components/legal/contact";
 import { useSeatPrefs } from "./local-prefs";
-import { textsValue } from "./words";
-import { AiSheet, BlockedSheet, PrivacySheet, TextsSheet } from "./seat-sheets";
+import { remindersHint, remindersValue } from "./words";
+import { AiSheet, BlockedSheet, PrivacySheet, RemindersSheet } from "./seat-sheets";
 import { ModePicker } from "./mode-screen";
 import { Card, Row, Section, YouHead, YouPage } from "./you-kit";
 
-type SettingsSheet = "texts" | "ai" | "privacy" | "blocked" | "delete";
-const SHEETS: SettingsSheet[] = ["texts", "ai", "privacy", "blocked", "delete"];
+type SettingsSheet = "reminders" | "ai" | "privacy" | "blocked" | "delete";
+const SHEETS: SettingsSheet[] = ["reminders", "ai", "privacy", "blocked", "delete"];
 
 /** "(256) 555-0142" for US numbers, else as saved. */
 function prettyPhone(p: string) {
@@ -87,7 +88,7 @@ export function SettingsScreen() {
       <motion.div {...fade(2)}>
         <Section label="Notifications" className="mt-s6">
           <Card>
-            <Row icon="bell" label="Texts" hint="Sent to your phone" value={textsValue(me.notification_prefs.sms, prefs.texts)} arrow onClick={() => go("texts")} />
+            <Row icon="bell" label="Reminders" hint={remindersHint(prefs.reminders)} value={remindersValue(prefs.reminders)} arrow onClick={() => go("reminders")} className="yo-row-wrap" />
             <Row icon="why" label="AI plans" hint="Plans from your free times" value={prefs.claude ? "On" : "Off"} arrow onClick={() => go("ai")} />
           </Card>
         </Section>
@@ -110,7 +111,7 @@ export function SettingsScreen() {
         <Section label="Help" className="mt-s6">
           <Card>
             <Row icon="list" label="Guidelines" href="/safety" arrow />
-            <Row icon="mail" label="Write to us" href={WRITE_TO_US} external arrow />
+            {CONTACT.ready && <Row icon="mail" label={CONTACT.label} href={CONTACT.href} external={CONTACT.external} arrow />}
           </Card>
         </Section>
       </motion.div>
@@ -123,7 +124,8 @@ export function SettingsScreen() {
               onClick={() => {
                 leaving.current = true;
                 signOut();
-                router.replace("/");
+                // a full load to Welcome back (sign in), so the signed-out redirect to sign-up can't win the race
+                window.location.assign(SIGNED_OUT_HREF);
               }}
             />
             <Row icon="trash" tone="danger" label="Delete my account" hint="Removes your profile and pods for good" onClick={() => go("delete")} />
@@ -143,7 +145,7 @@ export function SettingsScreen() {
         </div>
       </div>
 
-      <TextsSheet open={sheet === "texts"} onClose={close} />
+      <RemindersSheet open={sheet === "reminders"} onClose={close} />
       <AiSheet open={sheet === "ai"} onClose={close} />
       <PrivacySheet open={sheet === "privacy"} onClose={close} />
       <BlockedSheet open={sheet === "blocked"} onClose={close} />

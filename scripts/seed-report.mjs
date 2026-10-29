@@ -51,17 +51,20 @@ try {
   console.log("\nchecks");
   check(bytes < 2 * 1024 * 1024, "seed < 2 MB");
   check(json === JSON.stringify(again), "deterministic: two builds are identical");
-  check(Object.keys(db.interests).length === 14, "14 interests (D9)");
+  check(Object.keys(db.interests).length >= 14, `${Object.keys(db.interests).length} interests (D9's 14 at launch, plus later additions)`);
   check(!Object.values(db.venues).some((v) => v.active && (!v.source_url || !v.verified_at)), "every active venue has source_url + verified_at");
   check(Object.values(db.users).every((u) => u.is_demo_bot && u.verified && (u.photo_urls[0] ?? "").startsWith("/avatars/")), "all users are demo bots with an avatar path");
   check(Object.keys(db.users).length >= 68 && Object.keys(db.users).length <= 74, "about 70 bots");
   const hp = DEMO.hoopers.podId, sa = DEMO.southernAfrican.podId;
   const hoopers = mem(hp).map((m) => db.users[m.user_id]);
   check(hoopers.length === 7, "Hoopers has 7 bots (Chanda makes 8)");
-  const sunFree = hoopers.filter((u) => u.availability.includes("sunday-afternoon")).length + 1;
-  check(sunFree === 7, `7 of 8 free Sunday afternoons (got ${sunFree} incl. Chanda)`);
+  // The plan's line "7 of 8 of you are free Saturday mornings": the 7 Hoopers who were there before Chanda.
+  const satFree = hoopers.filter((u) => u.availability.includes("saturday-morning")).length;
+  check(satFree === 7 && DEMO.hoopers.reason.startsWith("7 of 8"), `7 Hoopers free Saturday mornings, the plan's "7 of 8" (got ${satFree})`);
   const hs = db.suggestions[DEMO.hoopers.suggestionId];
-  check(hs && hs.starts_at === DEMO.hoopers.starts_at && hs.venue_id === "venue_brahan_rec", "Hoopers plan: Sun Nov 8 1:00 PM at Brahan Spring Rec Center");
+  check(hs && hs.starts_at === DEMO.hoopers.starts_at && hs.starts_at.startsWith("2026-11-07T10:00") && hs.venue_id === "venue_brahan_spring_park", "Hoopers plan: Saturday Nov 7, 10am at Brahan Spring Park (free)");
+  check(hs?.plan_json.rain_venue_id === "venue_brahan_rec", "Hoopers rain plan: Brahan Spring Rec Center");
+  check(hs?.summary === DEMO.hoopers.title, `Hoopers title matches the video script ("${DEMO.hoopers.title}")`);
   check(hs.plan_json.reason.includes(DEMO.hoopers.reason), "Hoopers reason line matches BLUEPRINT §0");
   const going = db.rsvps.filter((r) => r.hangout_id === hs.id && r.status === "going").length;
   const lockAt = hs.min_to_lock ?? db.config.planner.lockThreshold;

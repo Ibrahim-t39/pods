@@ -1,6 +1,7 @@
 // Pod view models: pure selectors over DbState and the clock. Used by home, chat, details and events.
 // Status priority is BLUEPRINT §8.2. Repeat-loop stage is BLUEPRINT §7.1 / AP-06. Never returns identity fields.
 import { lockMinFor } from "@/lib/planner/lock";
+import { ribAgain } from "@/lib/planner/run-it-back";
 import type { DbState, Hangout, HangoutSuggestion, ID, Membership, NextHangoutVote, Pod, PublicMember, Venue } from "@/lib/types";
 import { activeSuggestion, goingUserIds, hangoutForSuggestion, membership, myMemberships, podMembers } from "@/lib/db/selectors";
 import { toPublicMember } from "@/lib/utils";
@@ -115,11 +116,10 @@ export function ribTally(db: DbState, hangoutId: ID) {
   };
 }
 
-/** Only ever shows a number when at least N said Yes (default 4). Denominator = people who answered. */
+/** Only ever shows a number when the pod is going again (lib/planner/run-it-back). Denominator = people who answered. */
 export function revealNumbers(db: DbState, hangoutId: ID): { yes: number; answered: number } | null {
   const t = ribTally(db, hangoutId);
-  const min = db.config.planner.runItBackRevealMin;
-  if (!t.revealedAt || t.yes < min) return null;
+  if (!t.revealedAt || !ribAgain(t.yes, t.answered, db.config.planner.runItBackRevealMin)) return null;
   return { yes: t.yes, answered: t.answered };
 }
 

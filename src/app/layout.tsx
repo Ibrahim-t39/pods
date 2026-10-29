@@ -9,7 +9,11 @@ import "./globals.css";
 
 const sans = Archivo({ variable: "--font-archivo", subsets: ["latin"], axes: ["wdth"], display: "swap" });
 
+/** Absolute base for og:image and other metadata URLs, so link previews (iMessage, Slack) find the image. */
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://pods-lac.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: { default: APP.title, template: "%s · Pods" },
   description: APP.description,
   applicationName: "Pods",

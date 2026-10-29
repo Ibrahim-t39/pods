@@ -6,7 +6,7 @@
 //   free       the week grid (read-only here; Edit opens the sheet)
 //   more       Invite a friend · Settings · If something's off · Sign out · Delete my account (opens the confirm flow in Settings)
 //   phone   one stack; laptop   identity + more on the left (sticky), pods / into / community / free on the right.
-// Sheets are addressed by ?sheet= (likes, free, community, texts, ai); account sheets forward to /app/settings.
+// Sheets are addressed by ?sheet= (likes, free, community, reminders, ai); account sheets forward to /app/settings.
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -20,19 +20,19 @@ import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { notify } from "@/components/ui";
 import { useStore } from "@/lib/db/store";
-import { signOut } from "@/lib/safety/sign-out";
+import { SIGNED_OUT_HREF, signOut } from "@/lib/safety/sign-out";
 import { useDb, useHydrated, useMe, useRepo } from "@/lib/db/hooks";
 import { myPlans, podLabel } from "@/lib/platform/selectors";
 import { opensAfter, roomTables, shortDay } from "@/components/pods/model";
 import { PodOrb } from "@/components/pods/pod-orb";
 import { nowISO, useClock } from "@/lib/time/clock";
-import { formatWhen } from "@/lib/time/format";
 import { displayName, toPublicMember } from "@/lib/utils";
 import type { DbState } from "@/lib/types";
 import { podHue } from "./hue";
+import { podNextLine } from "./pod-line";
 import { useSeatPrefs } from "./local-prefs";
-import { shortLike, textsValue } from "./words";
-import { AiSheet, CommunitySheet, FreeGrid, FreeSheet, LikesSheet, SEAT_SHEETS, TextsSheet, useMyCommunities, type SeatSheet } from "./seat-sheets";
+import { remindersValue, shortLike } from "./words";
+import { AiSheet, CommunitySheet, FreeGrid, FreeSheet, LikesSheet, SEAT_SHEETS, RemindersSheet, useMyCommunities, type SeatSheet } from "./seat-sheets";
 import { Card, Row, Section, TextAction, YouHead, YouPage } from "./you-kit";
 
 /** Sheets that live on /app/settings now; an old Your seat address is forwarded there. */
@@ -91,7 +91,7 @@ export function YourSeat() {
     notify(`Removed ${word}`, { undo: () => void repo.addInterest(id) });
   }
 
-  // Counted the way Pods and People count: open pods, and the people in them. Pods that open after your first
+  // Pods counts every pod you're in (as the Inbox does: "You're in 4 pods"); people counts the open ones. Pods that open after your first
   // hangout are listed muted, the same as on Pods.
   const plans = myPlans(db, now);
   const tables = roomTables(db, now);
@@ -99,10 +99,8 @@ export function YourSeat() {
   const pods = tables.map((t) => {
     const p = t.row.pod;
     const members = db.memberships.filter((m) => m.pod_id === p.id && !m.left_at).length;
-    const next = plans.upcoming.find((x) => x.podId === p.id) ?? null;
-    return { id: p.id, name: podLabel(db, p), members, hue: podHue(db, p.id), next, open: t.open };
+    return { id: p.id, name: podLabel(db, p), members, hue: podHue(db, p.id), open: t.open };
   });
-  const openPods = pods.filter((p) => p.open);
   const people = new Set(tables.filter((t) => t.open).flatMap((t) => t.people.map((x) => x.id))).size;
   const went = plans.past.filter((p) => p.me === "going" || p.checkedIn).length;
   const firstUp = plans.upcoming[0]?.starts_at ?? null;
@@ -146,8 +144,8 @@ export function YourSeat() {
       </div>
       <div className="yo-stats">
         <div className="yo-stat">
-          <b>{openPods.length}</b>
-          <span>{openPods.length === 1 ? "pod" : "pods"}</span>
+          <b>{pods.length}</b>
+          <span>{pods.length === 1 ? "pod" : "pods"}</span>
         </div>
         {went > 0 || !firstUp ? (
           <div className="yo-stat">
@@ -175,7 +173,7 @@ export function YourSeat() {
     <Section label="More">
       <Card>
         <Row icon="add" label="Invite a friend" hint="Save them a seat in your pod" href="/app/invite" arrow />
-        <Row icon="bell" label="Texts" value={textsValue(me.notification_prefs.sms, prefs.texts)} onClick={() => go("texts")} arrow />
+        <Row icon="bell" label="Reminders" value={remindersValue(prefs.reminders)} onClick={() => go("reminders")} arrow />
         <Row icon="more" label="Settings" href="/app/settings" arrow />
         <Row icon="here" tone="safe" label="If something’s off" href="/app/safety" arrow />
       </Card>
@@ -185,8 +183,8 @@ export function YourSeat() {
           label="Sign out"
           onClick={() => {
             signOut();
-            // a full load to the landing, so the signed-out redirect to sign-up can't win the race
-            window.location.assign("/");
+            // a full load to Welcome back (sign in), so the signed-out redirect to sign-up can't win the race
+            window.location.assign(SIGNED_OUT_HREF);
           }}
         />
         <Row icon="trash" tone="danger" label="Delete my account" hint="Removes your profile and pods for good" href="/app/settings?sheet=delete" />
@@ -221,7 +219,7 @@ export function YourSeat() {
                         hint={
                           !p.open
                             ? `${p.members} people · ${opens}`
-                            : `${p.members} people · ${p.next ? `${p.next.locked ? "Locked" : "Next"} ${formatWhen(p.next.starts_at)}` : "Planning the first one"}`
+                            : `${p.members} people · ${podNextLine(db, p.id, plans.upcoming, now)}`
                         }
                         className={p.open ? undefined : "yo-row-muted"}
                         arrow
@@ -306,7 +304,7 @@ export function YourSeat() {
       <LikesSheet open={sheet === "likes"} onClose={close} />
       <FreeSheet open={sheet === "free"} onClose={close} />
       <CommunitySheet open={sheet === "community"} onClose={close} />
-      <TextsSheet open={sheet === "texts"} onClose={close} />
+      <RemindersSheet open={sheet === "reminders"} onClose={close} />
       <AiSheet open={sheet === "ai"} onClose={close} />
     </YouPage>
   );

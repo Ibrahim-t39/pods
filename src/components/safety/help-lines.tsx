@@ -4,9 +4,11 @@
 
 import { SheetRow } from "@/components/profile/kit";
 import { Icon } from "@/components/icons";
+import { CONTACT } from "@/components/legal/contact";
 
 export const EMERGENCY_LINE = "In danger now? Call 911";
-export const WRITE_TO_US = "mailto:help@pods.example";
+/** The contact row's link (one constant: src/components/legal/contact.ts). */
+export const WRITE_TO_US = CONTACT.href;
 
 export function HelpLines() {
   return (

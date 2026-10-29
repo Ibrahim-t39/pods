@@ -202,6 +202,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* a hint that is the setting itself (Reminders) wraps instead of cutting off */
+.yo-row-wrap .yo-row-hint {
+  white-space: normal;
+}
 .yo-row-value {
   flex: none;
   max-width: 45%;

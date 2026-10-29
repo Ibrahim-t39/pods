@@ -63,7 +63,7 @@ export function DeleteAccountFlow({ open, onOpenChange, onDeleted, onBefore }: {
         />
       }
     >
-      <SheetLine>Your name, number, interests and free times are removed for good.</SheetLine>
+      <SheetLine>Your name, number, interests and free times are removed for good. Messages you sent stay in your pods.</SheetLine>
     </ResponsiveSheet>
   );
 }

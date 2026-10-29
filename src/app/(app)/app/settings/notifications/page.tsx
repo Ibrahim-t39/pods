@@ -5,5 +5,5 @@ import { redirect } from "next/navigation";
 export const instant = false;
 
 export default function Page() {
-  redirect("/app/settings?sheet=texts");
+  redirect("/app/settings?sheet=reminders");
 }

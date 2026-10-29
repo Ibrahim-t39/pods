@@ -1,27 +1,27 @@
 // Per-device choices that have no field on the user yet (filed with integration, V3_SPEC §5):
-//   texts   which texts to send (the channel itself is user.notification_prefs.sms)
+//   reminders  which in-app reminders show (independent toggles; the day before and 2 hours before are on by default)
 //   claude  whether Claude plans from your free times (Apple 5.1.2(i), library I #2)
 // Browser storage is a convenience only: every read and write is guarded, and defaults render when it is missing.
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { TextKind } from "./words";
+import { DEFAULT_REMINDERS, type ReminderKind } from "./words";
 
 export interface SeatPrefs {
-  texts: Record<TextKind, boolean>;
+  reminders: Record<ReminderKind, boolean>;
   claude: boolean;
 }
 
 const KEY = "pods:seat-prefs";
 const EVT = "pods:seat-prefs-changed";
-export const DEFAULT_SEAT_PREFS: SeatPrefs = { texts: { on: true, before: false, plan: false }, claude: true };
+export const DEFAULT_SEAT_PREFS: SeatPrefs = { reminders: DEFAULT_REMINDERS, claude: true };
 
 function read(): SeatPrefs {
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return DEFAULT_SEAT_PREFS;
     const p = JSON.parse(raw) as Partial<SeatPrefs>;
-    return { texts: { ...DEFAULT_SEAT_PREFS.texts, ...p.texts }, claude: p.claude ?? true };
+    return { reminders: { ...DEFAULT_REMINDERS, ...p.reminders }, claude: p.claude ?? true };
   } catch {
     return DEFAULT_SEAT_PREFS;
   }

@@ -62,7 +62,7 @@ export const ROSTER: Row[] = [
   // ── West African community pod (6) ──
   R("Chidi", "2002-03-18", "he/him", "Runs a few mornings a week, still slow, still happy. Works nights at a lab.", [["ask_me_about", "Running at 5 AM, and why I do it"], ["currently_learning", "Pacing myself"]], "UA,W", 9),
   R("Ngozi", "2003-11-06", "she/her", "Producer-curious: loops, drum machines, bad demos. Happy to trade feedback.", [["ask_me_about", "How I made a beat out of a dishwasher"], ["currently_learning", "Mixing without clipping everything"]], "UA,W", 9),
-  R("Kwame", "2001-08-04", "he/him", "Pickleball, soccer when someone organizes it, and strong opinions about jollof.", [["hot_take", "Second serve is where games are won"], ["perfect_saturday", "Pickup, cookout, repeat"]], "UA,W", 10),
+  R("Kwame", "2001-08-04", "he/him", "Pickleball, soccer when someone organizes it, and strong opinions about the best wings in town.", [["hot_take", "Second serve is where games are won"], ["perfect_saturday", "Pickup, cookout, repeat"]], "UA,W", 10),
   R("Abena", "2004-05-29", "she/her", "Hikes more than I admit. Loves a campsite breakfast.", [["perfect_saturday", "Trail by 8, brunch by noon"], ["ask_me_about", "Gear I regret buying"]], "UA", 10),
   R("Femi", "2002-01-25", "he/him", "Soccer all my life. Looking for a Sunday kickabout that actually starts on time.", [["hot_take", "If you are late, you are on defense"], ["currently_learning", "Finishing with the weaker foot"]], "UA,W", 11),
   R("Aminata", "2005-04-12", "she/her", "Second-year student. Book club of one, looking to upgrade to more.", [["ask_me_about", "A book that ruined my week in a good way"], ["perfect_saturday", "Library, then a patient lunch"]], "UA,W", 11),

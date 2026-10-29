@@ -20,6 +20,9 @@ export function wipeLocalPersonal() {
   }
 }
 
+/** Where signing out lands: Welcome back (sign in by number), never a sign-up step. */
+export const SIGNED_OUT_HREF = "/app/welcome";
+
 export function signOut() {
   signOutLocal(ctx);
   wipeLocalPersonal();

@@ -19,10 +19,10 @@ import { BlockedList, PrivacyCenter } from "@/components/safety";
 import { PageName, ChoiceRow, Rows, SheetFoot, SheetLine, GoLink } from "./kit";
 import "./you.css";
 import { useSeatPrefs } from "./local-prefs";
-import { TEXT_KINDS, shortLike } from "./words";
+import { REMINDER_KINDS, shortLike, type ReminderKind } from "./words";
 
-export type SeatSheet = "likes" | "free" | "community" | "texts" | "ai" | "more" | "privacy" | "blocked" | "delete";
-export const SEAT_SHEETS: SeatSheet[] = ["likes", "free", "community", "texts", "ai", "more", "privacy", "blocked", "delete"];
+export type SeatSheet = "likes" | "free" | "community" | "reminders" | "ai" | "more" | "privacy" | "blocked" | "delete";
+export const SEAT_SHEETS: SeatSheet[] = ["likes", "free", "community", "reminders", "ai", "more", "privacy", "blocked", "delete"];
 
 type SheetProps = { open: boolean; onClose: () => void };
 const done = (onClose: () => void) => <SheetFoot right={<Button onClick={onClose}>Done</Button>} />;
@@ -300,33 +300,29 @@ export function useMyCommunities(): string[] {
   return out;
 }
 
-/* ── Texts (Y02): SMS off unless chosen (library C #7) ─────────────────────────────────────────────────────────── */
+/* ── Reminders (Y02): in-app only, independent toggles ───────────────────────────────────────────────────────────── */
 
-export function TextsSheet({ open, onClose }: SheetProps) {
-  const repo = useRepo();
-  const me = useMe();
+/** Reminders: independent toggles, any number on. They show in the app; no copy claims a text is sent. */
+export function RemindersSheet({ open, onClose }: SheetProps) {
   const { prefs, save } = useSeatPrefs();
-  const sms = !!me?.notification_prefs.sms;
-
-  async function toggle(key: (typeof TEXT_KINDS)[number]["key"]) {
-    if (!me) return;
-    const on = sms && prefs.texts[key];
-    const texts = { ...prefs.texts, [key]: !on };
-    if (!sms) for (const k of TEXT_KINDS) texts[k.key] = k.key === key;
-    save({ ...prefs, texts });
-    const want = TEXT_KINDS.some((k) => texts[k.key]);
-    if (want !== sms) {
-      const r = await repo.setNotificationPrefs({ ...me.notification_prefs, sms: want });
-      if (!r.ok) notify.error("Not saved. Try again.");
-    }
-  }
-
+  const toggle = (key: ReminderKind) => save({ ...prefs, reminders: { ...prefs.reminders, [key]: !prefs.reminders[key] } });
   return (
-    <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="Text me" footer={done(onClose)}>
+    <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="Reminders" footer={done(onClose)}>
       <PageName>You</PageName>
-      <Rows label="Text me">
-        {TEXT_KINDS.map((k) => (
-          <ChoiceRow key={k.key} on={sms && prefs.texts[k.key]} label={k.label} onToggle={() => toggle(k.key)} />
+      <SheetLine className="-mt-s3 mb-s4">In the app. Turn on as many as you like.</SheetLine>
+      <Rows label="Reminders">
+        {REMINDER_KINDS.map((k) => (
+          <ChoiceRow
+            key={k.key}
+            on={prefs.reminders[k.key]}
+            label={
+              <>
+                <span className="block">{k.label}</span>
+                {k.key === "on" && <span className="block text-[13px] text-ink-2">2 hours before</span>}
+              </>
+            }
+            onToggle={() => toggle(k.key)}
+          />
         ))}
       </Rows>
     </ResponsiveSheet>

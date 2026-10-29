@@ -20,7 +20,7 @@ import { myPlans, planShareText, smsHref } from "@/lib/platform/selectors";
 import { GoLink, PageName, PillField, SheetFoot } from "@/components/profile/kit";
 import { Card, Row, Section, TextAction, YouHead, YouPage } from "@/components/profile/you-kit";
 import { BlockedList, useBlockedPeople } from "./blocked-list";
-import { WRITE_TO_US } from "./help-lines";
+import { CONTACT } from "@/components/legal/contact";
 
 const DAY = 86_400_000;
 
@@ -188,7 +188,7 @@ export function SafetyPage() {
                     ))}
                   </ul>
                   <Row icon="list" label="Read the guidelines" href="/safety" arrow />
-                  <Row icon="mail" label="Write to us" href={WRITE_TO_US} external arrow />
+                  {CONTACT.ready && <Row icon="mail" label={CONTACT.label} href={CONTACT.href} external={CONTACT.external} arrow />}
                 </Card>
               </Section>
             </motion.div>

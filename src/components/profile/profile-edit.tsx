@@ -1,5 +1,5 @@
 // /app/profile/edit: everything about you on one page, saved as you go (redesign r2; Doji / Tripadvisor edit pages).
-//   photo + first name · what you're into (chips; adding one looks for a pod) · community pods · when you're free
+//   photo + first name + age (Change opens the birthday) · what you're into (chips; adding one looks for a pod) · community pods · when you're free
 //   laptop: photo + name and communities left, interests and free times right. Done returns to the profile.
 "use client";
 
@@ -12,7 +12,10 @@ import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { notify } from "@/components/ui";
 import { useHydrated, useMe, useRepo } from "@/lib/db/hooks";
-import { displayName } from "@/lib/utils";
+import { ageOn, displayName } from "@/lib/utils";
+import { nowISO } from "@/lib/time/clock";
+import { placementDefaults } from "@/config/placement";
+import { birthdayProblem } from "./age";
 import { CommunityPicker, FreeGrid, LikesPicker, useToggleSlot } from "./seat-sheets";
 import { PillField } from "./kit";
 import { Card, Section, TextAction, YouHead, YouPage } from "./you-kit";
@@ -27,6 +30,10 @@ export function ProfileEdit() {
   const [first, setFirst] = useState("");
   const [nameErr, setNameErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dobOpen, setDobOpen] = useState(false);
+  const [dob, setDob] = useState("");
+  const [dobErr, setDobErr] = useState<string | null>(null);
+  const [dobSaving, setDobSaving] = useState(false);
   useEffect(() => {
     if (hydrated && !me) router.replace("/app");
   }, [hydrated, me, router]);
@@ -56,6 +63,20 @@ export function ProfileEdit() {
     setSaving(false);
     if (!r.ok) return setNameErr(r.error.code === "VALIDATION" ? (r.error.message ?? "Check this.") : "Not saved. Try again.");
     notify("Name saved");
+  }
+
+  const today = nowISO();
+  const age = ageOn(me.date_of_birth, today);
+  async function saveBirthday() {
+    if (!me) return;
+    const problem = birthdayProblem(dob, today, placementDefaults);
+    if (problem) return setDobErr(problem);
+    setDobSaving(true);
+    const r = await repo.updateAbout({ first_name: me.first_name, nickname: me.nickname, date_of_birth: dob, city: me.city });
+    setDobSaving(false);
+    if (!r.ok) return setDobErr(r.error.code === "VALIDATION" ? (r.error.message ?? "Check this.") : "Not saved. Try again.");
+    setDobOpen(false);
+    notify(`Your age shows as ${ageOn(dob, today)}`);
   }
 
   const photo = me.photo_urls[0];
@@ -108,7 +129,44 @@ export function ProfileEdit() {
                       </Button>
                     )}
                   </div>
-                  <p className="mt-s3 text-[14px] text-ink-2">Only your first name shows. Your age comes from your birthday.</p>
+                  <p className="mt-s3 text-[14px] text-ink-2">Only your first name shows.</p>
+                  <div className="mt-s4 flex min-h-11 items-center justify-between gap-s3 border-t border-line pt-s3">
+                    <p className="text-[15px] text-ink">
+                      Your age shows as <span className="tabular-nums">{age}</span>
+                    </p>
+                    {!dobOpen && (
+                      <TextAction
+                        onClick={() => {
+                          setDob(me.date_of_birth.slice(0, 10));
+                          setDobErr(null);
+                          setDobOpen(true);
+                        }}
+                      >
+                        Change
+                      </TextAction>
+                    )}
+                  </div>
+                  {dobOpen && (
+                    <div className="mt-s2 flex items-end gap-s2">
+                      <div className="min-w-0 flex-1">
+                        <PillField
+                          type="date"
+                          label="Birthday"
+                          value={dob}
+                          max={today.slice(0, 10)}
+                          autoComplete="bday"
+                          onChange={(v) => {
+                            setDob(v);
+                            setDobErr(null);
+                          }}
+                          error={dobErr}
+                        />
+                      </div>
+                      <Button size="lg" variant="secondary" loading={dobSaving} onClick={saveBirthday} className={dobErr ? "mb-[26px]" : undefined}>
+                        Save
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               </Section>
             </motion.div>

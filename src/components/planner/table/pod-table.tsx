@@ -27,6 +27,7 @@ import { Icon } from "@/components/icons";
 import { useHydrated, useRepo } from "@/lib/db/hooks";
 import { useStore } from "@/lib/db/store";
 import type { CardPhase, CardView } from "@/lib/planner/card-state";
+import { ribAgain } from "@/lib/planner/run-it-back";
 import type { RunItBackAnswer, Venue } from "@/lib/types";
 import { usePlanActions } from "../use-plan-actions";
 import { downloadIcs } from "../plan-utils";
@@ -37,6 +38,7 @@ import { GiveUpSheet, PlaceSheet, PlanMenu, WhySheet, type SheetId } from "./she
 import { ProposeSheet } from "./propose-sheet";
 import { freeCount, hm, placeWord, rainWord, placesCount, seatsFor, useTable, wd3, weekday, type TableModel } from "./model";
 import { tableSizeFor, useFit } from "./use-fit";
+import { CONTACT } from "@/components/legal/contact";
 
 export interface PlanStageOpts {
   /** opens Talk (core's sheet). The whole table is this one target. */
@@ -208,7 +210,7 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
   // ── E04: the reveal; Claude drafts #2's options while you look at it ──
   const lastId = view?.lastHangout?.id ?? null;
   const rv = view?.revealed;
-  const again = !!rv && (rv.yes >= 3 || (rv.answered >= 3 && rv.yes / rv.answered >= 0.6));
+  const again = !!rv && ribAgain(rv.yes, rv.answered);
   useEffect(() => {
     if (phase === "planning_next" && again && lastId && rv && m && !revealed.has(lastId)) setRevealFor({ id: lastId, yes: rv.yes, of: Math.max(m.attended, rv.answered), round: view?.round ?? 1, ...seatsFor(m, { all: true }) });
   }, [phase, again, lastId]);
@@ -889,9 +891,9 @@ function HelpSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (o: bo
           <Icon name="help" size={22} />
           Call 911
         </a>
-        <a className="pt-mrow pressable" href="mailto:support@pods.example">
+        <a className="pt-mrow pressable" href={CONTACT.href}>
           <Icon name="send" size={22} />
-          Write to us
+          {CONTACT.label}
         </a>
       </div>
     </ResponsiveSheet>

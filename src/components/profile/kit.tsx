@@ -146,7 +146,11 @@ export function PillField({
   maxLength,
   error,
   autoFocus,
+  type,
+  max,
 }: {
+  type?: "text" | "date";
+  max?: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -160,6 +164,8 @@ export function PillField({
     <label className="block">
       <span className="text-label font-medium text-ink-2">{label}</span>
       <input
+        type={type}
+        max={max}
         value={value}
         maxLength={maxLength}
         inputMode={inputMode}

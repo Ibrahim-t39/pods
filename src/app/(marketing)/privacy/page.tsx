@@ -2,7 +2,7 @@
 // Names the AI once (Claude, by Anthropic: the one disclosure line allowed in user copy) and the opt-out (library I #2; Apple 5.1.2(i)).
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/legal-page";
-import { CONTACT_EMAIL, CONTACT_HREF } from "@/components/legal/contact";
+import { CONTACT, CONTACT_EMAIL, CONTACT_HREF } from "@/components/legal/contact";
 
 export const metadata: Metadata = { title: "Privacy", description: "What Pods keeps, who sees it, and how to delete it." };
 
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
           line: "Delete everything from Settings.",
           more: <p>Delete my account, in Settings, removes your account and everything you told us.</p>,
         },
-        { id: "write", label: "Write to us", line: CONTACT_EMAIL, href: CONTACT_HREF },
+        { id: "write", label: CONTACT.label, line: CONTACT_EMAIL, href: CONTACT_HREF },
       ]}
     />
   );

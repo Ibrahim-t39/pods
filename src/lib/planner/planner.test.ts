@@ -137,7 +137,7 @@ describe("validation + fallback quality", () => {
 
 describe("repeat loop (repo)", () => {
   beforeEach(() => useStore.setState({ db: freshDb(), hydrated: true }));
-  it("lock → check-in → private ballot → reveal at 4 yes → vote → hangout #2 locked", async () => {
+  it("lock → check-in → private ballot → reveal at a yes majority → vote → hangout #2 locked", async () => {
     const repo = await placeChanda();
     const s = activeSuggestion(useStore.getState().db, DEMO.hoopers.podId)!;
     expect((await repo.rsvp(s.id, "going")).ok).toBe(true);
@@ -150,16 +150,16 @@ describe("repeat loop (repo)", () => {
     const now = DEMO.directorJump.at;
     useStore.getState().commit((d) => {
       for (const u of bots.slice(0, 5)) applyCheckIn(d, h.id, u, now);
-      applyRunItBack(d, h.id, bots[0], "yes", now);
+      applyRunItBack(d, h.id, bots[0], "not_sure", now);
       applyRunItBack(d, h.id, bots[1], "yes", now);
       applyRunItBack(d, h.id, bots[2], "not_sure", now);
       applyRunItBack(d, h.id, bots[3], "yes", now);
     });
-    expect(runItBackTally(useStore.getState().db, h.id).revealed).toBe(false); // 3 yes: no number
+    expect(runItBackTally(useStore.getState().db, h.id).revealed).toBe(false); // 2 of 4: no majority, 2 still to answer
     const t = await repo.castRunItBack(h.id, "yes");
-    expect(t.ok && t.data).toMatchObject({ yes: 4, answered: 5, revealed: true });
+    expect(t.ok && t.data).toMatchObject({ yes: 3, answered: 5, revealed: true });
     db = useStore.getState().db;
-    expect(db.messages[DEMO.hoopers.podId].some((m) => m.kind === "run_it_back" && m.text === "4 of 5 want to run it back.")).toBe(true);
+    expect(db.messages[DEMO.hoopers.podId].some((m) => m.kind === "run_it_back" && m.text === "3 of 5 want to run it back.")).toBe(true);
     expect(db.memberships.filter((m) => m.pod_id === DEMO.hoopers.podId && m.role === "admin").length).toBe(2);
 
     // Options → vote → lock at 4

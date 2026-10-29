@@ -16,7 +16,7 @@ export const PlannerConfigSchema = z.object({
   claudeBudgetMs: z.number().int().min(1000),
   stepDwellMs: z.number().int().min(0),
   model: z.string(),
-  /** Run-it-back: a number is revealed only when at least this many said Yes (BLUEPRINT §7.1). */
+  /** Run-it-back floor: the pod goes again once Yes ≥ max(this, a majority of who answered) (lib/planner/run-it-back). */
   runItBackRevealMin: z.number().int().min(1),
 });
 export type PlannerConfig = z.infer<typeof PlannerConfigSchema>;
@@ -34,5 +34,5 @@ export const plannerDefaults: PlannerConfig = PlannerConfigSchema.parse({
   claudeBudgetMs: 8000,
   stepDwellMs: 450,
   model: "claude-opus-5-5",
-  runItBackRevealMin: 4,
+  runItBackRevealMin: 2,
 });

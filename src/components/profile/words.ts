@@ -51,29 +51,30 @@ export function freeLine(slots: Slot[]) {
   return `Free ${days.join(", ")}${when && !nights ? `, ${when}` : ""}.`;
 }
 
-export type TextKind = "on" | "before" | "plan";
-export const TEXT_KINDS: { key: TextKind; label: string; line: string }[] = [
-  { key: "on", label: "When it’s on", line: "Texts when it’s on." },
-  { key: "before", label: "The day before", line: "Texts the day before." },
-  { key: "plan", label: "When a plan is ready", line: "Texts when a plan’s ready." },
+/* Reminders. They show in the app (Inbox and the day's card); nothing here claims a text is sent. */
+export type ReminderKind = "plan" | "before" | "on";
+export const REMINDER_KINDS: { key: ReminderKind; label: string; when: string }[] = [
+  { key: "plan", label: "When a plan is ready", when: "when a plan is ready" },
+  { key: "before", label: "The day before", when: "the day before" },
+  { key: "on", label: "When it’s on", when: "2 hours before" },
 ];
+export const DEFAULT_REMINDERS: Record<ReminderKind, boolean> = { plan: false, before: true, on: true };
 
-export function textsLine(sms: boolean, kinds: Record<TextKind, boolean>) {
-  const on = TEXT_KINDS.filter((k) => kinds[k.key]);
-  if (!sms || !on.length) return "Texts off.";
-  if (on.length === 1) return on[0].line;
-  return `${on[0].line.slice(0, -1)}, +${on.length - 1}.`;
+/** "In the app, the day before and 2 hours before" · "Off. Plans still show in your Inbox" */
+export function remindersHint(r: Record<ReminderKind, boolean>) {
+  const on = REMINDER_KINDS.filter((k) => r[k.key]).map((k) => k.when);
+  if (!on.length) return "Off. Plans still show in your Inbox";
+  const list = on.length === 1 ? on[0] : `${on.slice(0, -1).join(", ")} and ${on[on.length - 1]}`;
+  return `In the app, ${list}`;
+}
+
+/** Row value: "On" while any reminder is on, else "Off". */
+export function remindersValue(r: Record<ReminderKind, boolean>) {
+  return REMINDER_KINDS.some((k) => r[k.key]) ? "On" : "Off";
 }
 
 /** The value half of a line, for labelled fields: "Into basketball, guitar." → "basketball, guitar". */
 export function valueOf(line: string, prefix: string) {
   const v = line.startsWith(prefix) ? line.slice(prefix.length) : line;
   return v.replace(/[.?]$/, "");
-}
-
-/** "When it's on" · "When it's on, +1" · "Off" */
-export function textsValue(sms: boolean, kinds: Record<TextKind, boolean>) {
-  const on = TEXT_KINDS.filter((k) => kinds[k.key]);
-  if (!sms || !on.length) return "Off";
-  return on.length === 1 ? on[0].label : `${on[0].label}, +${on.length - 1}`;
 }

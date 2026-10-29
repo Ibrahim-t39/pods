@@ -2,7 +2,7 @@
 // Calm `clear` light, teal row marks, red only on the 911 words (COLOR_LIFE §8).
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/legal-page";
-import { CONTACT_EMAIL, CONTACT_HREF } from "@/components/legal/contact";
+import { CONTACT } from "@/components/legal/contact";
 
 export const metadata: Metadata = { title: "If something's off", description: "What to do at a hangout, and how to reach us." };
 
@@ -34,7 +34,8 @@ export default function SafetyPage() {
           line: "Public, daytime, no alcohol.",
           more: <p>Every plan uses a public place from a checked list, in daylight hours, with no alcohol.</p>,
         },
-        { id: "write", icon: "send", label: "Write to us", line: CONTACT_EMAIL, href: CONTACT_HREF },
+        // no inbox yet: this page is the help page, so the row would only link to itself (src/components/legal/contact.ts)
+        ...(CONTACT.ready ? [{ id: "write", icon: "send" as const, label: CONTACT.label, line: CONTACT.line, href: CONTACT.href }] : []),
       ]}
     />
   );

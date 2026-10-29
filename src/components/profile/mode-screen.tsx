@@ -10,13 +10,14 @@ import { useHydrated, useMode, useRepo, useSetMode } from "@/lib/db/hooks";
 import { useStore } from "@/lib/db/store";
 import { skipToPlaced } from "@/lib/simulation/director";
 import type { AppMode } from "@/lib/types";
-import { MODE_LABEL } from "@/components/platform/mode-switch";
 import { RingMark } from "./kit";
 import { Section, YouHead, YouPage } from "./you-kit";
 
+// Settings names the two worlds in plain words; the word "Demo" never shows to a member.
+export const MODE_TITLE: Record<AppMode, string> = { live: "Your account", demo: "See Chanda’s week" };
 const SUB: Record<AppMode, string> = {
   live: "Your own profile, pods and plans.",
-  demo: "Chanda’s week, already in motion.",
+  demo: "Her pods and plans, already in motion.",
 };
 
 export function ModePicker() {
@@ -42,7 +43,7 @@ export function ModePicker() {
           <button key={m} type="button" role="radio" aria-checked={mode === m} disabled={!!busy} onClick={() => void pick(m)} className="yo-mode pressable">
             {busy === m ? <CirclesLoader size={24} label="Opening" /> : <RingMark on={mode === m} size={24} />}
             <span className="min-w-0">
-              <span className="yo-mode-t">{MODE_LABEL[m]}</span>
+              <span className="yo-mode-t">{MODE_TITLE[m]}</span>
               <span className="yo-mode-s">{SUB[m]}</span>
             </span>
           </button>

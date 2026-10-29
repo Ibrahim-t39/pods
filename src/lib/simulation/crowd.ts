@@ -12,7 +12,8 @@ import { useStore } from "@/lib/db/store";
 import { nowISO, nowMs } from "@/lib/time/clock";
 import { DEMO } from "@/config/demo";
 import { hash32 } from "@/lib/ids";
-import { applyVote } from "@/lib/db/local/hangouts";
+import { applyRsvp, applyVote, runItBackTally } from "@/lib/db/local/hangouts";
+import { ribAllAnswered, ribShouldReveal } from "@/lib/planner/run-it-back";
 import type { DbState, ID } from "@/lib/types";
 import { pushMessage, replyLine, settleHangouts, welcomeLines } from "./script";
 
@@ -49,6 +50,24 @@ function botsIn(d: DbState, podId: ID): ID[] {
     .filter((m) => m.pod_id === podId && !m.left_at && m.activation !== "on_deck" && d.users[m.user_id]?.is_demo_bot)
     .map((m) => m.user_id)
     .sort((a, b) => hash32(`${podId}:${a}`) - hash32(`${podId}:${b}`));
+}
+
+/** Seed ids are deterministic and lower-case ("sug_hoopers_1"); runtime ids carry a 16-char nanoid. */
+export function isSeedId(id: string): boolean {
+  return /^[a-z0-9_]+$/.test(id);
+}
+
+/**
+ * How many more simulated members should tap I'm in on a plan. Counts bots only, so the plan still reaches its number
+ * when you tapped first: bots stop one short of the lock, and your tap (before or after) is the one that completes it.
+ * Vote options keep the older rule (everyone counted) because round two locks through votes.
+ */
+export function crowdRsvpNeed(d: DbState, suggestionId: ID, inVote = false): number {
+  const s = d.suggestions[suggestionId];
+  if (!s) return 0;
+  const going = d.rsvps.filter((r) => r.hangout_id === suggestionId && r.status === "going");
+  const counted = inVote ? going.length : going.filter((r) => d.users[r.user_id]?.is_demo_bot).length;
+  return lockMinFor(d, s) - 1 - counted;
 }
 
 function crowdOn(): boolean {
@@ -115,7 +134,12 @@ export function startCrowd(): () => void {
     lastMe = d.me;
     if (!seenMessages) {
       seenMessages = new Set(Object.values(d.messages).flat().map((m) => m.id));
-      seeded = { sugs: new Set(Object.keys(d.suggestions)), hangouts: new Set(Object.keys(d.hangouts)) };
+      // Only seed rows stay hand-tuned (the Demo's scripted counts). Plans made at runtime (Live starters, round-two
+      // options) keep filling in after a reload, so a plan you tapped never strands one short of its lock.
+      seeded = {
+        sugs: new Set(Object.keys(d.suggestions).filter(isSeedId)),
+        hangouts: new Set(Object.keys(d.hangouts).filter(isSeedId)),
+      };
     }
 
     // 1. Welcome: each active pod I'm in that has no welcome yet.
@@ -157,8 +181,8 @@ export function startCrowd(): () => void {
     // 3. RSVPs trickle: new suggestions up to threshold-1 (my tap locks); freshly locked hangouts top up to 6.
     for (const s of Object.values(d.suggestions)) {
       if (s.status !== "suggested" || seeded?.sugs.has(s.id)) continue;
-      const going = d.rsvps.filter((r) => r.hangout_id === s.id && r.status === "going");
-      const need = lockMinFor(d, s) - 1 - going.length;
+      const inVote = Object.values(d.votes).some((v) => v.status === "open" && v.option_ids.includes(s.id));
+      const need = crowdRsvpNeed(d, s.id, inVote);
       if (need <= 0) continue;
       const candidates = botsIn(d, s.pod_id).filter((b) => !d.rsvps.some((r) => r.hangout_id === s.id && r.user_id === b));
       candidates.slice(0, need).forEach((bot, i) =>
@@ -167,7 +191,10 @@ export function startCrowd(): () => void {
             useStore.getState().commit((x) => {
               const cur = x.suggestions[s.id];
               if (cur?.status !== "suggested" || x.rsvps.some((r) => r.hangout_id === s.id && r.user_id === bot)) return;
-              x.rsvps.push({ hangout_id: s.id, user_id: bot, status: "going", checked_in: false, checked_in_at: null });
+              // Vote options keep a plain RSVP (votes are step 4). A lone plan goes through the real transaction, so
+              // when you tapped I'm in first, the bot that reaches the number locks it.
+              if (inVote) x.rsvps.push({ hangout_id: s.id, user_id: bot, status: "going", checked_in: false, checked_in_at: null });
+              else applyRsvp(x, s.id, bot, "going", nowISO());
             }),
           ),
         ),
@@ -236,7 +263,7 @@ export function startCrowd(): () => void {
           ),
         );
 
-      // 6. Run-it-back: once I answer, the bots answer (all yes but one "not sure"), then it reveals at the minimum.
+      // 6. Run-it-back: once I answer, the bots answer (all yes but one "not sure"), then it reveals by the shared rule.
       const rib = d.runItBack[h.id];
       if (d.me && rib?.responses[d.me]) {
         const checked = d.rsvps.filter((r) => r.hangout_id === h.id && r.checked_in && r.user_id !== d.me && d.users[r.user_id]?.is_demo_bot);
@@ -252,16 +279,20 @@ export function startCrowd(): () => void {
             ),
           );
         });
-        const yes = Object.values(rib.responses).filter((a) => a === "yes").length;
-        if (!rib.revealed_at && yes >= d.config.planner.runItBackRevealMin) {
-          once(`reveal:${h.id}`, () =>
-            later(1200, () =>
-              useStore.getState().commit((x) => {
-                const cur = x.runItBack[h.id];
-                if (cur && !cur.revealed_at) cur.revealed_at = nowISO();
-              }),
-            ),
-          );
+        // Reveal by the shared rule. When everyone has answered, reveal now; when the pod is already going again but
+        // some answers are still on their way, give them a moment so the number reads complete ("3 of 4").
+        const t = runItBackTally(d, h.id);
+        const floor = d.config.planner.runItBackRevealMin;
+        // Simulated members still on their way to check in count as attendees who have not answered yet.
+        const arriving = d.rsvps.some((r) => r.hangout_id === h.id && r.status === "going" && !r.checked_in && d.users[r.user_id]?.is_demo_bot);
+        if (!rib.revealed_at && !arriving && ribShouldReveal(t, floor)) {
+          const reveal = () =>
+            useStore.getState().commit((x) => {
+              const cur = x.runItBack[h.id];
+              if (cur && !cur.revealed_at && ribShouldReveal(runItBackTally(x as DbState, h.id), floor)) cur.revealed_at = nowISO();
+            });
+          if (ribAllAnswered(t)) once(`reveal:${h.id}`, () => later(1200, reveal));
+          else once(`reveal-grace:${h.id}`, () => later(9000, reveal));
         }
       }
     }
