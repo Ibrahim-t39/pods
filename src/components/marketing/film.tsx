@@ -753,9 +753,9 @@ function ImIn() {
       </div>
       <div className="fm-copy fm-copy-top">
         <Line p={p} at={[0.5, 0.56, 0.86, 0.94]} className="fm-h2">
-          Four say yes.
+          You&apos;re in.
           <br />
-          <span className="fm-dim">It locks.</span>
+          <span className="fm-dim">Enough said yes. It locks.</span>
         </Line>
       </div>
       <O>
