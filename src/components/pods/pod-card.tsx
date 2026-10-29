@@ -6,7 +6,6 @@
 "use client";
 
 import Link from "next/link";
-import { WidenGlyph } from "@/components/brand";
 import { Icon } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { shortDay, shortTime, type RoomTable } from "./model";
@@ -91,7 +90,8 @@ export function kindLine(t: RoomTable) {
 }
 
 /** The full card (Pods list). */
-export function PodCard({ t, minute, closed, unread, widened }: { t: RoomTable; minute: number; closed: string; unread: number; widened?: string | null }) {
+/** `widened` is accepted for older callers and ignored: beat 3's line lives at placing and in the pod's details only. */
+export function PodCard({ t, minute, closed, unread }: { t: RoomTable; minute: number; closed: string; unread: number; widened?: string | null }) {
   const st = statusOf(t, closed);
   const plan = planLines(t, minute);
   const going = t.row.plan?.going.length ?? 0;
@@ -108,12 +108,6 @@ export function PodCard({ t, minute, closed, unread, widened }: { t: RoomTable; 
           <p className="mt-0.5 text-label text-ink-2">{kindLine(t)}</p>
         </div>
       </div>
-      {widened && (
-        <p className="mt-s3 flex items-start gap-s2 text-[14px] leading-[1.35] text-ink-2">
-          <WidenGlyph size={16} className="mt-0.5 shrink-0 text-grove-text" />
-          <span>{widened}</span>
-        </p>
-      )}
       {t.open ? (
         <>
           <div className="mt-s4 flex items-center gap-s3 rounded-[14px] bg-sunken px-s3 py-s3">
@@ -142,18 +136,15 @@ export function PodCard({ t, minute, closed, unread, widened }: { t: RoomTable; 
             </div>
           )}
         </>
-      ) : (
-        <p className="mt-s4 text-[14px] leading-[1.4] text-ink-2">One pod at a time: this one opens after your first hangout.</p>
-      )}
+      ) : null}
     </>
   );
+  // an on-deck pod opens too: its page is read-only until it opens (one pod at a time)
   const cls = "pods-card block p-s4 lg:p-s6";
-  return t.open ? (
+  return (
     <Link href={href} className={cn(cls, "pressable outline-offset-2 hover:shadow-[0_0_0_1px_var(--line-2),0_6px_20px_-12px_rgb(0_0_0/.18)]")}>
       {body}
     </Link>
-  ) : (
-    <div className={cn(cls, "opacity-90")}>{body}</div>
   );
 }
 
@@ -162,7 +153,7 @@ export function PodRow({ t, minute, closed, unread }: { t: RoomTable; minute: nu
   const st = statusOf(t, closed);
   const plan = planLines(t, minute);
   const going = t.row.plan?.going.length ?? 0;
-  const sub = !t.open ? "Opens after your first hangout" : plan ? `${plan.when} · ${plan.what}` : (t.row.lastLine ?? "Planning");
+  const sub = !t.open ? kindLine(t) : plan ? `${plan.when} · ${plan.what}` : (t.row.lastLine ?? "Planning");
   const inner = (
     <>
       <PodOrb hue={t.hue} people={t.row.size} inCount={going} size={40} open={t.open} needs={needsYou(t)} />
@@ -173,16 +164,14 @@ export function PodRow({ t, minute, closed, unread }: { t: RoomTable; minute: nu
         </span>
         <span className="block truncate text-[14px] text-ink-2">{sub}</span>
       </span>
-      {st && <StatusChip {...st} className="max-sm:hidden" />}
-      {t.open && <Icon name="arrow" size={16} stroke={2} className="shrink-0 text-ink-2" />}
+      {st && <StatusChip {...st} className={t.open ? "max-sm:hidden" : undefined} />}
+      <Icon name="arrow" size={16} stroke={2} className="shrink-0 text-ink-2" />
     </>
   );
   const cls = "flex min-h-16 items-center gap-s3 px-s4 py-s2";
-  return t.open ? (
+  return (
     <Link href={`/app/pods/${t.row.pod.id}`} className={cn(cls, "pressable outline-offset-[-2px] hover:bg-[color-mix(in_srgb,var(--ink)_3%,transparent)]")}>
       {inner}
     </Link>
-  ) : (
-    <div className={cn(cls, "opacity-80")}>{inner}</div>
   );
 }

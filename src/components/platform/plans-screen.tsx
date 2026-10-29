@@ -251,9 +251,9 @@ export function PlansScreen() {
       <Stage light="paper" />
       <div className="min-h-[100dvh] pb-[calc(var(--s12)+var(--shell-bottom,0px)+env(safe-area-inset-bottom))]">
         <Chrome left="mark" right="none" className="lg:hidden" />
-        <div className="mx-auto w-full max-w-[1280px] px-gutter pt-s4 lg:px-s12 lg:pt-s10">
+        <div className="mx-auto w-full max-w-[1280px] px-gutter pt-s4 lg:px-s12 lg:pt-s12">
           <header>
-            <h1 className="text-[28px] leading-[34px] font-semibold tracking-[-0.025em] text-ink">
+            <h1 className="font-display text-[28px] leading-[1.1] font-semibold tracking-[-0.025em] text-ink lg:text-[32px]">
               Plans
             </h1>
             <p className="mt-s1 text-[15px] leading-[20px] text-ink-2">

@@ -29,7 +29,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--s8);
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: var(--s6) var(--gutter) 0;
 }
@@ -44,23 +44,68 @@
   min-width: 0;
 }
 .pods-home-tiles {
+  /* phone: one pod per row, each card as tall as what it says (no tall empty tiles) */
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s3);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s2);
+}
+.pods-home-tile {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--s3);
+  height: 100%;
+  padding: var(--s3) var(--s4);
+}
+.pods-home-tile-orb {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+}
+.pods-home-tile-orb > * {
+  /* the 60px sphere drawn at 48 on phone: the margin keeps its layout box at 48 so it centres */
+  margin: -6px;
+  transform: scale(0.8);
+}
+.pods-home-tile-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pods-home-tile-chip {
+  margin-top: var(--s2);
 }
 @media (min-width: 640px) {
   .pods-home-tiles {
     /* 2 x 2: four pods never leave one tile alone on a second row */
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s3);
   }
-}
-.pods-home-tile {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  height: 100%;
-  min-height: 188px;
-  padding: var(--s4);
+  .pods-home-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 188px;
+    padding: var(--s4);
+  }
+  .pods-home-tile-orb {
+    place-items: start;
+    width: auto;
+    height: auto;
+    margin-bottom: var(--s3);
+  }
+  .pods-home-tile-orb > * {
+    margin: 0;
+    transform: none;
+  }
+  .pods-home-tile-body {
+    flex: 1;
+  }
+  .pods-home-tile-chip {
+    margin-top: auto;
+    padding-top: var(--s3);
+  }
 }
 
 @media (min-width: 1024px) {
@@ -79,7 +124,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--s3);
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: var(--s6) var(--gutter) var(--s12);
 }
@@ -155,6 +200,8 @@
 }
 @media (min-width: 1024px) {
   .pods-pod-body {
+    /* each card keeps its own height: the plan card never stretches to match Who's in */
+    align-items: start;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas: "id id" "plan who" "more more";
     column-gap: var(--s6);
@@ -196,5 +243,18 @@
   }
   [data-docked] .pods-pod-body {
     padding: var(--s8) var(--s8) 0 var(--s12);
+  }
+}
+/* docked (>=1280): Members and Memories share a row as an equal pair */
+@media (min-width: 1280px) {
+  [data-docked] .pods-pod-more {
+    align-items: stretch;
+  }
+  [data-docked] .pods-pod-more > section {
+    display: flex;
+    flex-direction: column;
+  }
+  [data-docked] .pods-pod-more > section > :last-child {
+    flex: 1 1 auto;
   }
 }

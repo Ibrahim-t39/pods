@@ -56,16 +56,19 @@ export function WhoIn({
       >
         {ordered.map((s, i) => {
           const you = s === seats[0];
-          const open = !s || s.open || (you && !s.in);
-          const label = you ? "You" : s && !s.open ? (s.name ?? "") : "Open";
+          const yours = you && !s?.in; // your seat, waiting on your answer: never "You" until you said yes
+          const open = !s || s.open || yours;
+          const label = yours ? "Your seat" : you ? "You" : s && !s.open ? (s.name ?? "") : "";
           return (
-            <span key={i} className="flex min-w-0 flex-col items-center gap-1">
+            <span key={i} className="flex min-w-0 flex-col items-center gap-1" aria-label={open && !yours ? "Open seat" : undefined}>
               {open ? (
-                <span aria-hidden className={cn("size-9 rounded-full border-[1.5px] border-dashed", you ? "border-ink-2" : "border-line-2")} />
+                <span aria-hidden className={cn("size-9 rounded-full border-[1.5px]", yours ? "border-ember-500" : "border-dashed border-line-2")} />
               ) : (
                 <Disc initial={s?.initial} tone={you ? "you" : hue} seed={s?.name} size={36} style={{ fontFamily: "var(--font-ui)", fontWeight: 600, fontSize: 15 }} />
               )}
-              <span className={cn("w-full truncate text-center text-[12px] leading-[1.2]", open && !you ? "text-ink-3" : "text-ink-2", you && "font-semibold text-ink")}>{label}</span>
+              <span aria-hidden={!label || undefined} className={cn("min-h-[14px] w-full truncate text-center text-[12px] leading-[1.2]", yours ? "text-ink-2" : you ? "font-semibold text-ink" : "text-ink-2")}>
+                {label}
+              </span>
             </span>
           );
         })}

@@ -384,12 +384,16 @@
     display: grid;
     grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
     column-gap: var(--s10, 40px);
-    padding: var(--s6) var(--s12) 0;
+    /* the shared page-head position (shell/page-header.tsx): 48px top, 48px inset */
+    padding: var(--s12) var(--s12) 0;
     align-items: start;
   }
   .inbx-head {
     padding-top: 0;
     min-height: 40px;
+  }
+  .inbx-title {
+    font-size: 32px;
   }
   .inbx-filters {
     margin: var(--s4) 0 0;

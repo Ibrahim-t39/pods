@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { ResponsiveSheet } from "@/components/ui/sheet";
 import { roomTables, shortTime } from "@/components/pods/model";
+import { weekGlance } from "@/components/pods/home-model";
 import { useDb, useHydrated, useMe } from "@/lib/db/hooks";
 import { calendarItems, encodeFeed, feedEvents, subscribeLinks, type CalItem } from "@/lib/platform/calendar";
 import { downloadIcs, icsFilename, icsForPlan } from "@/lib/platform/ics";
@@ -110,21 +111,14 @@ export function CalendarPage() {
 
   return (
     <div className="pods-cal">
-      <PageHeader
-        title="Calendar"
-        meta={meta}
-        actions={
-          <Button size="sm" variant="secondary" className="bg-lit" onClick={() => setShare(true)}>
-            <Icon name="add" size={18} /> Add to calendar
-          </Button>
-        }
-      />
+      <PageHeader title="Calendar" meta={meta} />
       <div className="pods-cal-grid">
         <section aria-label="Days" className="min-w-0">
           <div className="mb-s3 flex flex-wrap items-center justify-between gap-s3">
             <Segmented
               label="View"
               size="sm"
+              className="pods-cal-view"
               value={view}
               onChange={(v) => setView(v)}
               options={[
@@ -161,6 +155,10 @@ export function CalendarPage() {
         </section>
         <aside className="pods-cal-day" aria-live="polite">
           <DayPanel day={sel} today={today} items={byDay[sel] ?? []} hues={hues} listClass={view === "week" ? "lg:hidden" : undefined} />
+          {/* the whole feed, kept out of the header and below the day: a locked plan also adds itself from its own page */}
+          <Button size="sm" variant="link" className="mt-s4" onClick={() => setShare(true)}>
+            Sync with your calendar app
+          </Button>
         </aside>
       </div>
       <SubscribeSheet open={share} onOpenChange={setShare} items={items} />
@@ -296,7 +294,8 @@ export function ItemList({ items, hues, compact }: { items: CalItem[]; hues: Rec
               </span>
             </span>
           </Link>
-          {!compact && (i.kind === "plan" || i.kind === "hangout") && (
+          {/* only a locked hangout goes into your own calendar (sweep 10/29) */}
+          {!compact && i.kind === "hangout" && (
             <button type="button" onClick={() => download(i)} aria-label={`Add ${i.title} to your calendar`} className="pods-cal-nav pressable mr-s3 shrink-0">
               <CalendarGlyph size={20} />
             </button>
@@ -397,14 +396,10 @@ function SubscribeSheet({ open, onOpenChange, items }: { open: boolean; onOpenCh
 
 /** Home's glance at the week: the next seven days, the picked day's items and your time that day. */
 export function WeekGlance() {
-  const { items, today } = useCalendar();
-  const end = addDays(today, 6);
-  const week = items.filter((i) => i.day >= today && i.day <= end);
-  const next = week[0];
+  const { items, today, minute } = useCalendar();
+  // hangouts ahead in the next 7 days (votes and finished hangouts don't count): "1 plan · Sat"
+  const { line, next } = weekGlance(items, minute);
   const sel = next?.day ?? today;
-  const line = week.length
-    ? `${week.length} ${week.length === 1 ? "plan" : "plans"} · next ${sel === today ? "today" : fmt(sel, { weekday: "long" })}`
-    : "Nothing planned yet";
   return (
     <div className="flex flex-col gap-s4">
       <Link href="/app/calendar" className="pods-card pressable flex min-h-14 items-center gap-s3 px-s4 outline-offset-2">

@@ -18,7 +18,7 @@ import { Chrome } from "@/components/shell/chrome";
 import { Icon } from "@/components/icons";
 import { Button, notify } from "@/components/ui";
 import { useMediaQuery } from "@/components/ui/use-media-query";
-import { podHue } from "@/components/profile/hue";
+import { podHue, podOnDeck } from "@/components/profile/hue";
 import { shortTime } from "@/components/pods/model";
 import { useDb, useHydrated, useRepo } from "@/lib/db/hooks";
 import { useClock } from "@/lib/time/clock";
@@ -332,7 +332,7 @@ function PodMark({ db, podId, size = 40 }: { db: DbState; podId: ID; size?: numb
   // a pod is always its glossy sphere (one bead per person), never a letter: the same mark as Pods and the pod page
   const hue: PodHueKey = podHue(db, podId);
   const people = db.memberships.filter((m) => m.pod_id === podId && !m.left_at).length;
-  return <PodSphere hue={hue} people={Math.max(1, people)} you={db.memberships.some((m) => m.pod_id === podId && m.user_id === db.me && !m.left_at)} inCount={people} size={size} />;
+  return <PodSphere hue={hue} people={Math.max(1, people)} you={db.memberships.some((m) => m.pod_id === podId && m.user_id === db.me && !m.left_at)} inCount={people} size={size} open={!podOnDeck(db, podId)} />;
 }
 
 /** The row's mark: the person who did it (wearing their pod's colour), the pod, or your pods together (placed). */

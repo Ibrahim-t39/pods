@@ -169,6 +169,46 @@ export function hoursTogether(db: DbState, podId: ID): number {
   return Math.round((ms / HOUR) * 10) / 10;
 }
 
+/** Time together, for a pod (you, in this pod) or a person (hangouts you both checked in to). 0 hangouts → null. */
+export function timeTogether(db: DbState, of: { podId: ID } | { userId: ID }): { hangouts: number; hours: number } | null {
+  if (!db.me) return null;
+  const me = db.me;
+  const checked = (hid: ID, uid: ID) => db.rsvps.some((r) => r.hangout_id === hid && r.user_id === uid && r.checked_in);
+  let n = 0;
+  let ms = 0;
+  for (const h of Object.values(db.hangouts)) {
+    if (h.status === "cancelled") continue;
+    if ("podId" in of ? h.pod_id !== of.podId : !checked(h.id, of.userId)) continue;
+    if (!checked(h.id, me)) continue;
+    n += 1;
+    ms += Date.parse(h.ends_at) - Date.parse(h.starts_at);
+  }
+  return n ? { hangouts: n, hours: Math.round((ms / HOUR) * 10) / 10 } : null;
+}
+
+/** "1 hangout · 2 hours together"; null at 0 (the line is hidden). */
+export function togetherLine(t: { hangouts: number; hours: number } | null): string | null {
+  if (!t) return null;
+  const h = Number.isInteger(t.hours) ? String(t.hours) : t.hours.toFixed(1);
+  return `${t.hangouts} ${t.hangouts === 1 ? "hangout" : "hangouts"} · ${h} ${t.hours === 1 ? "hour" : "hours"} together`;
+}
+
+/** Beat 3, said in two places only (placing and the pod's details): "Only 3 Zambians nearby, so your pod is Southern African." */
+export function widenedLine(db: DbState, podId: ID): string | null {
+  const pod = db.pods[podId];
+  const w = pod?.widened_from;
+  if (!pod || !w || w.kind !== "group") return null;
+  const entry = (db.plannerCache as Record<string, { output?: unknown }>)[`${podId}:widen_explainer`];
+  const m = (((entry?.output as { body?: string } | undefined)?.body) ?? "").match(/Only (\d+) (\S+)/);
+  return `${m ? `Only ${m[1]} ${m[2]} nearby` : `Not many ${w.from}s nearby`}, so your pod is ${w.to}.`;
+}
+
+/** The interest under a pod's name: "Board games", "Southern African". */
+export function podTopicLabel(pod: Pick<Pod, "topic" | "type">): string {
+  const t = (pod.topic ?? "").trim();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : pod.type === "community" ? "Community pod" : "Interest pod";
+}
+
 // ── Pod status (§8.2) ───────────────────────────────────────────────────
 export interface PodRowVM {
   pod: Pod;
@@ -371,14 +411,12 @@ function near(iso: string, nowMs?: number) {
   return days >= 0 && days <= 6;
 }
 
-/** Colour means the pod: interest = ember, community = grove, a second interest = signal (DESIGN §4). */
+/** Colour means the pod, and the pod owns it (pod.hue): every sphere of a pod is the same colour on every screen. */
+export function podColor(pod: Pick<Pod, "hue" | "type"> | undefined): TableHue {
+  return pod?.hue ?? (pod?.type === "community" ? "grove" : "ember");
+}
 function assignHues(rows: PodRowVM[]): TableHue[] {
-  let interest = 0;
-  return rows.map((r) => {
-    if (r.pod.type === "community") return "grove";
-    interest += 1;
-    return interest === 2 ? "signal" : "ember";
-  });
+  return rows.map((r) => podColor(r.pod));
 }
 
 /** The Room's tables in a stable order; the next one is picked separately (heroRow). */

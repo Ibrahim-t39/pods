@@ -28,7 +28,8 @@ export interface PodDef {
 export const POD_DEFS: PodDef[] = [
   { id: DEMO.hoopers.podId, name: "Hoopers", type: "interest", kind: null, topic: "basketball", topic_key: "basketball", hue: "ember", plan: "basketball", demo: true, persona: ["W", "UA"],
     members: ["Malik", "Ama", "Tobi", "Jordan", "Dre", "Kayla", "Marcus"] },
-  { id: "pod_rocket_city_strings", name: "Strings", type: "interest", kind: null, topic: "guitar", topic_key: "guitar", hue: "ember", plan: "guitar", demo: true, persona: ["W", "UA"],
+  // Strings wears the "signal" slot (renders ember, POD_SOLID): your second interest pod, so your pods read as the logo
+  { id: "pod_rocket_city_strings", name: "Strings", type: "interest", kind: null, topic: "guitar", topic_key: "guitar", hue: "signal", plan: "guitar", demo: true, persona: ["W", "UA"],
     members: ["Eli", "Nia", "Sam", "Rae", "Theo"] },
   { id: DEMO.southernAfrican.podId, name: "Southern African", type: "community", kind: "heritage", topic: "Southern African", topic_key: "southern_african", hue: "grove", plan: "southern_african", demo: true, persona: ["UA", "W"],
     widened: { kind: "group", from: "Zambian", to: "Southern African" },

@@ -26,11 +26,12 @@ import { usePlanActions } from "@/components/planner/use-plan-actions";
 import { cn } from "@/lib/cn";
 import { clientId as newClientId } from "@/lib/ids";
 import { useDb, useRepo } from "@/lib/db/hooks";
-import { podMembers } from "@/lib/db/selectors";
+import { membership, podMembers } from "@/lib/db/selectors";
 import { cardView, type CardView } from "@/lib/planner/card-state";
 import { pollTally } from "@/lib/platform/selectors";
 import { isChatPaused, myBlockedIds } from "@/lib/safety/selectors";
 import { useTyping } from "@/lib/simulation/crowd";
+import { isRsvpOption, openVoteOptions, pollClosed, threadOrder, TYPING_MAX_MS, typingVisible } from "./talk-logic";
 import { nowISO, useClock } from "@/lib/time/clock";
 import { formatDayDivider } from "@/lib/time/format";
 import { REACTIONS, type Memory, type Message, type ReactionKey } from "@/lib/types";
@@ -138,6 +139,24 @@ function memberLine(people: { name: string; you: boolean }[]) {
 function activityWord(event: string) {
   const w = event.split(/[,:;(—–]/)[0].trim();
   return w.length > 44 ? `${w.slice(0, 43).trimEnd()}…` : w;
+}
+
+function useFreshTyping(podId: string) {
+  const t = useTyping(podId);
+  const [shown, setShown] = useState<typeof t>(null);
+  useEffect(() => {
+    if (!t) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- follows the typing store
+      setShown(null);
+      return;
+    }
+    const seen = Date.now();
+    if (!typingVisible(t, seen, seen)) return setShown(null);
+    setShown(t);
+    const id = setTimeout(() => setShown(null), Math.min(t.until, seen + TYPING_MAX_MS) - seen);
+    return () => clearTimeout(id);
+  }, [t]);
+  return shown;
 }
 
 // ── shells ───────────────────────────────────────────────────────────────────────────────────────────────
@@ -258,10 +277,12 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
       [podId],
     ),
   );
-  const podOpen = useDb((db) => db.pods[podId]?.status === "active");
+  // a pod on deck (one pod at a time) is read-only: you can read along, nothing to post or plan until it opens
+  const onDeck = useDb((db) => membership(db, podId)?.activation === "on_deck");
+  const podOpen = useDb((db) => db.pods[podId]?.status === "active") && !onDeck;
   const paused = useDb((db) => isChatPaused(db, podId));
   const blocked = useDb((db) => myBlockedIds(db));
-  const typing = useTyping(podId);
+  const typing = useFreshTyping(podId);
   const actions = usePlanActions(podId);
 
   const [pending, setPending] = useState<Message[]>([]);
@@ -281,6 +302,8 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
   const [snap, setSnap] = useState<{ keys: Set<string>; unread: string | null } | null>(null);
 
   const byId = useMemo(() => new Map(stored.map((m) => [m.id, m])), [stored]);
+  const voteKey = useDb(useCallback((db) => openVoteOptions(db, podId).join(","), [podId]));
+  const voteOptions = useMemo(() => new Set(voteKey ? voteKey.split(",") : []), [voteKey]);
 
   const rows = useMemo<Row[]>(() => {
     const ids = new Set(stored.map((m) => m.client_id).filter(Boolean));
@@ -293,11 +316,12 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
       .filter((x) => x.pod_id === podId && x.photo_url && !x.removed_at && !blocked.includes(x.user_id))
       .map((mem) => ({ t: "photo" as const, key: mem.id, at: mem.created_at, who: mem.user_id, mem }));
     // a later plan card for the same suggestion replaces an earlier one (re-plans), so the thread holds one per plan
-    const out = [...msgs, ...photos].sort((a, b) => a.at.localeCompare(b.at));
+    const out = threadOrder([...msgs, ...photos]);
     const lastCard = new Map<string, string>();
     for (const r of out) if (r.t === "msg" && r.m.kind === "plan_card" && r.m.ref_id) lastCard.set(r.m.ref_id, r.key);
-    return out.filter((r) => !(r.t === "msg" && r.m.kind === "plan_card" && r.m.ref_id && lastCard.get(r.m.ref_id) !== r.key));
-  }, [stored, pending, blocked, memories, podId]);
+    // while a round-two vote is open the poll is the only card: an option's plan card posts once it locks
+    return out.filter((r) => !(r.t === "msg" && r.m.kind === "plan_card" && r.m.ref_id && (lastCard.get(r.m.ref_id) !== r.key || voteOptions.has(r.m.ref_id))));
+  }, [stored, pending, blocked, memories, podId, voteOptions]);
 
   if (open && !snap) {
     const since = lastRead[podId];
@@ -430,7 +454,7 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
 
   // "Ask AI": plan when the table is empty, add an option while a plan is open, draft the next round after the reveal
   const ai = useMemo(() => {
-    if (!view) return null;
+    if (!view || onDeck) return null;
     if (view.phase === "empty") return { label: "Ask AI for a plan", run: () => void actions.planNow() };
     if (OPEN_PHASES.has(view.phase) && view.suggestion && !view.locked) {
       const s = view.suggestion;
@@ -438,7 +462,7 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
     }
     if (view.phase === "planning_next" && !view.vote) return { label: "Ask AI for next options", run: () => void actions.planNextRound(view) };
     return null;
-  }, [view, actions]);
+  }, [view, actions, onDeck]);
 
   const pickPhoto = async (f: File | undefined) => {
     if (!f) return;
@@ -473,10 +497,10 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
         </button>
       )}
       <button type="button" onClick={onMembers} disabled={!onMembers} className="pressable -ml-s1 flex min-h-11 min-w-0 flex-1 items-center gap-s3 rounded-[14px] px-s1 text-left disabled:cursor-default">
-        <PodSphere hue={hue} people={people.length} size={36} className="shrink-0" />
+        <PodSphere hue={hue} people={people.length} size={36} open={!onDeck} className="shrink-0" />
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-[17px] leading-[1.2] font-semibold tracking-[-0.01em] text-ink">{podName}</span>
-          <span className="truncate text-[13px] leading-[1.3] text-ink-2" aria-live="polite">
+          <span className="truncate text-[13px] leading-[1.3] text-ink-2">
             {typingName ? `${typingName} is typing…` : where === "sheet" ? `${people.length} people` : memberLine(people)}
           </span>
         </span>
@@ -501,7 +525,7 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
 
   // ── pinned plan (R7): hidden in the dock, where the plan is the left pane ──
   const pinned =
-    where === "sheet" && view ? (
+    where === "sheet" && view && !onDeck ? (
       <PinnedPlan
         view={view}
         hue={hue}
@@ -661,7 +685,7 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
           {typingName && typing && (
             <motion.div key="typing" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={SNAPPY} className="mt-s3 flex items-end gap-s2">
               <Face name={typingName} size={28} />
-              <div className="flex h-10 items-center gap-1 rounded-[20px] rounded-bl-md bg-sunken px-s4" role="status" aria-label={`${typingName} is typing`}>
+              <div className="flex h-10 items-center gap-1 rounded-[20px] rounded-bl-md bg-sunken px-s4" aria-hidden>
                 {[0, 1, 2].map((d) => (
                   <motion.span key={d} className="size-1.5 rounded-full bg-ink-2" animate={reduce ? undefined : { opacity: [0.3, 1, 0.3], y: [0, -2, 0] }} transition={{ duration: 1, repeat: Infinity, delay: d * 0.16 }} />
                 ))}
@@ -675,7 +699,11 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
 
   // ── composer (R9) ──
   const locked = paused || !podOpen;
-  const composer = polling ? (
+  const composer = onDeck ? (
+    <p className={cn("shrink-0 border-t border-line bg-lit py-s4 text-center text-[14px] text-ink-2", where === "sheet" ? "px-s4 pb-[calc(16px+env(safe-area-inset-bottom))]" : "px-s6")}>
+      Read along for now. Talk opens with the pod.
+    </p>
+  ) : polling ? (
     <div className={cn("shrink-0 border-t border-line bg-lit pt-s3", where === "page" ? "px-[max(var(--s8),calc((100%-760px)/2))] pb-s6" : where === "dock" ? "px-s6 pb-s6" : "px-s4 pb-[calc(12px+env(safe-area-inset-bottom))] md:px-s6 md:pb-s6")}>
       <PollComposer
         onCancel={() => setPolling(false)}
@@ -966,9 +994,11 @@ function PinnedPlan({
         </button>
       );
   }
-  const loop = ["check_in", "ballot", "waiting_reveal", "planning_next", "missed"].includes(view.phase);
-  const head = loop ? line : title ?? "No plan yet";
-  const sub = loop ? (title ? `${title}${when ? ` · ${shortDay(when, minute)}` : ""}` : "") : view.phase === "empty" ? "" : `${when ? `${shortDay(when, minute)} ${shortTime(when)} · ` : ""}${line}`;
+  // while the pod votes on round two, the strip names the round, never a date the vote has not picked yet
+  const voting = view.phase === "vote" || (view.phase === "planning_next" && !!view.vote);
+  const loop = voting || ["check_in", "ballot", "waiting_reveal", "planning_next", "missed"].includes(view.phase);
+  const head = voting ? `Hangout #${view.round} · voting` : loop ? line : title ?? "No plan yet";
+  const sub = voting ? "Pick a time" : loop ? (title ? `${title}${when ? ` · ${shortDay(when, minute)}` : ""}` : "") : view.phase === "empty" ? "" : `${when ? `${shortDay(when, minute)} ${shortTime(when)} · ` : ""}${line}`;
   return (
     <div className="shrink-0 border-b border-line bg-lit px-s3 py-s2 md:px-s4">
       <div
@@ -1430,9 +1460,10 @@ function PollLine({ pollId, names }: { pollId: string | null; hue: PodHueKey; na
   const repo = useRepo();
   const meId = useDb((db) => db.me);
   const poll = useDb(useCallback((db) => (pollId ? db.polls[pollId] : undefined), [pollId]));
+  const minute = useClock(30_000).getTime();
   if (!poll) return null;
   const tally = pollTally(poll, meId);
-  const closed = poll.status !== "open";
+  const closed = pollClosed(poll, minute);
   return (
     <CardShell eyebrow={closed ? "Poll · closed" : `Poll · ${names[poll.created_by] ?? "Member"}`}>
       <p className="mt-s2 text-[17px] leading-[1.3] font-semibold text-ink">{poll.question}</p>
@@ -1462,7 +1493,9 @@ function PollComposer({ onCancel, onPost }: { onCancel: () => void; onPost: (q: 
   const [q, setQ] = useState("");
   const [opts, setOpts] = useState(["", ""]);
   const [busy, setBusy] = useState(false);
-  const ready = q.trim() && opts.filter((o) => o.trim()).length >= 2;
+  // "I'm in" is the plan's own answer: a poll option that reads like an RSVP would be mistaken for one
+  const rsvpLike = opts.some(isRsvpOption);
+  const ready = q.trim() && opts.filter((o) => o.trim()).length >= 2 && !rsvpLike;
   const field = "h-11 w-full rounded-[14px] bg-sunken px-s4 text-[16px] text-ink outline-none placeholder:text-ink-3 focus:shadow-[inset_0_0_0_1.5px_var(--select)]";
   return (
     <form
@@ -1480,6 +1513,7 @@ function PollComposer({ onCancel, onPost }: { onCancel: () => void; onPost: (q: 
       {opts.map((o, i) => (
         <input key={i} aria-label={`Option ${i + 1}`} placeholder={`Option ${i + 1}`} maxLength={40} value={o} onChange={(e) => setOpts((p) => p.map((x, j) => (j === i ? e.target.value : x)))} className={field} />
       ))}
+      {rsvpLike && <p className="text-[13px] text-ink-2">&ldquo;I&apos;m in&rdquo; is for plans. Try &ldquo;Yes&rdquo; or &ldquo;Count me in&rdquo;.</p>}
       <div className="flex items-center justify-between gap-s2 pt-s1">
         {opts.length < 4 ? (
           <button type="button" onClick={() => setOpts((p) => [...p, ""])} className="pressable min-h-11 text-[15px] font-semibold text-select">

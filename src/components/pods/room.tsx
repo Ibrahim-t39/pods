@@ -21,12 +21,6 @@ import "./pods.css";
 /** A go link: underlined words with the arrow glyph (DESIGN §8 "go"). */
 export const GO = buttonVariants({ variant: "link", size: "lg" });
 
-/** "Only 3 Zambians live nearby, so we widened…" (the cached widen_explainer) → "Only 3 Zambians nearby." */
-function widenLine(body: string | undefined, from: string): string {
-  const m = body?.match(/Only (\d+) (\S+)/);
-  return m ? `Only ${m[1]} ${m[2]} nearby.` : `Not many ${from}s nearby.`;
-}
-
 export function Room() {
   const hydrated = useHydrated();
   const now = useClock();
@@ -46,16 +40,6 @@ export function Room() {
       [lastRead],
     ),
   );
-  const widened = useDb(
-    useCallback((db) => {
-      const pod = Object.values(db.pods).find((p) => p.widened_from?.kind === "group" && db.memberships.some((m) => m.pod_id === p.id && m.user_id === db.me));
-      if (!pod?.widened_from) return null;
-      const entry = (db.plannerCache as Record<string, { output?: unknown }>)[`${pod.id}:widen_explainer`];
-      const body = (entry?.output as { body?: string } | undefined)?.body;
-      return { podId: pod.id, line: `${widenLine(body, pod.widened_from.from)} Widened to ${pod.widened_from.to}.` };
-    }, []),
-  );
-
   if (!hydrated) {
     return (
       <div className="grid h-[100dvh] place-items-center">
@@ -88,12 +72,12 @@ export function Room() {
         <ul className="pods-list-grid">
           {ordered.map((t) => (
             <li key={t.row.pod.id} className="min-w-0">
-              <PodCard t={t} minute={minute} closed={closed} unread={unreadBy[t.row.pod.id] ?? 0} widened={widened?.podId === t.row.pod.id ? widened.line : null} />
+              <PodCard t={t} minute={minute} closed={closed} unread={unreadBy[t.row.pod.id] ?? 0} />
             </li>
           ))}
         </ul>
       ) : (
-        <div className="mx-auto max-w-[1200px] px-gutter pt-s6 lg:px-s12">
+        <div className="mx-auto max-w-[1280px] px-gutter pt-s6 lg:px-s12">
           <div className="pods-card flex flex-col items-start gap-s3 p-s6">
             <PodOrb hue="ember" people={8} size={48} open={false} />
             <h2 className="text-[20px] font-semibold tracking-[-0.015em] text-ink">No pods yet</h2>

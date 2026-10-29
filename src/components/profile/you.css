@@ -18,7 +18,8 @@
 }
 @media (min-width: 1024px) {
   .yo-wrap {
-    padding: 0 var(--s16);
+    /* the shared page-head inset (shell/page-header.tsx) */
+    padding: 0 var(--s12);
   }
 }
 
@@ -36,7 +37,7 @@
 @media (min-width: 1024px) {
   .yo-head,
   .yo-head-back {
-    padding-top: 40px;
+    padding-top: var(--s12);
   }
 }
 .yo-back {

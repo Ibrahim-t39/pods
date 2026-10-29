@@ -16,6 +16,9 @@ import { ResponsiveSheet } from "@/components/ui/sheet";
 import { directionsUrl } from "@/components/planner/plan-utils";
 import { cn } from "@/lib/cn";
 import type { Venue } from "@/lib/types";
+import { WidenGlyph } from "@/components/brand";
+import { useDb } from "@/lib/db/hooks";
+import { widenedLine } from "./model";
 
 export type PodSheet = null | "menu" | "place" | "giveup" | "leave" | "report" | "talk" | "members" | "memories";
 
@@ -74,8 +77,15 @@ export function PodMenuSheet({
   unread?: number;
 }) {
   const hasPlan = !!whyHref || !!venue || canGiveUp;
+  const widened = useDb((db) => widenedLine(db, podId));
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title={title}>
+      {widened && (
+        <p className="mb-s6 flex items-start gap-s2 text-[15px] leading-[1.4] text-ink-2">
+          <WidenGlyph size={18} className="mt-0.5 shrink-0 text-grove-text" />
+          <span>{widened}</span>
+        </p>
+      )}
       {hasPlan && (
         <Group>
           {whyHref && <Row icon="why" tone="plan" label="Why this plan" href={whyHref} onClick={() => onOpenChange(false)} />}

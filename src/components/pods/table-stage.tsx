@@ -326,7 +326,7 @@ function PlanCard({ top, foot }: { top: ReactNode; foot: ReactNode }) {
   return (
     <div className="pods-card flex flex-col overflow-hidden">
       <div className="flex-1">{top}</div>
-      {foot && <div className="flex min-h-[68px] items-center justify-between gap-s3 border-t border-line px-s5 py-s3">{foot}</div>}
+      {foot && <div className="flex min-h-[68px] flex-wrap items-center justify-between gap-x-s3 gap-y-s2 border-t border-line px-s5 py-s3 [&>*:last-child]:ml-auto">{foot}</div>}
     </div>
   );
 }

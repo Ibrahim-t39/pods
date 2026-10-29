@@ -13,7 +13,7 @@ import { useDb, useRepo } from "@/lib/db/hooks";
 import { inviteUrl } from "@/lib/platform/invite";
 import { podLabel } from "@/lib/platform/selectors";
 import { Frame } from "./frame";
-import { roomTables } from "./model";
+import { podHue, podOnDeck } from "@/components/profile/hue";
 import { PodOrb } from "./pod-orb";
 
 /** "host/i/JjyyQXz4": the link people read, without the scheme; a local host shows just the code. */
@@ -30,12 +30,8 @@ function shortLink(url: string): string {
 export function Invite() {
   const podId = useSearchParams().get("pod");
   const podName = useDb(useCallback((db) => (podId && db.pods[podId] ? podLabel(db, db.pods[podId]) : null), [podId]));
-  const hue = useDb(
-    useCallback(
-      (db) => (podId ? (roomTables(db, Date.now()).find((t) => t.row.pod.id === podId)?.hue ?? (db.pods[podId]?.type === "community" ? "grove" : "ember")) : "ember"),
-      [podId],
-    ),
-  );
+  const hue = useDb(useCallback((db) => podHue(db, podId), [podId]));
+  const onDeck = useDb(useCallback((db) => podOnDeck(db, podId), [podId]));
   // a pod you name: its people; no pod: you plus the friend you are bringing
   const people = useDb(useCallback((db) => (podId && db.pods[podId] ? db.memberships.filter((m) => m.pod_id === podId && !m.left_at).length : 1), [podId]));
   const repo = useRepo();
@@ -78,7 +74,7 @@ export function Invite() {
     <Frame over={podName ?? "Invite"} line={podName ? "Save a friend a seat." : "Bring a friend."}>
       <div className="flex flex-col items-start gap-s8 lg:flex-row lg:gap-s12 lg:items-center">
         <motion.span initial={reduce ? false : { scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={GENTLE} className="block">
-          <PodOrb hue={hue} people={Math.min(10, people + 1)} inCount={people} size={120} />
+          <PodOrb hue={hue} people={Math.min(10, people + 1)} inCount={people} size={120} open={!onDeck} />
         </motion.span>
         <div className="flex w-full max-w-[420px] flex-col gap-s4">
           <button

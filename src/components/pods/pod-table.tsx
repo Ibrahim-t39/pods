@@ -22,7 +22,7 @@ import { useDb, useHydrated } from "@/lib/db/hooks";
 import { membership, podMembers } from "@/lib/db/selectors";
 import { useClock } from "@/lib/time/clock";
 import { LeavePodSheet } from "./leave-pod-sheet";
-import { roomTables } from "./model";
+import { opensAfter, roomTables } from "./model";
 import { PodOrb } from "./pod-orb";
 import { GiveUpSheet, PlaceSheet, PodMenuSheet, type PodSheet } from "./pod-menu";
 import { MembersSheet, MemoriesSheet } from "./pod-sheets";
@@ -192,14 +192,16 @@ function PodTableInner({ podId }: { podId: string }) {
     );
   }
 
-  const canGiveUp = !!view && !!view.targetId && view.imIn && ["proposed", "in", "locked", "starting_soon"].includes(view.phase);
+  // one pod at a time (founder r1029): a pod on deck is read-only until your first pod has met. No planner here.
+  const onDeck = !here.open;
+  const canGiveUp = !onDeck && !!view && !!view.targetId && view.imIn && ["proposed", "in", "locked", "starting_soon"].includes(view.phase);
   // Who's in sits beside the plan while there is a plan (or a call to plan one); the repeat loop's cards take the row
-  const ringMode = !!stage.foot;
+  const ringMode = !onDeck && !!stage.foot;
   const menuBtn = <GlyphButton icon="more" label={`${name} menu`} onClick={() => setSheet("menu")} className="max-lg:hidden" />;
 
   return (
     <PodTableContext.Provider value={api}>
-      <Stage light={stage.light} />
+      <Stage light={onDeck ? "paper" : stage.light} />
       <div
         className="pods-pod"
         aria-label={`${name} table`}
@@ -229,10 +231,15 @@ function PodTableInner({ podId }: { podId: string }) {
               kind={here.row.pod.type === "community" ? "Community pod" : "Interest pod"}
               going={view?.going.length ?? 0}
               held={here.held}
+              open={!onDeck}
               actions={menuBtn}
             />
           </div>
-          {ringMode ? (
+          {onDeck ? (
+            <div className="pods-pod-plan pods-pod-plan-wide">
+              <OnDeckCard opens={opensAfter(tables, minute)} />
+            </div>
+          ) : ringMode ? (
             <>
               <div className="pods-pod-plan">{stage.head}</div>
               <div className="pods-pod-who">{stage.object}</div>
@@ -253,10 +260,11 @@ function PodTableInner({ podId }: { podId: string }) {
             onMute={() => void toggleMute()}
             onSheet={(s) => setSheet(s)}
             onTalk={api.openTalk}
+            readOnly={onDeck}
           />
         </div>
       </div>
-      {stage.overlay}
+      {!onDeck && stage.overlay}
 
       {docked && <TalkPanel podId={podId} podName={name} hue={hue} focusKey={focusTalk} onMembers={() => setSheet("members")} />}
       <TalkSheet open={!docked && sheet === "talk"} onOpenChange={(o) => (o ? setSheet("talk") : close())} podId={podId} podName={name} hue={hue} onMembers={() => setSheet("members")} />
@@ -292,5 +300,15 @@ function PodTableInner({ podId }: { podId: string }) {
       <ReportSheet open={sheet === "report"} onOpenChange={(o) => (o ? setSheet("report") : close())} target={{ kind: "pod", podId, podName: name }} />
       <LeavePodSheet open={sheet === "leave"} onOpenChange={(o) => (o ? setSheet("leave") : close())} podId={podId} podName={name} />
     </PodTableContext.Provider>
+  );
+}
+
+/** A pod on deck: one line, one chip. Talk is read-only and nothing is planned here until the first pod has met. */
+function OnDeckCard({ opens }: { opens: string }) {
+  return (
+    <div className="pods-card flex flex-col items-start gap-s3 p-s5" data-testid="on-deck">
+      <span className="rounded-full bg-sunken px-s3 py-1 text-[13px] font-semibold text-ink-2">{opens}</span>
+      <p className="font-display text-[24px] leading-[1.15] font-semibold tracking-[-0.02em] text-ink lg:text-[28px]">Your first pod meets first. This one plans next.</p>
+    </div>
   );
 }

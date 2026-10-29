@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useCallback, type ReactNode } from "react";
-import { Disc, DiscStack, WidenGlyph, type PodHueKey } from "@/components/brand";
+import { Disc, DiscStack, type PodHueKey } from "@/components/brand";
 import { Icon, type IconName } from "@/components/icons";
 import { buttonVariants } from "@/components/ui/button";
 import { useDb } from "@/lib/db/hooks";
@@ -13,40 +13,26 @@ import { podMemories } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
 import { formatRelative } from "@/lib/time/format";
 import { cn } from "@/lib/cn";
-import { firstName } from "./model";
+import { firstName, podTopicLabel, timeTogether, togetherLine } from "./model";
 import type { PodSheet } from "./pod-menu";
 import { PodOrb } from "./pod-orb";
 
-export function PodIdentity({ podId, name, hue, kind, going, held, actions }: { podId: string; name: string; hue: PodHueKey; kind: string; going: number; held: number; actions?: ReactNode }) {
+export function PodIdentity({ podId, name, hue, going, actions, open = true }: { podId: string; name: string; hue: PodHueKey; kind?: string; going: number; held?: number; actions?: ReactNode; open?: boolean }) {
   const size = useDb(useCallback((db) => podMembers(db, podId).length, [podId]));
-  // beat 3: a community pod widened from a smaller group says so, once, under its name
-  const widened = useDb(
-    useCallback((db) => {
-      const w = db.pods[podId]?.widened_from;
-      if (!w || w.kind !== "group") return null;
-      const entry = (db.plannerCache as Record<string, { output?: unknown }>)[`${podId}:widen_explainer`];
-      const m = ((entry?.output as { body?: string } | undefined)?.body ?? "").match(/Only (\d+) (\S+)/);
-      return `${m ? `Only ${m[1]} ${m[2]} nearby` : `Not many ${w.from}s nearby`}. Widened to ${w.to}.`;
-    }, [podId]),
-  );
+  const topic = useDb(useCallback((db) => (db.pods[podId] ? podTopicLabel(db.pods[podId]) : ""), [podId]));
+  // one quiet line, only once you have been together (checked in): "1 hangout · 2 hours together"
+  const together = useDb(useCallback((db) => togetherLine(timeTogether(db, { podId })), [podId]));
   return (
-    <div>
-      <div className="flex items-center gap-s3">
-        <PodOrb hue={hue} people={size} inCount={going} size={48} />
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate font-display text-[24px] leading-[1.15] font-semibold tracking-[-0.02em] text-ink lg:text-[28px]">{name}</h1>
-          <p className="text-label text-ink-2">
-            {kind} · {size} people{held > 0 ? ` · ${held} ${held === 1 ? "hangout" : "hangouts"}` : ""}
-          </p>
-        </div>
-        {actions}
-      </div>
-      {widened && (
-        <p className="mt-s3 flex items-start gap-s2 text-[14px] leading-[1.35] text-ink-2">
-          <WidenGlyph size={16} className="mt-0.5 shrink-0 text-grove-text" />
-          <span>{widened}</span>
+    <div className="flex items-center gap-s3">
+      <PodOrb hue={hue} people={size} inCount={going} size={48} open={open} />
+      <div className="min-w-0 flex-1">
+        <h1 className="truncate font-display text-[24px] leading-[1.15] font-semibold tracking-[-0.02em] text-ink lg:text-[28px]">{name}</h1>
+        <p className="truncate text-label text-ink-2">
+          {topic} · {size} people
         </p>
-      )}
+        {together && <p className="truncate text-[13px] leading-[1.3] text-ink-3">{together}</p>}
+      </div>
+      {actions}
     </div>
   );
 }
@@ -75,7 +61,9 @@ export function PodSections({
   onMute,
   onSheet,
   onTalk,
+  readOnly = false,
 }: {
+  readOnly?: boolean;
   podId: string;
   hue: PodHueKey;
   name: string;
@@ -102,7 +90,7 @@ export function PodSections({
         (db.messages[podId] ?? [])
           .filter((m) => m.kind === "text" && m.user_id)
           .slice(-3)
-          .map((m) => ({ id: m.id, you: m.user_id === db.me, who: firstName(db, m.user_id), text: m.text, at: m.created_at })),
+          .map((m) => ({ id: m.id, you: m.user_id === db.me, who: m.user_id && m.user_id === db.me ? (db.users[m.user_id]?.first_name ?? "You") : firstName(db, m.user_id), text: m.text, at: m.created_at })),
       [podId],
     ),
   );
@@ -116,7 +104,7 @@ export function PodSections({
           title="Talk"
           action={
             <button type="button" onClick={onTalk} className={linkCls}>
-              {unread > 0 ? `${unread} new` : "Open"}
+              {unread > 0 ? `${unread} new` : "Open chat"}
             </button>
           }
         >
@@ -139,7 +127,7 @@ export function PodSections({
             ) : (
               <span className="text-[15px] text-ink-2">No messages yet. Say hi to the pod.</span>
             )}
-            <span className="mt-s3 flex h-11 items-center rounded-full bg-sunken px-s4 text-[15px] text-ink-2">Message {name}</span>
+            {!readOnly && <span className="mt-s3 flex h-11 items-center rounded-full bg-sunken px-s4 text-[15px] text-ink-2">Message {name}</span>}
           </button>
         </Section>
       )}

@@ -71,7 +71,8 @@ export function lockSuggestion(d: D, s: Draft<HangoutSuggestion>, now: string): 
   hostMessage(d, s.pod_id, `Plan locked: ${going} of ${size} in`, now, "system", hangoutId);
   hostMessage(
     d, s.pod_id,
-    s.round >= 2 ? `Round two. Locked. ${going} of you are in for ${shortWhen(s.plan_json.starts_at)}.` : `It's on. ${going} people are in. We'll remind everyone the day before and 2 hours before.`,
+    // count-free: the live count moves after this line is posted, so the line never states one
+    s.round >= 2 ? `Round two. Locked. See you ${shortWhen(s.plan_json.starts_at)}. We'll remind everyone the day before and 2 hours before.` : "It's on. We'll remind everyone the day before and 2 hours before.",
     now, "host", hangoutId,
   );
   notifyMembers(d, s.pod_id, "plan_locked", podLabelForNotice(d, s.pod_id), s.round >= 2 ? "Round two is locked." : `It's on: ${going} people are in.`, `/app/pods/${s.pod_id}`, now);
