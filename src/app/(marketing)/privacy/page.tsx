@@ -32,19 +32,19 @@ export default function PrivacyPage() {
         {
           id: "ai",
           label: "AI",
-          line: "Plans from free times. Off in Your seat.",
+          line: "Plans from free times. Turn it off in Settings.",
           more: (
             <p>
               AI plans each hangout from the pod&apos;s free times and a list of public places. It does not get your name or number. The AI is
-              Claude, made by Anthropic. Turn it off in Your seat and hangouts are planned from free times alone.
+              Claude, made by Anthropic. Turn it off in Settings and hangouts are planned from free times alone.
             </p>
           ),
         },
         {
           id: "delete",
           label: "Delete",
-          line: "Everything, from Your seat.",
-          more: <p>Delete my seat removes your account and what you told us.</p>,
+          line: "Delete everything from Settings.",
+          more: <p>Delete my account, in Settings, removes your account and everything you told us.</p>,
         },
         { id: "write", label: "Write to us", line: CONTACT_EMAIL, href: CONTACT_HREF },
       ]}

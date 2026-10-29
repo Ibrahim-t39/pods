@@ -59,7 +59,7 @@ export function ModeScreen() {
   return (
     <YouPage>
       <div data-allow-mode>
-        <YouHead back="/app/settings" backLabel="Settings" title="Mode" sub="Pick which world the app shows." />
+        <YouHead back="/app/settings" backLabel="Settings" title="Mode" sub="Choose what the app shows." />
       </div>
       <div className="yo-wrap yo-body">
         <div className="max-w-[720px]">

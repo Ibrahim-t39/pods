@@ -115,7 +115,7 @@ export function PlanDetails({
     if (!t) return;
     const r = await repo.rsvp(t, "not_going");
     if (r.ok)
-      notify("Seat given back.", {
+      notify("You're out for this one.", {
         undo: () => void repo.rsvp(t, "going"),
         duration: 6000,
       });

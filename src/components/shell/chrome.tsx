@@ -99,7 +99,7 @@ export function SeatGlyph() {
   const me = useMe();
   const initial = (me?.first_name ?? "").slice(0, 1).toUpperCase();
   return (
-    <Link href="/app/profile" aria-label="Your seat" data-seat className="pressable inline-flex size-11 items-center justify-center rounded-full outline-offset-2">
+    <Link href="/app/profile" aria-label="Your profile" data-seat className="pressable inline-flex size-11 items-center justify-center rounded-full outline-offset-2">
       <span data-nc className="grid size-9 place-items-center rounded-full bg-spark text-[17px] leading-none font-semibold text-on-spark">
         {initial}
       </span>

@@ -56,7 +56,7 @@ function Copy({ kicker, line, sub }: { kicker?: string; line: React.ReactNode; s
 function People() {
   return (
     <section className="ls-scene ls-people" aria-label="Everyone starts new">
-      <Copy line="Everyone starts new." sub="Three people. Three worlds." />
+      <Copy line="Everyone starts new." sub="Three people, all new in town." />
       <div className="ls-obj ls-trio" aria-hidden>
         {(["ember", "signal", "grove"] as const).map((h, i) => (
           <span key={h} className="ls-grow" style={{ ["--i" as string]: i }}>
@@ -227,7 +227,7 @@ function Repeat() {
   const yes = voted || calm ? 4 : 0;
   return (
     <section className="ls-scene ls-repeat" aria-label="Run it back">
-      <Copy kicker="Repeat" line="Pods asks for round two." sub="Same people. Two weeks later." />
+      <Copy kicker="Repeat" line="Then the pod meets again." sub="Same people. Two weeks later." />
       <div className="ls-obj ls-in" ref={voteRef}>
         <div className="ls-vote">
           <p className="ls-vote-q">Run it back?</p>

@@ -307,7 +307,7 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
     const t = view.hangout?.id ?? target;
     if (!t) return;
     const r = await repo.rsvp(t, "not_going");
-    if (r.ok) notify("Seat given back.", { undo: () => void repo.rsvp(t, "going"), duration: 6000 });
+    if (r.ok) notify("You're out for this one.", { undo: () => void repo.rsvp(t, "going"), duration: 6000 });
   };
   const planOne = async () => {
     setFailed(false);

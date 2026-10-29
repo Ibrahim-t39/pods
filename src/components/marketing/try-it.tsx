@@ -335,7 +335,7 @@ function ImIn() {
   const { n, locked, imIn, pod } = useTry();
   return (
     <div id="in" className="tr-beat">
-      <Head k="I'm in" line={locked ? "Locked. It's on." : "Four in locks it."} sub={locked ? `${pod.what}, ${pod.when}.` : "Three already said yes."} />
+      <Head k="I'm in" line={locked ? "Locked. It's on." : "It locks when four are in."} sub={locked ? `${pod.what}, ${pod.when}.` : "Three already said yes."} />
       <div className="tr-obj tr-inobj">
         <Huddle n={n} close={locked ? 1 : 0} names={["Jordan", "Amara", "Theo", "You"]} className="tr-hd" />
         <div className="tr-in-row">
@@ -358,7 +358,7 @@ function Repeat() {
   const all = votes.length === 4;
   return (
     <div id="repeat" className="tr-beat">
-      <Head k="Repeat" line={all ? "Hangout #2 is on." : "After: run it back?"} sub={all ? `Same people. ${pod.next}.` : "Pods asks, so nobody has to."} />
+      <Head k="Repeat" line={all ? "Hangout #2 is on." : "Afterwards: run it back?"} sub={all ? `Same people. ${pod.next}.` : "Pods asks for you, so nobody has to."} />
       <div className="tr-obj tr-repobj">
         <Huddle n={4} close={all ? 1.2 : 1} names={["Jordan", "Amara", "Theo", "You"]} className="tr-hd tr-hd-sm" />
         <div className="tr-vote">

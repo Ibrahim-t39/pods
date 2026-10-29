@@ -70,7 +70,7 @@ export function aiReply(db: DbState, podId: ID, question: string, nowMs: number)
       const need = Math.max(0, view!.threshold - going.length);
       const text = going.length
         ? `${going.length} of ${view!.size} are in: ${list(going)}.${view!.locked ? " It's locked." : need ? ` ${need} more and it's locked.` : ""}`
-        : `Nobody's tapped in yet. ${view!.threshold} people locks it.`;
+        : `Nobody's in yet. It locks when ${view!.threshold} people are in.`;
       return { intent, facts, text, chips: view!.imIn ? [AI_CHIPS.bring] : [AI_CHIPS.rain, AI_CHIPS.bring] };
     }
     case "cheaper": {

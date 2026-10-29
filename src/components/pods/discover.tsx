@@ -89,7 +89,7 @@ export function Discover() {
                 ? `Met ${met} times so far`
                 : r.verdict === "join"
                   ? `${r.seatsOpen} seats open`
-                  : "Full, you can ask";
+                  : "Full · ask to join";
           return { ...r, known, faces, title: h?.title ?? s?.plan_json.event ?? null, free: venue ? venue.cost_per_person === 0 && !venue.cost_unconfirmed : false, met, why };
         });
       },

@@ -57,7 +57,7 @@ export function usePlanActions(podId: ID) {
       }
       if (!opts.silent) {
         const target = r.data.locked ? (Object.values(useStore.getState().db.hangouts).find((h) => h.suggestion_id === targetId)?.id ?? targetId) : targetId;
-        toast(status === "going" ? "You're in." : "Seat given back.", {
+        toast(status === "going" ? "You're in." : "You're out for this one.", {
           duration: 6000,
           action: { label: "Undo", onClick: () => void repo.rsvp(target, status === "going" ? "not_going" : "going") },
         });

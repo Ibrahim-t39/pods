@@ -74,7 +74,7 @@ export function SafetyPage() {
 
   return (
     <YouPage>
-      <YouHead title="If something’s off" sub="Pods can’t send help. In danger, call 911 first." />
+      <YouHead title="If something’s off" sub="If you’re in danger, call 911 first. Pods can’t send help." />
       <div className="yo-wrap yo-body">
         <div className="yo-cols" data-even>
           <div>

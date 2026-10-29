@@ -96,7 +96,7 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
       setBusy(false);
       const e = r.error as { code: string; field?: string };
       if (e.code === "UNDERAGE") return draft.set({ minorBlocked: true });
-      if (e.code === "BANNED") return setMsg("This number can't hold a seat.");
+      if (e.code === "BANNED") return setMsg("This number can't be used. Try another.");
       setWrong((n) => n + 1);
       setCode("");
       setMsg(e.field === "locked" ? "Too many tries. Get a new code." : null);
@@ -200,7 +200,7 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
     <FlowStep
       screen="number"
       back={signin ? "/" : BACK.seat}
-      label={signin ? "Sign in" : "Keep your seat"}
+      label={signin ? "Sign in" : "Your number"}
       head={
         <form
           onSubmit={(e) => {
@@ -209,9 +209,9 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
           }}
         >
           <Line size="lg" className="max-w-[9ch]">
-            {signin ? "Welcome back." : "Keep your seat."}
+            {signin ? "Welcome back." : "Add your number."}
           </Line>
-          {!signin && <Sub>A text code holds it.</Sub>}
+          {!signin && <Sub>We text you a code to confirm it. Nobody else sees it.</Sub>}
           <label className="mt-s8 block">
             <span className="pods-ob-phone-label">Mobile number</span>
             <input

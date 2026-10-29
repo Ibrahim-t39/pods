@@ -46,7 +46,7 @@ function Copy({ line, sub, i = 0 }: { line: React.ReactNode; sub?: React.ReactNo
 function People() {
   return (
     <section className="ps-scene ps-people" aria-label="Everyone starts new">
-      <Copy line="Everyone starts new." sub="Three people. Three worlds." />
+      <Copy line="Everyone starts new." sub="Three people, all new in town." />
       <div className="ps-obj ps-trio-apart" aria-hidden>
         {(["ember", "signal", "grove"] as const).map((h, i) => (
           <span key={h} className="ps-grow" style={{ ["--i" as string]: i }}>
@@ -224,7 +224,7 @@ function Repeat() {
   const yes = voted || calm ? 4 : 0;
   return (
     <section className="ps-scene ps-repeat" aria-label="Run it back">
-      <Copy line="Pods asks for round two." sub="Same people. Two weeks later." />
+      <Copy line="Then the pod meets again." sub="Same people. Two weeks later." />
       <div className="ps-obj" ref={voteRef}>
         <div className="ps-vote">
           <p className="ps-vote-q">Run it back?</p>

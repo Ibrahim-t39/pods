@@ -188,7 +188,7 @@ function useActions() {
     if (!r.ok) return notify.error("Not sent.");
     if (s === "going" && r.data.locked)
       return notify.success(`Locked. ${p.podName} is on.`);
-    notify(s === "going" ? `You're in. ${p.podName}.` : "Seat given back.", {
+    notify(s === "going" ? `You're in. ${p.podName}.` : "You're out for this one.", {
       undo: () => void repo.rsvp(p.id, s === "going" ? "not_going" : "going"),
     });
   };

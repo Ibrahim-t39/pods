@@ -20,7 +20,7 @@ export function NotFoundView({ inApp = false }: { inApp?: boolean }) {
       head={
         <>
           <Line size="lg">Not found.</Line>
-          <p className="mt-s4 text-body-lg text-ink-2">This link goes nowhere. Your seats are kept.</p>
+          <p className="mt-s4 text-body-lg text-ink-2">This page doesn't exist. Your pods and plans are safe.</p>
         </>
       }
       object={<EmptyTable />}
@@ -43,8 +43,8 @@ export function ErrorView({ onRetry }: { onRetry: () => void; inApp?: boolean; d
       chrome={<Chrome left="mark" />}
       head={
         <>
-          <Line size="lg">Something slipped.</Line>
-          <p className="mt-s4 text-body-lg text-ink-2">Your seats are kept.</p>
+          <Line size="lg">Something went wrong.</Line>
+          <p className="mt-s4 text-body-lg text-ink-2">Your pods and plans are safe. Try again in a moment.</p>
         </>
       }
       object={<EmptyTable />}

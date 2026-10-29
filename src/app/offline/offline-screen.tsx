@@ -15,7 +15,7 @@ export function OfflineScreen() {
       head={
         <>
           <Line size="lg">Offline.</Line>
-          <p className="mt-s4 text-body-lg text-ink-2">Your seats are kept.</p>
+          <p className="mt-s4 text-body-lg text-ink-2">Your pods and plans are safe. We'll catch up when you're back online.</p>
         </>
       }
       object={<span aria-hidden className="block size-48 rounded-full border-[1.5px] border-dashed border-line-2 lg:size-80" />}

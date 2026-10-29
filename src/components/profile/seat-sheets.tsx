@@ -51,7 +51,7 @@ export function LikesSheet({ open, onClose }: SheetProps) {
       // one filled primary per sheet: while a new pod asks Join, Done steps back to the quiet pill
       footer={<SheetFoot right={<Button variant={asking ? "secondary" : "primary"} onClick={onClose}>Done</Button>} />}
     >
-      <PageName>Your seat</PageName>
+      <PageName>You</PageName>
       <LikesPicker onAsking={setAsking} />
       <div className="mt-s8 flex items-center gap-s4 border-t border-line pt-s4">
         {photo ? (
@@ -217,7 +217,7 @@ export function FreeSheet({ open, onClose }: SheetProps) {
   const toggle = useToggleSlot();
   return (
     <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="When you’re free" footer={done(onClose)}>
-      <PageName>Your seat</PageName>
+      <PageName>You</PageName>
       <SheetLine className="-mt-s3 mb-s6">The AI plans hangouts inside these times.</SheetLine>
       <FreeGrid slots={me?.availability ?? []} onToggle={toggle} />
     </ResponsiveSheet>
@@ -268,7 +268,7 @@ export function CommunitySheet({ open, onClose }: SheetProps) {
       title="Community pods"
       footer={<SheetFoot right={<Button variant={asking ? "secondary" : "primary"} onClick={onClose}>Done</Button>} />}
     >
-      <PageName>Your seat</PageName>
+      <PageName>You</PageName>
       <SheetLine className="-mt-s3 mb-s4">Only members see you there. Change it anytime.</SheetLine>
       <CommunityPicker onAsking={setAsking} />
     </ResponsiveSheet>
@@ -352,7 +352,7 @@ export function TextsSheet({ open, onClose }: SheetProps) {
 
   return (
     <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="Text me" footer={done(onClose)}>
-      <PageName>Your seat</PageName>
+      <PageName>You</PageName>
       <Rows label="Text me">
         {TEXT_KINDS.map((k) => (
           <ChoiceRow key={k.key} on={sms && prefs.texts[k.key]} label={k.label} onToggle={() => toggle(k.key)} />
@@ -368,7 +368,7 @@ export function AiSheet({ open, onClose }: SheetProps) {
   const { prefs, save } = useSeatPrefs();
   return (
     <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="AI plans" footer={done(onClose)}>
-      <PageName>Your seat</PageName>
+      <PageName>You</PageName>
       <SheetLine className="-mt-s3 mb-s4">Picks a time and place from free times.</SheetLine>
       <Rows label="AI plans">
         <ChoiceRow safe on={prefs.claude} label={prefs.claude ? "On" : "Off"} onToggle={() => save({ ...prefs, claude: !prefs.claude })} />

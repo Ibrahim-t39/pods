@@ -26,7 +26,7 @@ export function shortLike(id: string, label: string) {
 
 /** "Into basketball, guitar." · "Into basketball, guitar, +2." · "Into nothing yet." */
 export function likesLine(likes: { id: string; label: string }[]) {
-  if (!likes.length) return "Into nothing yet.";
+  if (!likes.length) return "No interests added yet.";
   const words = likes.map((l) => shortLike(l.id, l.label));
   if (words.length <= 2) return `Into ${words.join(", ")}.`;
   return `Into ${words.slice(0, 2).join(", ")}, +${words.length - 2}.`;

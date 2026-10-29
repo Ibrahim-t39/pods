@@ -126,7 +126,7 @@ export function SettingsScreen() {
                 router.replace("/");
               }}
             />
-            <Row icon="trash" tone="danger" label="Delete my seat" hint="Removes your profile and pods for good" onClick={() => go("delete")} />
+            <Row icon="trash" tone="danger" label="Delete my account" hint="Removes your profile and pods for good" onClick={() => go("delete")} />
           </Card>
         </Section>
       </motion.div>
@@ -154,7 +154,7 @@ export function SettingsScreen() {
         onDeleted={() => {
           leaving.current = true;
           router.replace("/");
-          notify("Your seat is cleared.");
+          notify("Your account is deleted.");
         }}
       />
     </YouPage>

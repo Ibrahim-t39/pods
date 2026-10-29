@@ -48,7 +48,7 @@ export function DeleteAccountFlow({ open, onOpenChange, onDeleted, onBefore }: {
     <ResponsiveSheet
       open={open}
       onOpenChange={onOpenChange}
-      title="Delete my seat?"
+      title="Delete your account?"
       dismissible={!busy}
       footer={
         <SheetFoot
@@ -61,7 +61,7 @@ export function DeleteAccountFlow({ open, onOpenChange, onDeleted, onBefore }: {
         />
       }
     >
-      <SheetLine>Name, number, times. All gone.</SheetLine>
+      <SheetLine>Your name, number, interests and free times are removed for good.</SheetLine>
     </ResponsiveSheet>
   );
 }
@@ -73,7 +73,7 @@ export function AccountDeleted() {
       <Stage light="dusk" />
       <Page
         chrome={<Chrome left="none" />}
-        head={<Line size="lg">Your seat is cleared.</Line>}
+        head={<Line size="lg">Your account is deleted.</Line>}
         object={<TableRing size={200} seats={[{ open: true }, { open: true }, { open: true }, { open: true }]} names={false} youWaiting={false} dim />}
         foot={
           <>
