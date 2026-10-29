@@ -25,7 +25,7 @@ const browser = await chromium.launch({ executablePath: CHROME });
 for (const [vp, opts] of Object.entries(VIEWPORTS)) {
   const ctx = await browser.newContext(opts);
   const page = await ctx.newPage();
-  page.setDefaultTimeout(60_000);
+  page.setDefaultTimeout(Number(process.env.SHOT_TIMEOUT ?? 60_000));
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message.slice(0, 160)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text().slice(0, 160)));
