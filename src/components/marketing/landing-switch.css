@@ -8,3 +8,9 @@
 }
 .landing-switch a { display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border-radius: 999px; color: var(--ink-2); text-decoration: none; }
 .landing-switch a[aria-current="page"] { background: var(--ink); color: #fff; }
+.landing-switch-x {
+  display: inline-grid; place-items: center; width: 30px; min-height: 30px; margin-left: 2px;
+  border: 0; border-radius: 999px; background: transparent; color: var(--ink-2);
+  font-size: 18px; line-height: 1; cursor: pointer;
+}
+.landing-switch-x:hover { background: rgb(0 0 0 / .06); }
