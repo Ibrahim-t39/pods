@@ -1,6 +1,6 @@
 // Platform §N: the information architecture as data, so the phone bar, the laptop rail, the command palette (⌘K) and
 // the tests agree. Pure. The shell (core area) renders it; the labels are final copy (one word each).
-export type DestinationId = "home" | "pods" | "plans" | "inbox" | "you" | "discover" | "search" | "people" | "safety" | "settings";
+export type DestinationId = "home" | "pods" | "plans" | "calendar" | "inbox" | "you" | "discover" | "search" | "people" | "safety" | "settings";
 
 export interface Destination {
   id: DestinationId;
@@ -17,6 +17,7 @@ export const DESTINATIONS: Destination[] = [
   { id: "home", label: "Home", href: "/app/home", key: "h", slot: "primary", match: /^\/app\/home(\/|$)/ },
   { id: "pods", label: "Pods", href: "/app/pods", key: "p", slot: "primary", match: /^\/app\/pods(\/|$)/ },
   { id: "plans", label: "Plans", href: "/app/plans", key: "l", slot: "primary", match: /^\/app\/(plans|events)(\/|$)/ },
+  { id: "calendar", label: "Calendar", href: "/app/calendar", key: "c", slot: "rail", match: /^\/app\/calendar(\/|$)/ },
   { id: "inbox", label: "Inbox", href: "/app/inbox", key: "i", slot: "primary", match: /^\/app\/inbox(\/|$)/ },
   { id: "you", label: "You", href: "/app/profile", key: "y", slot: "primary", match: /^\/app\/profile(\/|$)/ },
   { id: "discover", label: "Discover", href: "/app/discover", key: "d", slot: "rail", match: /^\/app\/discover(\/|$)/ },

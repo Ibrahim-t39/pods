@@ -17,7 +17,7 @@ import { buildSeedPolls } from "./polls";
 import { POD_DEFS } from "./pods";
 import { addDays, dateOf } from "./time";
 
-export const SEED_VERSION = "u2-3-sat10-polls";
+export const SEED_VERSION = "u2-3-sat10-polls-aichat";
 
 export function buildSeed(anchor: string): DbState {
   assertVenues(VENUES);

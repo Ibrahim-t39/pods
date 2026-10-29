@@ -35,6 +35,8 @@ import { formatDayDivider } from "@/lib/time/format";
 import { REACTIONS, type Memory, type Message, type ReactionKey } from "@/lib/types";
 import { dayWord, firstName, shortDay, shortTime } from "./model";
 import { useLastRead } from "./use-last-read";
+import { useStore } from "@/lib/db/store";
+import { AI_CHIPS, AI_MENTION, aiReply, asksAi } from "@/lib/planner/chat-ai";
 import "./chat-room.css";
 import { formatInTimeZone } from "date-fns-tz";
 import { TZ } from "@/lib/time/tz";
@@ -364,6 +366,31 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
     const r = await repo.sendMessage(podId, body, cid, reply ? { replyTo: reply } : undefined);
     if (r.ok) setPending((p) => p.filter((x) => x.client_id !== cid));
     else setPending((p) => p.map((x) => (x.client_id === cid ? { ...x, delivery: "failed" } : x)));
+    if (r.ok && asksAi(body)) void askAi(body);
+  }
+
+  // "@AI …": the AI answers once, from this pod's own plan (rule-based; /api/chat-ai may rephrase with Claude)
+  const [thinking, setThinking] = useState(false);
+  async function askAi(question: string) {
+    setThinking(true);
+    const draft = aiReply(useStore.getState().db, podId, question, Date.now());
+    let text = draft.text;
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 4000);
+    const wait = new Promise((ok) => setTimeout(ok, 900)); // a beat, so the answer reads as a reply, not an echo
+    try {
+      const res = await fetch("/api/chat-ai", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: question.slice(0, 400), facts: draft.facts.slice(0, 8), draft: draft.text }), signal: ctl.signal });
+      const j = res.ok ? ((await res.json()) as { text?: string | null }) : null;
+      if (j?.text) text = j.text;
+    } catch {
+      // offline or slow: the grounded draft stands
+    } finally {
+      clearTimeout(t);
+    }
+    await wait;
+    await repo.postAiMessage(podId, text, draft.chips);
+    setThinking(false);
+    if (draft.intent === "other" && ai) ai.run();
   }
 
   // offline: resend what failed once the connection is back
@@ -426,6 +453,7 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
   };
 
   const spoke = rows.some((r) => r.who === meId);
+  const lastAiKey = [...rows].reverse().find((r) => r.t === "msg" && r.m.kind === "host")?.key;
   const typingName = typing && typing.userId !== meId ? (names[typing.userId] ?? null) : null;
   const generating = actions.genKind !== null;
   const genStep = actions.genSteps[actions.genSteps.length - 1]?.label;
@@ -600,22 +628,35 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
                   <PlanLine id={r.m.ref_id} text={r.m.text} minute={minute} podId={podId} onOpen={(href) => (onOpenChange(false), setTimeout(() => router.push(href), 60))} />
                 ) : r.m.kind === "checkin_prompt" ? (
                   <CheckInLine hangoutId={r.m.ref_id} />
-                ) : (
-                  <EventLine
+                ) : r.m.kind === "host" ? (
+                  <AiLine
                     text={r.m.text}
-                    kind={r.m.kind}
-                    replies={r.m.kind === "host" && !spoke && podOpen && !paused ? r.m.quick_replies : undefined}
+                    time={shortTime(r.at)}
+                    joined={!!prev && prev.t === "msg" && prev.m.kind === "host" && Date.parse(r.at) - Date.parse(prev.at) < RUN_MS}
+                    replies={podOpen && !paused ? aiChips(r.m.quick_replies, r.key === lastAiKey, spoke) : undefined}
                     onReply={(t) => void send(t)}
                   />
+                ) : (
+                  <EventLine text={r.m.text} kind={r.m.kind} />
                 )}
               </motion.div>
             </div>
           );
         })}
         <AnimatePresence initial={false}>
+          {thinking && !generating && (
+            <motion.div key="ai-think" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={SNAPPY} className="mt-s3 flex items-end gap-s2">
+              <AiDisc />
+              <div className="flex h-10 items-center gap-1 rounded-[20px] rounded-bl-md bg-lit px-s4 shadow-[inset_0_0_0_1px_var(--line)]" role="status" aria-label="AI is answering">
+                {[0, 1, 2].map((d) => (
+                  <motion.span key={d} className="size-1.5 rounded-full bg-ink-2" animate={reduce ? undefined : { opacity: [0.3, 1, 0.3], y: [0, -2, 0] }} transition={{ duration: 1, repeat: Infinity, delay: d * 0.16 }} />
+                ))}
+              </div>
+            </motion.div>
+          )}
           {generating && (
             <motion.div key="ai" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={SNAPPY} className="mt-s3 flex items-end gap-s2">
-              <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-full bg-ink text-[11px] font-semibold text-lit">AI</span>
+              <AiDisc />
               <div className="rounded-[20px] rounded-bl-md bg-lit px-s4 py-2.5 text-[15px] text-ink-2 shadow-[inset_0_0_0_1px_var(--line)]">
                 <span className="font-semibold text-ink">Planning</span>
                 {genStep ? ` · ${genStep}` : "…"}
@@ -681,6 +722,7 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
           >
             <TrayItem label="Photo" hint="Share with the pod" onClick={() => file.current?.click()} />
             <TrayItem label="Poll" hint="Ask the pod a question" onClick={() => (setTray(false), setReplyTo(null), setPolling(true))} />
+            <TrayItem label="Ask AI" hint="Rain plan, what to bring, who's in" ai onClick={() => (setTray(false), setText((t) => (AI_MENTION.test(t) ? t : `@AI ${t}`)), setTimeout(() => field.current?.focus(), 30))} />
             {ai && <TrayItem label={ai.label} hint="A time and place that works" ai disabled={generating} onClick={() => (setTray(false), ai.run())} />}
           </motion.div>
         )}
@@ -1231,6 +1273,56 @@ function EventLine({ text, kind, replies, onReply }: { text: string; kind: Messa
           ))}
         </span>
       )}
+    </div>
+  );
+}
+
+/** The AI's mark: the three logo circles, small, on ink. Never a face, never a person's initial. */
+function AiDisc({ size = 28 }: { size?: number }) {
+  return (
+    <span aria-hidden className="grid shrink-0 place-items-center rounded-full bg-ink" style={{ width: size, height: size }}>
+      <svg width={size * 0.64} height={size * 0.64} viewBox="0 0 24 24">
+        <circle cx="8.5" cy="9" r="5.2" fill="#FD6123" />
+        <circle cx="15.5" cy="9" r="5.2" fill="#1B78FE" fillOpacity=".92" />
+        <circle cx="12" cy="15.2" r="5.2" fill="#19C185" fillOpacity=".9" />
+      </svg>
+    </span>
+  );
+}
+
+const AI_CHIP_SET = new Set<string>(Object.values(AI_CHIPS));
+/** AI chips stay live on the newest line only; the welcome's hello chips go once you've spoken. */
+function aiChips(chips: string[] | undefined, newest: boolean, spoke: boolean) {
+  if (!chips?.length) return undefined;
+  const ai = chips.some((c) => AI_CHIP_SET.has(c));
+  return ai ? (newest ? chips : undefined) : spoke ? undefined : chips;
+}
+
+/** The AI in the thread: left like a member, its own mark and an "AI" label, a quiet outlined bubble (not grey, not blue). */
+function AiLine({ text, time, joined, replies, onReply }: { text: string; time: string; joined: boolean; replies?: string[]; onReply: (t: string) => void }) {
+  return (
+    <div className="flex flex-col">
+      {!joined && (
+        <p className="mb-1 ml-9 flex items-center gap-s2 px-s2 text-[12px] leading-none">
+          <span className="font-semibold text-ink">AI</span>
+          <span className="text-ink-3">{time}</span>
+        </p>
+      )}
+      <div className="flex items-end gap-s2">
+        <AiDisc />
+        <p className="max-w-[min(80%,420px)] min-w-0 rounded-[20px] rounded-bl-md bg-lit px-s4 py-2.5 text-[15px] leading-[1.4] text-ink shadow-[inset_0_0_0_1px_var(--line-2)] [overflow-wrap:anywhere]">{text}</p>
+      </div>
+      <div className="ml-9">
+        {replies && replies.length > 0 && (
+          <span className="mt-s2 flex flex-wrap gap-s2">
+            {replies.map((t) => (
+              <button key={t} type="button" onClick={() => onReply(AI_CHIP_SET.has(t) ? `@AI ${t}` : t)} className="pressable h-9 rounded-full bg-lit px-s4 text-[14px] font-semibold text-select shadow-[inset_0_0_0_1px_var(--line-2)] hover:bg-sunken">
+                {t}
+              </button>
+            ))}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

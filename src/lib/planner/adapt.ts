@@ -4,6 +4,7 @@
 import { addDays, dateOf, timeOf } from "@/data/time";
 import { TOPICS } from "@/data/plans";
 import { podMembers } from "@/lib/db/selectors";
+import { effectiveSlots } from "@/lib/availability/exceptions";
 import type { DbState, HangoutSuggestion, ID, PlannerStep, Slot, Venue } from "@/lib/types";
 import { SLOTS, THEMES, type AvoidPref, type NextOption, type Plan, type PlannerInput, type PlannerSource, type PlannerVenue, type RoundContext, type Theme } from "./types";
 
@@ -41,12 +42,10 @@ export function slotCounts(db: DbState, podId: ID): { availability: { slot: Slot
   let sharers = 0;
   for (const m of podMembers(db, podId)) {
     const u = db.users[m.user_id];
-    if (!u || !u.availability.length) continue;
+    if (!u || (!u.availability.length && !u.availability_exceptions?.length)) continue;
     sharers++;
-    for (const s of u.availability) {
-      const blocked = u.blocked_days?.some((d) => s.startsWith(d));
-      if (!blocked) counts.set(s, (counts.get(s) ?? 0) + 1);
-    }
+    // the usual week with this person's week-specific busy/free marks applied (still only counted, never labelled)
+    for (const s of effectiveSlots(u)) counts.set(s, (counts.get(s) ?? 0) + 1);
   }
   return { availability: SLOTS.map((slot) => ({ slot, free: counts.get(slot) ?? 0 })).filter((x) => x.free > 0), sharers };
 }

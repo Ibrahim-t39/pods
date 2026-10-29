@@ -9,7 +9,7 @@ import { podNoticeLabel } from "./social";
 
 export const MAX_MESSAGE = 1000;
 
-export function chatRepo(ctx: RepoCtx): RepoPart<"sendMessage" | "pinMessage"> {
+export function chatRepo(ctx: RepoCtx): RepoPart<"sendMessage" | "pinMessage" | "postAiMessage"> {
   return {
     async sendMessage(podId, text, clientId, opts = {}) {
       const me = ctx.meId();
@@ -52,6 +52,20 @@ export function chatRepo(ctx: RepoCtx): RepoPart<"sendMessage" | "pinMessage"> {
           });
         }
       });
+      return ok(msg);
+    },
+
+    async postAiMessage(podId, text, chips = []) {
+      const me = ctx.meId();
+      const db = ctx.get();
+      if (!me || !db.memberships.some((m) => m.pod_id === podId && m.user_id === me && !m.left_at)) return err({ code: "FORBIDDEN" });
+      const body = text.trim().slice(0, MAX_MESSAGE);
+      if (!body) return err({ code: "VALIDATION", field: "text", message: "Empty." });
+      const msg: Message = {
+        id: newId("msg"), pod_id: podId, user_id: null, text: body, created_at: ctx.now(), kind: "host", ref_id: null,
+        client_id: null, pinned: false, delivery: "sent", ...(chips.length ? { quick_replies: chips.slice(0, 3) } : {}),
+      };
+      ctx.commit((d) => void (d.messages[podId] ??= []).push(msg));
       return ok(msg);
     },
 

@@ -68,6 +68,8 @@ export interface Repo {
   /** Idempotent on clientId. Platform §F2: `replyTo` threads it under a message of the same pod. */
   sendMessage(podId: string, text: string, clientId: string, opts?: { replyTo?: string }): Promise<Result<Message>>;
   pinMessage(podId: string, messageId: string): Promise<Result<void>>; // admins only
+  /** The AI posts in the pod chat (an "@AI" answer, a reminder, a recap prompt). Members only; one line, optional chips. */
+  postAiMessage(podId: string, text: string, chips?: string[]): Promise<Result<Message>>;
 
   // hangouts & planner [U4]
   saveSuggestion(s: Omit<HangoutSuggestion, "id" | "created_at">): Promise<Result<HangoutSuggestion>>;

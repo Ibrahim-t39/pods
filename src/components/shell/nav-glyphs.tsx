@@ -3,6 +3,7 @@
 //   home     a ring with a person at its centre: where you are now
 //   pods     the three overlapping circles of the mark
 //   plans    the lock ring: four arcs, one filled (a seat taken)
+//   calendar a rounded page with two rings on top and one dot: a day with you in it
 //   inbox    a circle with a dot arriving at its rim
 //   discover a dashed ring with a dot: an open seat
 //   people   two overlapping circles, a person in each
@@ -113,10 +114,21 @@ export function SettingsGlyph({ on, ...p }: P) {
   );
 }
 
+export function CalendarGlyph({ on, ...p }: P) {
+  return (
+    <Svg {...p}>
+      <rect x="4.5" y="6" width="15" height="13.5" rx="3.5" fill={on ? "currentColor" : "none"} />
+      <path d="M8.5 4v3.5M15.5 4v3.5" />
+      <circle cx="14.5" cy="14.5" r="1.6" fill={on ? "var(--lit, #fff)" : "currentColor"} stroke="none" />
+    </Svg>
+  );
+}
+
 export const NAV_GLYPH: Record<DestinationId, (p: P) => React.ReactElement> = {
   home: HomeGlyph,
   pods: PodsNavGlyph,
   plans: PlansGlyph,
+  calendar: CalendarGlyph,
   inbox: InboxGlyph,
   you: HomeGlyph,
   discover: DiscoverGlyph,

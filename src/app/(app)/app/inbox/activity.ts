@@ -25,6 +25,8 @@ export interface Activity extends InboxItem {
   /** the pod's display name (masked for discreet community pods) */
   podName: string | null;
   act: Act | null;
+  /** one plain line on why it matters right now (Needs you cards only) */
+  why?: string;
 }
 
 /** Plan-level things only you can settle: they sit on top in "Needs you" until answered. */
@@ -35,6 +37,7 @@ export function needsYou(n: Activity): boolean {
   if (a.type === "vote" || a.type === "ballot") return !a.mine;
   if (a.type === "checkin") return !a.done;
   if (a.type === "join") return a.status === "new";
+  if (a.type === "poll") return !a.mine;
   return false;
 }
 
@@ -70,10 +73,11 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
       const venue = db.venues[s.venue_id]?.name;
       out.push({
         id, kind: "plans", trigger: "plan_locked", stored: false, podId: m.pod_id, podName: label, who: null,
-        title: v.imIn ? `You're in for ${label}` : `${label} has a plan`,
+        title: v.imIn ? `You're in for ${maskText(s.summary, pod, discreet)}` : `Are you in for ${shortDay(s.plan_json.starts_at, nowMs)}?`,
         body: `${maskText(s.summary, pod, discreet)} · ${shortDay(s.plan_json.starts_at, nowMs)} ${shortTime(s.plan_json.starts_at)}${venue && !s.summary.includes(venue) ? ` · ${venue}` : ""}`,
         href: `/app/pods/${m.pod_id}`, created_at: s.created_at, read: seen.has(id),
         act: { type: "rsvp", targetId: s.id, going: v.going.length, size: v.size, imIn: v.imIn, imOut: v.imOut },
+        why: v.going.length >= v.threshold ? `${v.going.length} of ${v.size} are in.` : `${v.going.length} of ${v.size} are in. It locks at ${v.threshold}, so your answer counts.`,
       });
     }
     if (v.phase === "vote" && v.vote) {
@@ -82,8 +86,9 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
       const after = v.lastHangout?.ends_at ?? v.vote.closes_at;
       out.push({
         id, kind: "plans", trigger: "next_scheduled", stored: false, podId: m.pod_id, podName: label, who: null,
-        title: `${label} is voting on the next hangout`,
+        title: "Pick the next hangout",
         body: `${counts.length} of ${v.size} voted · closes ${shortDay(v.vote.closes_at, nowMs)} ${shortTime(v.vote.closes_at)}`,
+        why: "The AI plans whichever option gets the most votes.",
         href: `/app/pods/${m.pod_id}`, created_at: after < nowISO ? after : nowISO, read: seen.has(id),
         act: {
           type: "vote", voteId: v.vote.id, mine: v.myVote, total: counts.length,
@@ -96,8 +101,9 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
       const id = `d:checkin:${h.id}`;
       out.push({
         id, kind: "plans", trigger: "checkin", stored: false, podId: m.pod_id, podName: label, who: null,
-        title: v.checkedIn ? `Checked in with ${label}` : `Check in with ${label}`,
-        body: `${maskText(h.title, pod, discreet)} · tap when you're there`,
+        title: v.checkedIn ? `You checked in at ${maskText(h.title, pod, discreet)}` : `Made it to ${maskText(h.title, pod, discreet)}?`,
+        body: v.checkedIn ? label : `${shortDay(h.starts_at, nowMs)} ${shortTime(h.starts_at)}`,
+        why: "Check in so the pod knows you're there.",
         href: `/app/pods/${m.pod_id}`, created_at: h.starts_at < nowISO ? h.starts_at : nowISO, read: seen.has(id) || v.checkedIn,
         act: { type: "checkin", hangoutId: h.id, done: v.checkedIn },
       });
@@ -106,8 +112,9 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
       const id = `d:ballot:${h.id}`;
       out.push({
         id, kind: "plans", trigger: "run_it_back_reveal", stored: false, podId: m.pod_id, podName: label, who: null,
-        title: `Run it back with ${label}?`,
-        body: "Your answer stays private. Only the total is shared.",
+        title: `Meet ${label} again?`,
+        body: maskText(h.title, pod, discreet),
+        why: "Your answer stays private. Only the total is shared.",
         href: `/app/pods/${m.pod_id}`, created_at: h.ends_at < nowISO ? h.ends_at : nowISO, read: seen.has(id),
         act: { type: "ballot", hangoutId: h.id, mine: v.myBallot },
       });
@@ -141,8 +148,8 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
     pollsShown.add(`${p.pod_id}|${p.question}`);
     out.push({
       id, kind: "messages", trigger: "poll_opened", stored: false, podId: p.pod_id, podName: podLabel(pod, discreet), who: { id: p.created_by, name: first(p.created_by) },
-      title: `${first(p.created_by)} asked ${podLabel(pod, discreet)}`,
-      body: maskText(p.question, pod, discreet),
+      title: maskText(p.question, pod, discreet),
+      body: `${first(p.created_by)} asked · ${votes.length} voted`,
       href: `/app/pods/${p.pod_id}/chat`, created_at: p.created_at, read: seen.has(id) || !!p.votes[me],
       act: { type: "poll", pollId: p.id, mine: p.votes[me] ?? null, total: votes.length, options: p.options.map((o) => ({ ...o, count: votes.filter((v) => v === o.id).length })) },
     });
@@ -160,7 +167,7 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
       if (h) {
         const going = db.rsvps.filter((r) => r.hangout_id === h.id && r.status === "going").length;
         const label = podLabel(db.pods[n.podId], discreet);
-        out.push({ ...n, kind: "plans", podName: label, who: null, act: null, title: `${label} is locked`, body: `${maskText(h.title, db.pods[n.podId], discreet)} · ${shortDay(h.starts_at, nowMs)} ${shortTime(h.starts_at)} · ${going} going` });
+        out.push({ ...n, kind: "plans", podName: label, who: null, act: null, title: `${maskText(h.title, db.pods[n.podId], discreet)} is on`, body: `${shortDay(h.starts_at, nowMs)} ${shortTime(h.starts_at)} · ${going} going · the plan is locked` });
         continue;
       }
     }
@@ -183,7 +190,7 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
     if (n.trigger === "new_match") {
       const matchId = n.href.split("match=")[1];
       const match = (db.podMatches ?? []).find((x) => x.id === matchId);
-      out.push({ ...base, kind: "pods", act: match ? { type: "join", matchId: match.id, status: match.status } : null });
+      out.push({ ...base, kind: "pods", act: match ? { type: "join", matchId: match.id, status: match.status } : null, why: "Joining is free. You can leave any time." });
       continue;
     }
     if (n.trigger === "reply" || n.trigger === "chat_batch") {

@@ -112,6 +112,17 @@ export const HOST = {
   quiet: "Want to plan something? Tap and Pods will plan it.",
 };
 
+/** The AI's seeded chat answers, worded like its live ones (src/lib/planner/chat-ai.ts). */
+const lc = (t: string) => t.charAt(0).toLowerCase() + t.slice(1).replace(/\.$/, "");
+/** "If rain is likely, Pods moves it to X and tells everyone." → "If it rains, we move to X at the same time. …" */
+export const aiRain = (rainPlan: string, altName?: string) => {
+  const to = altName ?? rainPlan.match(/moves? (?:it )?to ([^.,]+?)(?: and|[.,]|$)/i)?.[1];
+  const body = to ? `we move to ${to} at the same time` : lc(rainPlan.replace(/^if (rain is likely|it rains),?\s*/i, ""));
+  return `If it rains, ${body}. I'll post here the morning of if we switch.`;
+};
+export const aiBring = (bring: string[]) =>
+  bring.length ? `Bring ${bring.length > 1 ? `${bring.slice(0, -1).map(lc).join(", ")} and ${lc(bring[bring.length - 1])}` : lc(bring[0])}. That's it.` : "Nothing special. Just come as you are.";
+
 export const WHAT_WELCOME: Record<string, string> = {
   basketball: "who play and are new-ish here",
   pickleball: "who play pickleball and are new-ish here",

@@ -144,6 +144,7 @@ export function startCrowd(): () => void {
           if (seenMessages.has(msg.id)) continue;
           seenMessages.add(msg.id);
           if (msg.user_id !== d.me || msg.kind !== "text") continue;
+          if (/(^|\s)@ai\b/i.test(msg.text)) continue; // asked the AI: the AI answers, people stay out of it
           if (repliesIn(d, podId) >= MAX_REPLIES) continue;
           const bots = botsIn(d, podId);
           if (!bots.length) continue;

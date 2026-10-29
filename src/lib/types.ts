@@ -28,6 +28,14 @@ export type Slot = (typeof SLOTS)[number];
 export const BLOCKABLE_DAYS = ["saturday", "sunday"] as const;
 export type BlockedDay = (typeof BLOCKABLE_DAYS)[number];
 
+/** One-off change to the usual week for a given date and time of day. */
+export type DayPart = "morning" | "afternoon" | "evening";
+export interface AvailabilityException {
+  date: ISODate;
+  part: DayPart;
+  status: "busy" | "free";
+}
+
 // ── User ───────────────────────────────────────────────────────────────
 export interface User {
   id: ID;
@@ -45,6 +53,9 @@ export interface User {
   verified_at: ISODateTime | null;
   availability: Slot[]; // [] = didn't share
   blocked_days: BlockedDay[]; // + D3; never sent to the planner as a per-person value (D11)
+  /** + week-specific changes to the usual week ("Busy this Saturday", "Free Thursday evening"). Device-side; the planner
+   *  sees only the per-slot counts they change. Past dates are pruned on write. */
+  availability_exceptions?: AvailabilityException[];
   created_at: ISODateTime;
   // + operational fields
   status: "onboarding" | "pending_verification" | "active" | "suspended" | "banned" | "deleted";

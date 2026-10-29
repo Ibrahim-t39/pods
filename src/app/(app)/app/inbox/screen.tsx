@@ -1,14 +1,9 @@
-// Inbox: what your pods did and what they need from you, handled right here.
-//   head      compact "Inbox" + how many are new + Mark all read, then All · Plans · Messages · Pods
-//   list      grouped Today · Yesterday · This week · Earlier. Each row: a meaningful mark (the pod, or the person with
-//             their pod's colour), one line, one preview, the time, a new-dot, and its one inline action
-//             only in "Needs you" (I'm in · vote · Check in · Run it back · Join pod); every other row is quiet and
-//             opens on tap (messages open the chat to reply, polls open to vote)
-//   phone     tap the text to open the real thing; swipe a row left to mark it read
-//   laptop    master-detail: the list on the left, the real object on the right (the plan with its details and
-//             actions, the chat thread with a reply box, the poll, your pods)
-// Community pods: in the app they keep their real name, like everywhere else. The lock-screen label ("Your community
-// pod") is for push previews only; the inbox masks names only when "Hide community names" (in-app masking) is on.
+// Inbox: what is happening in your pods and what you should do next, in that order.
+//   Needs you  decisions only you can make, as cards with the one-tap answer (I'm in, vote, check in, meet again, join)
+//   Updates    what happened (plan locked, someone joined, pods opening), quiet rows that open the real thing
+//   Messages   one row per pod: the newest line and how many are new; opens the chat
+//   laptop     master-detail: the list on the left, the real object on the right (plan, vote, chat with a reply box)
+// Community pods keep their real name in the app; the inbox masks names only when in-app masking is on.
 "use client";
 
 import Link from "next/link";
@@ -35,7 +30,7 @@ import { maskText, podLabel } from "@/lib/notifications/rules";
 import { useDevicePrefs } from "@/lib/notifications/prefs";
 import type { DbState, ID } from "@/lib/types";
 import { cn } from "@/lib/cn";
-import { buildActivity, needsYou, sectionOf, type Act, type Activity, type Kind, type Section } from "./activity";
+import { buildActivity, needsYou, type Act, type Activity } from "./activity";
 import "./inbox.css";
 
 const SEEN = "pods:inbox-seen";
@@ -57,15 +52,6 @@ function writeSeen(s: Set<string>) {
 /** Old derived links pointed at the settings pages; help now lives at /app/safety. */
 const hrefOf = (n: Activity) => (n.href.startsWith("/app/settings/safety") ? "/app/safety" : n.href);
 
-type Filter = "all" | Kind;
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "plans", label: "Plans" },
-  { id: "messages", label: "Messages" },
-  { id: "pods", label: "Pods" },
-];
-const SECTIONS: Section[] = ["Today", "Yesterday", "This week", "Earlier"];
-
 function stamp(iso: string, now: Date): string {
   const d = chicagoDaysBetween(iso, now);
   if (d <= 0) {
@@ -74,6 +60,50 @@ function stamp(iso: string, now: Date): string {
   }
   if (d < 7) return formatInTimeZone(iso, TZ, "EEE");
   return formatInTimeZone(iso, TZ, "MMM d");
+}
+
+const UPDATES_SHOWN = 6;
+
+/** One chat per pod: the newest line, who said it, and how many came in since you last looked. */
+interface Thread {
+  podId: ID;
+  podName: string;
+  last: { who: string; text: string; at: string } | null;
+  unread: number;
+  items: Activity[];
+  /** the row the laptop pane opens: the chat itself */
+  view: Activity;
+}
+
+function buildThreads(db: DbState, items: Activity[], now: Date, discreet: boolean): Thread[] {
+  if (!db.me) return [];
+  const nowISO = now.toISOString();
+  const out: Thread[] = [];
+  for (const m of db.memberships.filter((x) => x.user_id === db.me && !x.left_at)) {
+    const pod = db.pods[m.pod_id];
+    if (!pod) continue;
+    const lines = (db.messages[m.pod_id] ?? []).filter((x) => x.kind === "text" && x.created_at <= nowISO);
+    const lastMsg = lines[lines.length - 1];
+    const mine = items.filter((i) => i.podId === m.pod_id && i.kind === "messages" && i.act?.type === "reply");
+    if (!lastMsg && !mine.length) continue;
+    const unread = mine.filter((i) => !i.read).reduce((t, i) => t + Math.max(1, i.act?.type === "reply" ? i.act.count : 1), 0);
+    const who = lastMsg ? (lastMsg.user_id === db.me ? "You" : lastMsg.user_id ? (db.users[lastMsg.user_id]?.first_name ?? "Someone") : "AI") : "";
+    const name = podLabel(pod, discreet);
+    const at = lastMsg?.created_at ?? mine[0]?.created_at ?? nowISO;
+    out.push({
+      podId: m.pod_id,
+      podName: name,
+      last: lastMsg ? { who, text: maskText(lastMsg.text, pod, discreet), at } : null,
+      unread,
+      items: mine,
+      view: {
+        id: `t:${m.pod_id}`, kind: "messages", trigger: "chat_batch", stored: false, podId: m.pod_id, podName: name, who: null,
+        title: name, body: lastMsg ? maskText(lastMsg.text, pod, discreet) : "", href: `/app/pods/${m.pod_id}/chat`, created_at: at, read: unread === 0,
+        act: { type: "reply", podId: m.pod_id, messageId: mine.find((i) => i.act?.type === "reply" && i.act.messageId)?.act?.type === "reply" ? (mine.find((i) => i.act?.type === "reply" && i.act.messageId)!.act as Extract<Act, { type: "reply" }>).messageId : null, count: unread },
+      },
+    });
+  }
+  return out.sort((a, b) => (b.unread > 0 ? 1 : 0) - (a.unread > 0 ? 1 : 0) || b.view.created_at.localeCompare(a.view.created_at));
 }
 
 export function InboxScreen() {
@@ -86,23 +116,25 @@ export function InboxScreen() {
   const { prefs } = useDevicePrefs();
   const discreet = prefs.discreet && prefs.maskInApp;
   const [seen, setSeen] = useState<Set<string> | null>(null);
-  const [filter, setFilter] = useState<Filter>("all");
   const [chosen, setChosen] = useState<string | null>(null);
+  const [allUpdates, setAllUpdates] = useState(false);
   useEffect(() => setSeen(readSeen()), []);
 
   const items = useMemo(() => (seen ? buildActivity(db, now, seen, discreet) : []), [db, now, seen, discreet]);
-  const counts = useMemo(() => {
-    const c: Record<Filter, number> = { all: 0, plans: 0, messages: 0, pods: 0 };
-    for (const i of items) if (!i.read) (c.all++, c[i.kind]++);
-    return c;
-  }, [items]);
-  const shown = items.filter((n) => filter === "all" || n.kind === filter);
+  const threads = useMemo(() => buildThreads(db, items, now, discreet), [db, items, now, discreet]);
+  const RANK: Record<string, number> = { checkin: 0, rsvp: 1, ballot: 2, vote: 3, join: 4, poll: 5 };
+  const pending = items.filter(needsYou).sort((a, b) => (RANK[a.act?.type ?? ""] ?? 9) - (RANK[b.act?.type ?? ""] ?? 9) || b.created_at.localeCompare(a.created_at));
+  const isThreadItem = (n: Activity) => n.kind === "messages" && n.act?.type === "reply";
+  const updates = items.filter((n) => !needsYou(n) && !isThreadItem(n));
+  const updatesShown = allUpdates ? updates : updates.slice(0, UPDATES_SHOWN);
   const unread = items.filter((i) => !i.read);
-  const ordered = [...shown.filter(needsYou), ...shown.filter((n) => !needsYou(n))];
-  const pick = shown.find((n) => n.id === chosen) ?? ordered[0] ?? null;
+  const newCount = unread.filter((i) => !needsYou(i)).length;
+  const all = [...pending, ...updates, ...threads.map((t) => t.view)];
+  const pick = all.find((n) => n.id === chosen) ?? all[0] ?? null;
   const ready = hydrated && seen !== null;
 
   async function markRead(list: Activity[], quiet = true) {
+    list = list.filter((i) => !i.id.startsWith("t:"));
     if (!list.length) return;
     const stored = list.filter((i) => i.stored && !i.read).map((i) => i.id);
     if (stored.length) {
@@ -122,16 +154,15 @@ export function InboxScreen() {
     if (!r.ok) notify.error("Not marked. Try again.");
     await markRead(unread.filter((i) => !i.stored));
   }
-  function open(n: Activity) {
-    void markRead([n]);
+  function open(n: Activity, also: Activity[] = []) {
+    void markRead([n, ...also]);
     router.push(hrefOf(n));
   }
-
-  const pending = shown.filter(needsYou);
-  const groups = [
-    { s: "Needs you" as Section, rows: pending },
-    ...SECTIONS.map((s) => ({ s, rows: shown.filter((n) => !needsYou(n) && sectionOf(n.created_at, now) === s) })),
-  ].filter((g) => g.rows.length);
+  function choose(n: Activity, also: Activity[] = []) {
+    setChosen(n.id);
+    void markRead([n, ...also]);
+  }
+  const lead = pending.length === 0 ? "Nothing needs you right now." : pending.length === 1 ? "One thing needs your answer." : `${NUM[pending.length] ?? pending.length} things need your answer.`;
 
   return (
     <div className="inbx-pg">
@@ -140,15 +171,11 @@ export function InboxScreen() {
       <div className="inbx-wrap">
         <section className="inbx-col" aria-label="Inbox">
           <header className="inbx-head">
-            <div className="flex min-w-0 items-baseline gap-s3">
+            <div className="min-w-0">
               <h1 className="inbx-title">Inbox</h1>
-              {ready && counts.all > 0 && (
-                <span data-nc className="text-[15px] font-medium text-select tabular-nums">
-                  {counts.all} new
-                </span>
-              )}
+              {ready && <p className="inbx-lead">{lead}</p>}
             </div>
-            {ready && counts.all > 0 && (
+            {ready && newCount > 0 && (
               <button type="button" onClick={() => void markAll()} className="inbx-quiet pressable">
                 <Icon name="check" size={18} />
                 Mark all read
@@ -156,48 +183,63 @@ export function InboxScreen() {
             )}
           </header>
 
-          <div role="tablist" aria-label="Show" className="inbx-filters">
-            {FILTERS.map((f) => (
-              <button key={f.id} type="button" role="tab" aria-selected={filter === f.id} onClick={() => setFilter(f.id)} className="inbx-filter pressable">
-                {filter === f.id && <motion.span layoutId="inbx-bead" aria-hidden className="absolute inset-0 rounded-full bg-ink" transition={SNAPPY} />}
-                <span className="relative">{f.label}</span>
-                {ready && counts[f.id] > 0 && f.id !== "all" && <span className="inbx-count relative tabular-nums">{counts[f.id]}</span>}
-              </button>
-            ))}
-          </div>
-
           {!ready && <Skeleton />}
 
-          {ready && shown.length === 0 && <Empty filter={filter} any={items.length > 0} />}
-
-          {ready &&
-            groups.map((g) => (
-              <div key={g.s} className="inbx-group">
-                <h2 className="inbx-section" data-needs={g.s === "Needs you" || undefined}>{g.s}</h2>
-                <ul className="inbx-list">
-                  <AnimatePresence initial={false}>
-                    {g.rows.map((n) => (
-                      <motion.li key={n.id} layout="position" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }} transition={GENTLE} className="relative">
-                        <Row
-                          n={n}
-                          db={db}
-                          now={now}
-                          wide={wide}
-                          discreet={discreet}
-                          selected={wide && pick?.id === n.id}
-                          onOpen={() => open(n)}
-                          onChoose={() => {
-                            setChosen(n.id);
-                            void markRead([n]);
-                          }}
-                          onRead={() => void markRead([n], false)}
-                        />
-                      </motion.li>
-                    ))}
-                  </AnimatePresence>
-                </ul>
+          {ready && (
+            <>
+              <div className="inbx-group">
+                <h2 className="inbx-section" data-needs="">
+                  Needs you {pending.length > 0 && <span className="inbx-count tabular-nums">{pending.length}</span>}
+                </h2>
+                {pending.length === 0 ? (
+                  <AllSet />
+                ) : (
+                  <ul className="inbx-cards">
+                    <AnimatePresence initial={false}>
+                      {pending.map((n) => (
+                        <motion.li key={n.id} layout="position" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={GENTLE}>
+                          <NeedCard n={n} db={db} now={now} wide={wide} discreet={discreet} selected={wide && pick?.id === n.id} onOpen={() => open(n)} onChoose={() => choose(n)} onDone={() => void markRead([n])} />
+                        </motion.li>
+                      ))}
+                    </AnimatePresence>
+                  </ul>
+                )}
               </div>
-            ))}
+
+              {updates.length > 0 && (
+                <div className="inbx-group">
+                  <h2 className="inbx-section">Updates</h2>
+                  <ul className="inbx-list">
+                    {updatesShown.map((n) => (
+                      <li key={n.id} className="relative">
+                        <Row n={n} db={db} now={now} wide={wide} discreet={discreet} selected={wide && pick?.id === n.id} onOpen={() => open(n)} onChoose={() => choose(n)} onRead={() => void markRead([n], false)} />
+                      </li>
+                    ))}
+                  </ul>
+                  {updates.length > UPDATES_SHOWN && (
+                    <button type="button" className="inbx-more pressable" onClick={() => setAllUpdates((v) => !v)}>
+                      {allUpdates ? "Show fewer" : `Show ${updates.length - UPDATES_SHOWN} earlier`}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {threads.length > 0 && (
+                <div className="inbx-group">
+                  <h2 className="inbx-section">Messages</h2>
+                  <ul className="inbx-list">
+                    {threads.map((t) => (
+                      <li key={t.podId}>
+                        <ThreadRow t={t} db={db} now={now} wide={wide} discreet={discreet} selected={wide && pick?.id === t.view.id} onOpen={() => open(t.view, t.items)} onChoose={() => choose(t.view, t.items)} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {items.length === 0 && threads.length === 0 && <Empty />}
+            </>
+          )}
         </section>
 
         {wide && (
@@ -217,6 +259,58 @@ export function InboxScreen() {
             )}
           </aside>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** A decision only you can make: pod, plain headline, why it matters, and the one-tap answer. */
+function NeedCard({ n, db, now, wide, discreet, selected, onOpen, onChoose, onDone }: { n: Activity; db: DbState; now: Date; wide: boolean; discreet: boolean; selected: boolean; onOpen: () => void; onChoose: () => void; onDone: () => void }) {
+  return (
+    <article className="inbx-card" data-selected={selected || undefined}>
+      <button type="button" className="inbx-card-hit" onClick={wide ? onChoose : onOpen} aria-label={`${n.title}. ${n.body}`}>
+        <span className="inbx-kicker">
+          <Mark n={{ ...n, who: null }} db={db} discreet={discreet} size={24} />
+          <span className="truncate">{n.podName ?? "Pods"}</span>
+          <span data-nc className="ml-auto shrink-0 text-[13px] font-normal text-ink-3 tabular-nums">{stamp(n.created_at, now)}</span>
+        </span>
+        <span className="inbx-card-title">{n.title}</span>
+        {n.body && <span className="inbx-body block">{n.body}</span>}
+        {n.why && <span className="inbx-why">{n.why}</span>}
+      </button>
+      {n.act && <Actions n={n} act={n.act} db={db} now={now} onDone={onDone} />}
+    </article>
+  );
+}
+
+function ThreadRow({ t, db, now, wide, discreet, selected, onOpen, onChoose }: { t: Thread; db: DbState; now: Date; wide: boolean; discreet: boolean; selected: boolean; onOpen: () => void; onChoose: () => void }) {
+  const line = t.last ? `${t.last.who}: ${t.last.text}` : "Open the chat";
+  return (
+    <div className="inbx-row" data-unread={t.unread ? "" : undefined} data-selected={selected || undefined}>
+      <PodMark db={db} podId={t.podId} size={40} discreet={discreet} />
+      <button type="button" className="inbx-hit min-w-0 flex-1" onClick={wide ? onChoose : onOpen} aria-label={`${t.podName}. ${t.unread ? `${t.unread} new. ` : ""}${line}`}>
+        <span className="flex items-baseline gap-s2">
+          <span className={cn("inbx-line min-w-0 flex-1", t.unread > 0 && "font-semibold")}>{t.podName}</span>
+          {t.last && <span data-nc className="shrink-0 text-[13px] text-ink-3 tabular-nums">{stamp(t.last.at, now)}</span>}
+        </span>
+        <span className="flex items-center gap-s2">
+          <span className={cn("inbx-body min-w-0 flex-1", t.unread > 0 && "text-ink")}>{line}</span>
+          {t.unread > 0 && <span data-nc className="inbx-new tabular-nums" aria-hidden>{t.unread}</span>}
+        </span>
+      </button>
+    </div>
+  );
+}
+
+function AllSet() {
+  return (
+    <div className="inbx-allset">
+      <span className="inbx-allset-mark" aria-hidden>
+        <Icon name="check" size={18} />
+      </span>
+      <div>
+        <p className="text-[16px] font-medium text-ink">You&apos;re all set</p>
+        <p className="mt-0.5 text-[15px] text-ink-2">When a plan needs your answer, it shows up here first.</p>
       </div>
     </div>
   );
@@ -427,7 +521,7 @@ function Actions({ n, act, onDone, compact }: { n: Activity; act: Act; db: DbSta
     case "poll":
     case "vote":
       return (
-        <div className="inbx-opts" role="group" aria-label={n.body}>
+        <div className="inbx-opts" role="group" aria-label={n.title}>
           {(compact ? act.options.slice(0, 2) : act.options).map((o) => {
             const on = act.mine === o.id;
             return (
@@ -730,7 +824,7 @@ function threadPane({ n, db, now, discreet, onRead }: { n: Activity; db: DbState
     <>
       {poll && (
         <div>
-          <h2 className="inbx-pane-title">{n.body}</h2>
+          <h2 className="inbx-pane-title">{n.title}</h2>
           <p className="mt-s1 text-[14px] text-ink-2 tabular-nums">
             {poll.total} voted · asked by {n.who?.name}
             {poll.mine ? " · tap another to change" : ""}
@@ -849,22 +943,14 @@ function Skeleton() {
   );
 }
 
-const EMPTY: Record<Filter, [string, string]> = {
-  all: ["Nothing yet.", "Plans, messages and new pods land here."],
-  plans: ["No plans waiting.", "When the AI plans a hangout for a pod, it shows up here."],
-  messages: ["No new messages.", "Replies and polls from your pods show up here."],
-  pods: ["No pod news.", "New pods for you and pods opening show up here."],
-};
-function Empty({ filter, any }: { filter: Filter; any: boolean }) {
-  const [a, b] = EMPTY[filter];
+function Empty() {
   return (
-    <div className="mt-s8 flex items-start gap-s4">
+    <div className="mt-s6 flex items-start gap-s4">
       <Disc tone="open" size={40} />
       <div>
-        <p className="text-[16px] font-medium text-ink">{filter === "all" && any ? "All caught up." : a}</p>
-        <p className="mt-s1 text-[15px] text-ink-2">{b}</p>
+        <p className="text-[16px] font-medium text-ink">Nothing here yet</p>
+        <p className="mt-s1 text-[15px] text-ink-2">Plans, updates and messages from your pods will show up here.</p>
       </div>
     </div>
   );
 }
-

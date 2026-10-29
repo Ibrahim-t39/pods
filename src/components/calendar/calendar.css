@@ -1,0 +1,220 @@
+/* Calendar (round 10-29). Flat and quiet: the pod colours carry the meaning (dots, bars), everything else is ink. */
+.pods-cal {
+  min-height: 100dvh;
+  padding-bottom: var(--s12);
+}
+.pods-cal-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s8);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--s6) var(--gutter) 0;
+}
+@media (min-width: 1024px) {
+  .pods-cal-grid {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    column-gap: var(--s12);
+    padding: var(--s8) var(--s12) 0;
+  }
+  .pods-cal-day {
+    position: sticky;
+    top: var(--s8);
+    align-self: start;
+  }
+}
+.pods-cal-day {
+  min-width: 0;
+}
+
+.pods-cal-nav {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: var(--ink);
+}
+.pods-cal-nav:hover,
+.pods-cal-today:hover {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.pods-cal-today {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+/* week row: seven equal days */
+.pods-cal-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.pods-cal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 76px;
+  padding: 10px 2px 8px;
+  border-radius: 16px;
+  background: var(--lit);
+  box-shadow: 0 0 0 1px var(--line);
+  color: var(--ink);
+  transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+.pods-cal-dow {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.pods-cal-num {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.pods-cal-cell.is-past,
+.pods-cal-mcell.is-past {
+  color: var(--ink-3);
+}
+.pods-cal-cell.is-today .pods-cal-num,
+.pods-cal-mcell.is-today .pods-cal-num {
+  color: var(--select);
+}
+.pods-cal-cell.is-sel,
+.pods-cal-mcell.is-sel {
+  background: var(--ink);
+  color: var(--lit);
+  box-shadow: none;
+}
+.pods-cal-cell.is-sel .pods-cal-dow,
+.pods-cal-cell.is-sel .pods-cal-num,
+.pods-cal-mcell.is-sel .pods-cal-num {
+  color: var(--lit);
+}
+.pods-cal-dots {
+  display: flex;
+  gap: 3px;
+  height: 7px;
+}
+.pods-cal-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--dot);
+}
+.pods-cal-dot.is-task {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--dot);
+}
+.is-sel .pods-cal-dot {
+  box-shadow: 0 0 0 1.5px var(--ink);
+}
+.is-sel .pods-cal-dot.is-task {
+  box-shadow: inset 0 0 0 1.5px var(--dot), 0 0 0 1.5px var(--ink);
+}
+
+/* month grid */
+.pods-cal-month-head,
+.pods-cal-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+.pods-cal-month-head span {
+  padding: 6px 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.pods-cal-mcell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 52px;
+  border-radius: 12px;
+  color: var(--ink);
+}
+.pods-cal-mcell .pods-cal-num {
+  font-size: 15px;
+  font-weight: 500;
+}
+.pods-cal-mcell.is-out {
+  opacity: 0.4;
+}
+.pods-cal-mcell:not(.is-sel):hover {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+@media (min-width: 768px) {
+  .pods-cal-mcell {
+    min-height: 72px;
+  }
+}
+
+/* one item: the pod's bar, the time, the title */
+.pods-cal-item {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 64px;
+  padding: var(--s2) var(--s4) var(--s2) 0;
+  outline-offset: -2px;
+}
+.pods-cal-item.is-compact {
+  min-height: 56px;
+}
+.pods-cal-bar {
+  align-self: stretch;
+  width: 4px;
+  margin: 10px 0 10px 12px;
+  border-radius: 999px;
+  background: var(--dot);
+}
+
+/* your time: three toggles */
+.pods-cal-parts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s2);
+}
+.pods-cal-part {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 60px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  text-align: left;
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+.pods-cal-part.is-free {
+  background: var(--color-grove-soft);
+  box-shadow: inset 0 0 0 1px var(--color-grove-soft-border);
+  color: var(--color-grove-text);
+}
+.pods-cal-part.is-busy {
+  background: var(--lit);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink-2);
+}
+.pods-cal-part.is-changed {
+  outline: 1.5px dashed var(--ink-2);
+  outline-offset: -1.5px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pods-cal-cell,
+  .pods-cal-part {
+    transition: none;
+  }
+}

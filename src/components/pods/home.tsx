@@ -28,7 +28,8 @@ import { TZ } from "@/lib/time/tz";
 import { cn } from "@/lib/cn";
 import { dayWord, firstName, opensAfter, roomTables, shortTime, type RoomTable } from "./model";
 import { PodOrb } from "./pod-orb";
-import { PodRow, StatusChip, activityWord, needsYou, statusOf } from "./pod-card";
+import { StatusChip, activityWord, needsYou, planLines, statusOf } from "./pod-card";
+import { WeekGlance } from "@/components/calendar/calendar";
 import { sourceLine } from "./table-stage";
 import { useLastRead } from "./use-last-read";
 import { NewPodsOnHome } from "@/components/placement/new-pod";
@@ -147,16 +148,10 @@ export function Home() {
                 <SectionHead id="h-pods" action={<Link href="/app/pods" className="pressable text-label font-semibold text-select outline-offset-2">See all</Link>}>
                   Your pods
                 </SectionHead>
-                <ul className="pods-card divide-y divide-line overflow-hidden">
+                <ul className="pods-home-tiles">
                   {tables.map((t) => (
                     <li key={t.row.pod.id}>
-                      <PodRow t={t} minute={minute} closed={closed} unread={unreadBy[t.row.pod.id] ?? 0} />
-                      {widened?.podId === t.row.pod.id && (
-                        <p data-widened-note className="-mt-1 flex items-start gap-s2 pr-s4 pb-s3 pl-[68px] text-[13px] leading-[1.35] text-ink-2">
-                          <WidenGlyph size={14} className="mt-0.5 shrink-0 text-grove-text" />
-                          <span>{widened.line}</span>
-                        </p>
-                      )}
+                      <PodTile t={t} minute={minute} closed={closed} unread={unreadBy[t.row.pod.id] ?? 0} widened={widened?.podId === t.row.pod.id ? widened.line : null} />
                     </li>
                   ))}
                 </ul>
@@ -166,12 +161,20 @@ export function Home() {
               </section>
             )}
           </div>
-          {open.length > 0 && (
-            <aside className="pods-home-side" aria-labelledby="h-activity">
-              <SectionHead id="h-activity">Pod activity</SectionHead>
-              <Activity tables={open} />
-            </aside>
-          )}
+          <aside className="pods-home-side" aria-labelledby="h-week">
+            <section aria-labelledby="h-week">
+              <SectionHead id="h-week" action={<Link href="/app/calendar" className="pressable text-label font-semibold text-select outline-offset-2">Calendar</Link>}>
+                This week
+              </SectionHead>
+              <WeekGlance />
+            </section>
+            {open.length > 0 && (
+              <section aria-labelledby="h-activity" className="mt-s8">
+                <SectionHead id="h-activity">From your pods</SectionHead>
+                <Activity tables={open} />
+              </section>
+            )}
+          </aside>
         </div>
       </div>
     </>
@@ -199,6 +202,48 @@ function EmptyPods() {
         Browse pods
       </Link>
     </section>
+  );
+}
+
+// ── your pods: each a glossy sphere with its next step ─────────────────
+
+function PodTile({ t, minute, closed, unread, widened }: { t: RoomTable; minute: number; closed: string; unread: number; widened: string | null }) {
+  const st = statusOf(t, closed);
+  const plan = planLines(t, minute);
+  const going = t.row.plan?.going.length ?? 0;
+  const next = !t.open ? "Opens after your first hangout" : plan ? `${plan.when} · ${plan.what}` : (t.row.lastLine ?? "The AI is planning");
+  const inner = (
+    <>
+      <span className="flex items-start justify-between gap-s2">
+        <PodOrb hue={t.hue} people={t.row.size} inCount={going} size={60} open={t.open} needs={needsYou(t)} />
+        {unread > 0 && (
+          <span className="tabular grid h-6 min-w-6 place-items-center rounded-full bg-select px-1.5 text-[12px] font-semibold text-on-select" aria-label={`${unread} new`}>
+            {unread}
+          </span>
+        )}
+      </span>
+      <span className="mt-s3 block truncate text-[16px] font-semibold text-ink">{t.row.name}</span>
+      <span className="mt-0.5 line-clamp-2 block text-[14px] leading-[1.35] text-ink-2">{next}</span>
+      {widened && (
+        <span data-widened-note className="mt-s2 flex items-start gap-1.5 text-[13px] leading-[1.35] text-ink-2">
+          <WidenGlyph size={14} className="mt-0.5 shrink-0 text-grove-text" />
+          <span>{widened}</span>
+        </span>
+      )}
+      {st && (
+        <span className="mt-auto pt-s3">
+          <StatusChip {...st} />
+        </span>
+      )}
+    </>
+  );
+  const cls = "pods-card pods-home-tile";
+  return t.open ? (
+    <Link href={`/app/pods/${t.row.pod.id}`} className={cn(cls, "pressable outline-offset-2")}>
+      {inner}
+    </Link>
+  ) : (
+    <div className={cn(cls, "opacity-80")}>{inner}</div>
   );
 }
 
@@ -360,7 +405,7 @@ function Activity({ tables }: { tables: RoomTable[] }) {
               .map((m) => ({ id: m.id, podId: pid, who: firstName(db, m.user_id), text: m.text, at: m.created_at })),
           )
           .sort((a, b) => b.at.localeCompare(a.at))
-          .slice(0, 6);
+          .slice(0, 3);
       },
       [ids],
     ),

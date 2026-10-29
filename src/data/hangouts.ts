@@ -14,7 +14,7 @@ import { ageOn } from "@/lib/utils";
 import { hash32, seededRandom } from "@/lib/ids";
 import { POD_DEFS, type PodDef } from "./pods";
 import { botId } from "./users";
-import { HOST, LINES, WHAT_WELCOME } from "./messages";
+import { HOST, LINES, WHAT_WELCOME, aiBring, aiRain } from "./messages";
 import { SLOT_PHRASE, SLOT_START, SLOT_WEEKDAY, TOPICS, VENUE_BY_ID, buildPlan, candidateVenues, rankSlots, suggestionFrom } from "./plans";
 import { addDays, addMinutes, at, dateOf, nextWeekday } from "./time";
 
@@ -161,6 +161,9 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
         pushMsg(botId("Malik"), "I'll grab the far court if we're early", at(NOV1, "12:42"), "text", { reactions: { fire: [botId("Tobi"), botId("Ama")] } });
         pushMsg(botId("Tobi"), "Same! Tacos after?", at(NOV1, "12:47"), "text", { reactions: { laugh: [botId("Malik")], thumbs: [botId("Ama"), botId("Kayla")] } });
         pushMsg(botId("Marcus"), "Saturday mornings are my thing. Let me check and I'll tap in", at("2026-11-02", "08:15"));
+        // the AI in the chat: answers an @AI question from the plan itself, then stays quiet
+        pushMsg(botId("Marcus"), "@AI what if it rains?", at("2026-11-02", "08:16"));
+        pushMsg(null, aiRain(built.plan.rain_plan), at("2026-11-02", "08:16"), "host", { quick_replies: ["What to bring?", "Who's in?"] });
         pushMsg(botId("Ama"), "I'll bring a ball and a pump, mine's a little flat", at("2026-11-02", "19:30"));
         pushMsg(botId("Tobi"), "Legend. I've got water for everyone", at("2026-11-02", "19:36"), "text", { reply_to: msgs[msgs.length - 1].id, reactions: { heart: [botId("Ama")] } });
         pushMsg(botId("Kayla"), "Cool, I'll be the one in the pink socks", at("2026-11-03", "20:05"), "text", { reactions: { laugh: [botId("Tobi"), botId("Malik")] } });
@@ -170,6 +173,10 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
       } else {
         pushMsg(a1.id, pickLine(lines.pre, "p1"), at("2026-11-01", "14:10"));
         pushMsg(a2.id, pickLine(lines.misc, "m1"), at("2026-11-02", "11:25"));
+        if (isSA) {
+          pushMsg(a2.id, "@AI what should we bring?", at("2026-11-02", "11:31"));
+          pushMsg(null, aiBring(built.plan.bring), at("2026-11-02", "11:31"), "host", { quick_replies: ["Rain plan?", "Who's in?"] });
+        }
         pushMsg(a3.id, pickLine(lines.pre, "p2"), at("2026-11-03", "18:40"));
       }
       w.messages[def.id] = msgs;
