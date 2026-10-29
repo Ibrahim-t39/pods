@@ -10,6 +10,8 @@ import { ok, err, type RepoPart } from "@/lib/db/repo";
 import { newId } from "@/lib/ids";
 import type { AppNotification, DbState, HangoutSuggestion, ID, NextHangoutVote, RunItBackAnswer, RunItBackTally, RsvpStatus } from "@/lib/types";
 import { podMembers } from "@/lib/db/selectors";
+import { displayName } from "@/lib/utils";
+import { lockBounds, lockMinFor, lockRuleForPod } from "@/lib/planner/lock";
 
 type D = Draft<DbState>;
 const HOUR = 3_600_000;
@@ -98,7 +100,7 @@ export function applyRsvp(d: D, targetId: ID, userId: ID, status: RsvpStatus, no
   if (vote && status === "going") return applyVote(d, vote.id, userId, s.id, now);
   if (vote && status === "not_going" && vote.votes[userId] === s.id) delete vote.votes[userId];
   let locked = !!hang;
-  if (s && s.status === "suggested" && goingOn(d, targetId) >= d.config.planner.lockThreshold) {
+  if (s && s.status === "suggested" && goingOn(d, targetId) >= lockMinFor(d, s)) {
     const hid = lockSuggestion(d, s, now);
     return { goingCount: goingOn(d, hid), locked: true };
   }
@@ -178,6 +180,39 @@ export function applyRunItBack(d: D, hangoutId: ID, userId: ID, value: RunItBack
   return runItBackTally(d as DbState, hangoutId);
 }
 
+/** Fill a plan's lock number when it was saved without one (member proposals, old callers). */
+export function ensureLock(d: D, s: Draft<HangoutSuggestion>) {
+  if (typeof s.min_to_lock === "number") return;
+  const v = d.venues[s.venue_id];
+  const r = lockRuleForPod(d as DbState, s.pod_id, `${s.summary} ${s.plan_json?.event ?? ""}`, v ?? null, s.summary);
+  s.min_to_lock = r.min_to_lock;
+  s.lock_reason = r.lock_reason;
+  if (r.max_seats) s.max_seats = r.max_seats;
+}
+
+/** The pod nudges a plan's lock number (− / +). Bounded to 2..pod size and never below who's already in. If the
+ *  new number is already met, the plan locks now. Posts one quiet system line. */
+export function applyLockMin(d: D, suggestionId: ID, userId: ID, n: number, now: string): { min: number; locked: boolean } | null {
+  const s = d.suggestions[suggestionId];
+  if (!s || (s.status !== "suggested" && s.status !== "pending_review")) return null;
+  const going = goingOn(d, s.id);
+  const b = lockBounds(podSize(d, s.pod_id), going, s.max_seats);
+  const next = Math.max(b.min, Math.min(b.max, Math.round(n)));
+  if (next === lockMinFor(d, s)) return { min: next, locked: false };
+  // Keep the AI's pick visible once the pod has nudged it ("Set by the pod · AI picked 4").
+  const ai = /AI picked (\d+)/.exec(s.lock_reason ?? "")?.[1] ?? String(lockMinFor(d, s));
+  s.min_to_lock = next;
+  s.lock_reason = `Set by the pod · AI picked ${ai}`;
+  const u = d.users[userId];
+  const who = u ? displayName(u) : "Someone";
+  hostMessage(d, s.pod_id, `${who} changed it to lock at ${next}`, now, "system", s.id);
+  if (s.status === "suggested" && going >= next) {
+    lockSuggestion(d, s, now);
+    return { min: next, locked: true };
+  }
+  return { min: next, locked: false };
+}
+
 /** Close a vote: first to the threshold wins; at close, most votes wins, ties go to the earliest start; no votes → the
  *  default (option 0), and the host says so. */
 export function closeVote(d: D, voteId: ID, now: string): ID | null {
@@ -218,7 +253,7 @@ export function applyVote(d: D, voteId: ID, userId: ID, suggestionId: ID, now: s
   }
   v.votes[userId] = suggestionId;
   const count = Object.values(v.votes).filter((x) => x === suggestionId).length;
-  if (count >= d.config.planner.lockThreshold) {
+  if (count >= lockMinFor(d, d.suggestions[suggestionId])) {
     moveVotersToWinner(d, v, suggestionId);
     const hid = lockSuggestion(d, d.suggestions[suggestionId], now);
     v.status = "closed";
@@ -255,7 +290,7 @@ function attachToVote(d: D, s: HangoutSuggestion, now: string) {
 
 export function hangoutsRepo(
   ctx: RepoCtx,
-): RepoPart<"saveSuggestion" | "dismissCard" | "undismissCard" | "rsvp" | "approveSuggestion" | "checkIn" | "castRunItBack" | "voteNextOption"> {
+): RepoPart<"saveSuggestion" | "dismissCard" | "undismissCard" | "rsvp" | "setLockMin" | "approveSuggestion" | "checkIn" | "castRunItBack" | "voteNextOption"> {
   const memberOf = (podId: ID, userId: ID) => podMembers(ctx.get(), podId).some((m) => m.user_id === userId);
 
   return {
@@ -275,6 +310,7 @@ export function hangoutsRepo(
       if (db.config.planner.adminReview && s.source !== "admin") s.status = "pending_review";
       ctx.commit((d) => {
         d.suggestions[s.id] = s;
+        ensureLock(d, d.suggestions[s.id]);
         for (const m of d.memberships) if (m.pod_id === s.pod_id) { m.card_dismissed = false; m.card_dismissed_for = null; }
         if (s.option_index === 0) hostMessage(d, s.pod_id, s.summary, now, "plan_card", s.id);
         if (s.status === "suggested") attachToVote(d, s, now);
@@ -327,6 +363,20 @@ export function hangoutsRepo(
       let out = { goingCount: 0, locked: false };
       ctx.commit((d) => { out = applyRsvp(d, target, me.id, status, now); });
       return ok(out);
+    },
+
+    async setLockMin(suggestionId, n) {
+      await ctx.latency();
+      const me = ctx.meId();
+      if (!me) return err({ code: "FORBIDDEN" });
+      const s = ctx.get().suggestions[suggestionId];
+      if (!s) return err({ code: "NOT_FOUND" });
+      if (!memberOf(s.pod_id, me)) return err({ code: "FORBIDDEN" });
+      if (s.status !== "suggested" && s.status !== "pending_review") return err({ code: "CONFLICT", message: "This plan is already locked" });
+      const now = ctx.now();
+      let out: { min: number; locked: boolean } | null = null;
+      ctx.commit((d) => { out = applyLockMin(d, suggestionId, me, n, now); });
+      return out ? ok(out) : err({ code: "CONFLICT" });
     },
 
     async approveSuggestion(id, edits) {

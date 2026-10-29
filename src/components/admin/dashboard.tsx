@@ -5,6 +5,7 @@
 // No hero number, no KPI cards, no sparklines, no deltas.
 "use client";
 
+import { lockMinForTarget } from "@/lib/planner/lock";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { motion } from "motion/react";
@@ -34,8 +35,7 @@ export function Dashboard() {
   const n = useMemo(() => {
     if (!hydrated) return null;
     const live = Object.values(db.pods).filter((p) => p.status !== "closed");
-    const lock = db.config.planner.lockThreshold;
-    const locked = Object.values(db.hangouts).filter((h) => h.status !== "cancelled" && Date.parse(h.ends_at) > t && goingCount(db, h.id) >= lock).length;
+    const locked = Object.values(db.hangouts).filter((h) => h.status !== "cancelled" && Date.parse(h.ends_at) > t && goingCount(db, h.id) >= lockMinForTarget(db, h.id)).length;
     const repeat = metricsAt(db, t).repeat;
     // the same definition as metricsAt.repeat, kept per pod so each pair can take its pod's hue
     const done = (h: { status: string; ends_at: string }) => h.status !== "cancelled" && Date.parse(h.ends_at) <= t;
@@ -60,8 +60,8 @@ export function Dashboard() {
       const plan = openPlan(db, pod.id);
       if (!plan) continue;
       const start = Date.parse(plan.s.starts_at);
-      if (start <= t || start - t > SOON_MS || plan.going >= lock) continue;
-      queue.push({ id: plan.s.id, hue: hueOf(pod), title: label(pod), meta: `Not locked · ${plan.going} of ${seated(db, pod.id)} in · ${weekday(plan.s.starts_at)}`, href: "/admin/hangouts", mark: "ring", waiting: true });
+      if (start <= t || start - t > SOON_MS || plan.going >= lockMinForTarget(db, plan.s.id)) continue;
+      queue.push({ id: plan.s.id, hue: hueOf(pod), title: label(pod), meta: `Not locked · ${plan.going} of ${seated(db, pod.id)} in · locks at ${lockMinForTarget(db, plan.s.id)} · ${weekday(plan.s.starts_at)}`, href: "/admin/hangouts", mark: "ring", waiting: true });
     }
 
     return {

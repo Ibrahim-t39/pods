@@ -112,6 +112,9 @@ export const PlanSchema = z.object({
   rain_plan: z.string().describe("Backup if weather is bad; any indoor venue must come from the list"),
   icebreaker: z.string().describe("A question the host posts in chat the day before"),
   reason: z.string().describe("Why this plan, counts only: 'Chosen because 7 of 8 of you are free Sunday afternoons.'"),
+  min_to_lock: z.number().int().optional().describe("How many 'I'm in' make it happen: from the activity and members, at least 2, never above members. e.g. pickup basketball 4, picnic 3, a run 2"),
+  max_seats: z.number().int().optional().describe("Only when the venue books a fixed number of seats (a class, a paint and sip)"),
+  lock_reason: z.string().optional().describe("One short plain line on why that number, e.g. '2v2 half-court works with 4; more can join'"),
 });
 export type Plan = z.infer<typeof PlanSchema>;
 

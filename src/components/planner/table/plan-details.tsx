@@ -24,6 +24,7 @@ import { useIsDesktop } from "@/components/ui/use-media-query";
 import { useRepo } from "@/lib/db/hooks";
 import { downloadIcs, directionsUrl } from "../plan-utils";
 import { usePlanActions } from "../use-plan-actions";
+import { LockStepper } from "./lock-stepper";
 import { ProposeSheet } from "./propose-sheet";
 import { GiveUpSheet } from "./sheets";
 import { placeWord, rainWord, sourceLine, type TableModel } from "./model";
@@ -359,6 +360,24 @@ export function PlanDetails({
                 </span>
               </p>
             </div>
+            {!locked && m.plan && v.suggestion?.id === m.plan.id && (m.plan.status === "suggested" || m.plan.status === "pending_review") ? (
+              <LockStepper
+                suggestionId={m.plan.id}
+                at={v.threshold}
+                size={v.size}
+                going={going}
+                reason={m.plan.lock_reason}
+                seats={m.plan.max_seats}
+                onLocked={() =>
+                  setTimeout(
+                    () => router.replace(`/app/pods/${m.pod.id}`, { scroll: false }),
+                    calm ? 900 : 1700,
+                  )
+                }
+              />
+            ) : locked && m.plan?.max_seats ? (
+              <p className="pd-fact-s pd-lock-seats">{m.plan.max_seats} seats</p>
+            ) : null}
           </section>
 
           {p?.schedule?.length ? (

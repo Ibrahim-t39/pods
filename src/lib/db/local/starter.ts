@@ -8,7 +8,7 @@ import { buildPlannerInput, planToSuggestion } from "@/lib/planner/adapt";
 import { runPlanner } from "@/lib/planner/run";
 import { newId } from "@/lib/ids";
 import type { RepoCtx } from "./context";
-import { hostMessage } from "./hangouts";
+import { ensureLock, hostMessage } from "./hangouts";
 
 /** Pods (of `userId`) that are active, open to them, and have no live plan and no upcoming hangout. */
 export function podsNeedingStarter(db: DbState, userId: ID): ID[] {
@@ -44,6 +44,7 @@ export async function draftStarter(db: DbState, podId: ID, nowISO: string): Prom
 export function applyStarter(d: Draft<DbState>, s: Omit<HangoutSuggestion, "id" | "created_at">, now: string): ID {
   const id = newId("sug");
   d.suggestions[id] = { ...s, id, created_at: now } as HangoutSuggestion;
+  ensureLock(d, d.suggestions[id]);
   if (d.config.planner.adminReview) d.suggestions[id].status = "pending_review";
   hostMessage(d, s.pod_id, s.summary, now, "plan_card", id);
   return id;

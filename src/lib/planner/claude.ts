@@ -17,6 +17,7 @@ const RULES = `Rules you must follow:
 - Use the chosen date and time window exactly as given.
 - If rain is likely and the venue is outdoors, the rain_plan must name an indoor venue from the list.
 - The reason uses counts only, e.g. "Chosen because 7 of 8 of you are free Sunday afternoons." Never guess why anyone is unavailable.
+- Set min_to_lock from the activity and members: at least 2 and never above members (pickup basketball 4 for 2v2 half-court, picnic 3, game night 3, a run 2, a class 3). If the activity needs more people than the pod has (5v5 needs 10), pick a format that fits (3v3, 2v2) and say so in lock_reason. For a class or booking, set max_seats and use "Booking needs a headcount". lock_reason is one short plain line.
 - Write warm, concise, plain copy for 22-year-olds. Sentence case. No emojis, no hype, no exclamation marks.`;
 
 const SYSTEM_PLAN = `You plan small-group hangouts for Pods, an app that places young adults (18-29) who just moved to a new city into small recurring friend groups called pods.

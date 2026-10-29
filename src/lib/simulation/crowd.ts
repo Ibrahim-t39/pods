@@ -6,6 +6,7 @@
 // Client-only. Started by DemoRuntime; switched off by config.demo.crowd (Director "Crowd").
 "use client";
 
+import { lockMinFor } from "@/lib/planner/lock";
 import { useSyncExternalStore } from "react";
 import { useStore } from "@/lib/db/store";
 import { nowISO, nowMs } from "@/lib/time/clock";
@@ -105,7 +106,6 @@ export function startCrowd(): () => void {
     if (!crowdOn()) return;
     const d = db();
     const t = nowMs();
-    const threshold = d.config.planner.lockThreshold;
 
     // Reset or a different person signed in: forget everything scheduled for the old state.
     if (lastMe !== undefined && lastMe !== d.me) {
@@ -158,7 +158,7 @@ export function startCrowd(): () => void {
     for (const s of Object.values(d.suggestions)) {
       if (s.status !== "suggested" || seeded?.sugs.has(s.id)) continue;
       const going = d.rsvps.filter((r) => r.hangout_id === s.id && r.status === "going");
-      const need = threshold - 1 - going.length;
+      const need = lockMinFor(d, s) - 1 - going.length;
       if (need <= 0) continue;
       const candidates = botsIn(d, s.pod_id).filter((b) => !d.rsvps.some((r) => r.hangout_id === s.id && r.user_id === b));
       candidates.slice(0, need).forEach((bot, i) =>
@@ -194,7 +194,7 @@ export function startCrowd(): () => void {
     // 4. Votes: bots back the first (default) option until one short of the threshold.
     for (const v of Object.values(d.votes)) {
       if (v.status !== "open" || !v.option_ids.length) continue;
-      const need = threshold - 1 - Object.keys(v.votes).length;
+      const need = lockMinFor(d, d.suggestions[v.option_ids[0]]) - 1 - Object.keys(v.votes).length;
       if (need <= 0 || (d.me && v.votes[d.me])) continue;
       botsIn(d, v.pod_id)
         .filter((b) => !v.votes[b])

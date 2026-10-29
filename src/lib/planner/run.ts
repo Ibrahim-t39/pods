@@ -7,6 +7,7 @@ import { bestSlot, candidateVenues, dateForSlot, SLOT_HOURS, topTwoText, venueLa
 import type { ClaudeJobs } from "./claude";
 import { fallbackOption3, fallbackPlan, fallbackWhyFits, fallbackWiden, ruleBasedOptions, template } from "./fallback";
 import { errorTag, validatePlan } from "./validate";
+import { lockRule, resolveLock } from "./lock";
 import {
   SLOT_LABEL, type Analysis, type Forecast, type NextOption, type Plan, type PlannerEvent, type PlannerInput, type PlannerSource,
   type PlannerVenue, type WhyFitsInput, type WidenInput,
@@ -52,6 +53,16 @@ function claudeBrief(input: PlannerInput, a: Analysis, ordered: PlannerVenue[], 
     avoid: input.avoid ? { title: input.avoid.title, prefs: input.avoid.prefs ?? [] } : null,
     last_hangout: input.context ? { checked_in: input.context.checkedIn, want_again: input.context.runItBackYes, answered: input.context.answered, chat_themes: input.context.themes } : null,
   };
+}
+
+/** The AI's lock number when it gave a sane one, else the rule for this activity and pod size. */
+function withLock(plan: Plan, input: PlannerInput, venue: PlannerVenue | undefined): Plan {
+  const size = input.pod.size;
+  const rule = lockRule({ key: input.pod.templateKey, size, text: `${plan.summary} ${plan.event}`, format: plan.summary, venue: venue ? { type: venue.type, costPerPerson: venue.costPerPerson } : null });
+  const r = resolveLock(plan, rule, size);
+  const { max_seats: _drop, ...rest } = plan;
+  void _drop;
+  return { ...rest, min_to_lock: r.min_to_lock, lock_reason: r.lock_reason, ...(r.max_seats ? { max_seats: r.max_seats } : {}) };
 }
 
 /** Job 1 (plan) and job 3 (next_options). */
@@ -217,8 +228,9 @@ export async function* runPlanner(input: PlannerInput, deps: PlannerDeps, job: "
   const finalSource: PlannerSource = source === "fallback" && deps.mode === "local" ? "local" : source;
 
   if (job === "plan") {
-    const plan = accepted?.plan ?? fallbackPlan(input, analysis, ordered, indoorBackup, slot.fewShared);
-    const venue = accepted?.venue ?? ordered.find((v) => v.id === plan.venue_id)!;
+    const draft = accepted?.plan ?? fallbackPlan(input, analysis, ordered, indoorBackup, slot.fewShared);
+    const venue = accepted?.venue ?? ordered.find((v) => v.id === draft.venue_id)!;
+    const plan = withLock(draft, input, venue);
     yield validateStep(venue, input, rejected, firstErrors);
     yield { type: "plan", plan, venue, source: finalSource, analysis, forecast };
     return;
@@ -239,6 +251,7 @@ export async function* runPlanner(input: PlannerInput, deps: PlannerDeps, job: "
     third.source = finalSource;
   }
   for (const o of base) o.source = deps.mode === "local" ? "local" : "fallback";
+  for (const o of [...base, third]) o.plan = withLock(o.plan, input, o.venue);
   yield validateStep(third.venue, input, rejected, firstErrors);
   yield { type: "options", options: [...base, third], analysis, forecast };
 }

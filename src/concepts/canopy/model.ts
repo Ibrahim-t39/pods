@@ -1,5 +1,6 @@
 // CANOPY concept: pure read helpers over the real DbState. Store, seed, repo and planner stay the source of truth;
 // this file only shapes what one "ground" (one pod) needs to draw.
+import { lockMinFor } from "@/lib/planner/lock";
 import { cardView, type CardView } from "@/lib/planner/card-state";
 import { goingUserIds, myMemberships, podMembers } from "@/lib/db/selectors";
 import { candidateVenues } from "@/data/plans";
@@ -140,7 +141,7 @@ export function ground(db: DbState, ref: GroundRef, nowMs: number): Ground {
     free: freeCounts(db, ref.id),
     fits: candidateVenues(pod?.topic_key ?? "").length,
     size: podMembers(db, ref.id).length,
-    threshold: db.config.planner.lockThreshold,
+    threshold: lockMinFor(db, s),
     meInitial: (me?.nickname || me?.first_name || "Y").slice(0, 1).toUpperCase(),
   };
 }

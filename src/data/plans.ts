@@ -4,6 +4,7 @@
 import type { HangoutSuggestion, ID, ISODateTime, PlannerStep, PlanJson, Slot, Venue } from "@/lib/types";
 import { VENUES } from "./venues";
 import { addMinutes, at, dayLabel } from "./time";
+import { lockRule, type LockRule } from "@/lib/planner/lock";
 
 export const VENUE_BY_ID: Record<ID, Venue> = Object.fromEntries(VENUES.map((v) => [v.id, v]));
 
@@ -198,7 +199,7 @@ export interface PlanInput {
   overBudget?: boolean;
 }
 
-export function buildPlan(inp: PlanInput): { plan: PlanJson; trace: PlannerStep[]; venue: Venue; startsAt: ISODateTime; endsAt: ISODateTime } {
+export function buildPlan(inp: PlanInput): { plan: PlanJson; trace: PlannerStep[]; venue: Venue; startsAt: ISODateTime; endsAt: ISODateTime; lock: LockRule } {
   const t = TOPICS[inp.topicKey];
   const venue = VENUE_BY_ID[inp.venueId ?? t.venue];
   const start = at(inp.date, inp.startHHMM ?? SLOT_START[inp.slot]);
@@ -246,7 +247,9 @@ export function buildPlan(inp: PlanInput): { plan: PlanJson; trace: PlannerStep[
       ? { id: "validate", label: "Checking it against the rules", detail: `${venue.short_name ?? venue.name} ✓ public ✓ daytime ✓ on the list · over the usual $15, so a person reviews it first`, status: "warn" }
       : { id: "validate", label: "Checking it against the rules", detail: `${venue.short_name ?? venue.name} ✓ public ✓ under $15 ✓ ${inp.slot === "weekday-evening" ? "evening" : "daytime"} ✓ on the list`, status: "done" },
   ];
-  return { plan, trace, venue, startsAt: start, endsAt: end };
+  // Per-plan lock number from the activity and pod size (Hoopers: basketball, 8 members → 4, the video script).
+  const lock = lockRule({ key: inp.topicKey, size: inp.members, text: `${summary} ${t.event}`, format: inp.title, venue: { type: venue.type, costPerPerson: venue.cost_per_person } });
+  return { plan, trace, venue, startsAt: start, endsAt: end, lock };
 }
 
 export function suggestionFrom(
@@ -256,6 +259,6 @@ export function suggestionFrom(
   return {
     id, pod_id: podId, summary: built.plan.summary, plan_json: built.plan, venue_id: built.venue.id,
     starts_at: built.startsAt, status: "suggested", created_at: createdAt, source: "seed", round: 1, option_index: 0,
-    trace: built.trace, ...extra,
+    trace: built.trace, ...built.lock, ...extra,
   };
 }

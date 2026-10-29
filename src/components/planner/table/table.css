@@ -1318,3 +1318,59 @@ html[data-light="night"] .pt-over {
   font-size: 16px;
   line-height: 22px;
 }
+
+/* Locks at N: the AI's number and reason, with a small − / + the pod can nudge (lock-stepper.tsx) */
+.pd-lock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  margin-top: var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+}
+.pd-lock-text {
+  min-width: 0;
+}
+.pd-lock-seats {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.pd-lock-step {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  height: 40px;
+}
+.pd-lock-btn {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+.pd-lock-btn:disabled {
+  color: var(--ink-3);
+  cursor: default;
+}
+.pd-lock-btn:not(:disabled):active {
+  background: var(--line);
+}
+.pd-lock-btn:focus-visible {
+  outline: 2px solid var(--select);
+  outline-offset: 1px;
+}
+.pd-lock-n {
+  min-width: 20px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}

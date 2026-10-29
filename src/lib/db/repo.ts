@@ -76,6 +76,8 @@ export interface Repo {
   dismissCard(podId: string): Promise<Result<void>>;
   undismissCard(podId: string): Promise<Result<void>>; // + Undo on the "Hidden for you" toast (AP-02 AC 2)
   rsvp(hangoutOrSuggestionId: string, status: RsvpStatus): Promise<Result<{ goingCount: number; locked: boolean }>>;
+  /** The pod nudges how many "I'm in" lock this plan (2..pod size, not below who's in). Locks now if already met. */
+  setLockMin(suggestionId: string, n: number): Promise<Result<{ min: number; locked: boolean }>>;
   approveSuggestion(id: string, edits?: Partial<PlanJson>): Promise<Result<HangoutSuggestion>>;
   checkIn(hangoutId: string): Promise<Result<RSVP>>;
   castRunItBack(hangoutId: string, value: RunItBackAnswer): Promise<Result<RunItBackTally>>; // D6: yes / not_sure / no

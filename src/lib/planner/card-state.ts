@@ -1,5 +1,6 @@
 // [U4] The pinned card's state machine (BLUEPRINT §8.1) as a pure view model over DbState + the demo clock.
 // U7 can call `cardView` to pick a pod card status or to render its own CheckInCard in the "check_in" state.
+import { lockMinFor } from "@/lib/planner/lock";
 import { activeSuggestion, goingUserIds, hangoutForSuggestion, membership, podMembers } from "@/lib/db/selectors";
 import type { DbState, Hangout, HangoutSuggestion, ID, NextHangoutVote, RunItBackAnswer, Venue } from "@/lib/types";
 
@@ -50,9 +51,9 @@ export function cardView(db: DbState, podId: ID, nowMs: number): CardView | null
   if (!pod) return null;
   const me = db.me;
   const size = podMembers(db, podId).length;
-  const threshold = db.config.planner.lockThreshold;
   const mine = membership(db, podId);
   const s = activeSuggestion(db, podId) ?? null;
+  const threshold = lockMinFor(db, s);
   const hangouts = Object.values(db.hangouts)
     .filter((h) => h.pod_id === podId && h.status !== "cancelled")
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));

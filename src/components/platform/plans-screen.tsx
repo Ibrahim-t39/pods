@@ -9,6 +9,7 @@
 // Titles, times and places come from plan-display, the one plan display helper every surface uses.
 "use client";
 
+import { lockMinFor } from "@/lib/planner/lock";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
@@ -75,7 +76,6 @@ function extrasFor(
   items: PlanItem[],
   nowMs: number,
 ): Record<string, Extra> {
-  const threshold = db.config.planner.lockThreshold;
   const out: Record<string, Extra> = {};
   for (const p of items) {
     const s = db.hangouts[p.id]
@@ -109,7 +109,7 @@ function extrasFor(
     const ended = Date.parse(p.ends_at);
     out[p.id] = {
       size: Math.max(members.length, p.going),
-      threshold,
+      threshold: lockMinFor(db, s),
       names,
       bring: s?.plan_json.bring ?? [],
       reason: (s?.plan_json.reason ?? "").replace(/\.$/, ""),

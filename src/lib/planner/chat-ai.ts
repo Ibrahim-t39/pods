@@ -68,9 +68,11 @@ export function aiReply(db: DbState, podId: ID, question: string, nowMs: number)
     case "who": {
       const going = view!.going.map((id) => (id === db.me ? "you" : firstName(db, id)));
       const need = Math.max(0, view!.threshold - going.length);
+      const why = s.lock_reason ? ` (${s.lock_reason.replace(/\.$/, "")})` : "";
+      facts.push(`Locks at ${view!.threshold}${why}`);
       const text = going.length
-        ? `${going.length} of ${view!.size} are in: ${list(going)}.${view!.locked ? " It's locked." : need ? ` ${need} more and it's locked.` : ""}`
-        : `Nobody's in yet. It locks when ${view!.threshold} people are in.`;
+        ? `${going.length} of ${view!.size} are in: ${list(going)}.${view!.locked ? " It's locked." : need ? ` ${need} more and it's locked${why}.` : ""}`
+        : `Nobody's in yet. It locks when ${view!.threshold} people are in${why}.`;
       return { intent, facts, text, chips: view!.imIn ? [AI_CHIPS.bring] : [AI_CHIPS.rain, AI_CHIPS.bring] };
     }
     case "cheaper": {

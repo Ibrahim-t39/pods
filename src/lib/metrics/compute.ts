@@ -1,5 +1,6 @@
 // [U9] Spec success metrics over the local DB (ARCHITECTURE §12). Pure: pass the DB and a clock ms.
 // Every figure here is computed from SYNTHETIC seed history; the admin pages say so.
+import { lockMinForTarget } from "@/lib/planner/lock";
 import type { DbState, Hangout, ID, Pod } from "@/lib/types";
 
 const DAY = 86_400_000;
@@ -159,8 +160,8 @@ export function needsAttention(db: DbState, nowMs: number): AttentionItem[] {
       out.push({ id: `forming_${p.id}`, kind: "stuck_forming", podId: p.id, title: "Still forming after 7 days", detail: `${members(p.id)} members` });
     }
   }
-  const lock = db.config.planner.lockThreshold;
   for (const h of Object.values(db.hangouts)) {
+    const lock = lockMinForTarget(db, h.id);
     const start = ms(h.starts_at);
     if (h.status === "upcoming" && start > nowMs && start - nowMs < DAY) {
       const going = db.rsvps.filter((r) => r.hangout_id === h.id && r.status === "going").length;

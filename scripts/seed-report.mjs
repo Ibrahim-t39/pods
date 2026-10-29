@@ -64,7 +64,8 @@ try {
   check(hs && hs.starts_at === DEMO.hoopers.starts_at && hs.venue_id === "venue_brahan_rec", "Hoopers plan: Sun Nov 8 1:00 PM at Brahan Spring Rec Center");
   check(hs.plan_json.reason.includes(DEMO.hoopers.reason), "Hoopers reason line matches BLUEPRINT §0");
   const going = db.rsvps.filter((r) => r.hangout_id === hs.id && r.status === "going").length;
-  check(going === 3 && going + 1 >= db.config.planner.lockThreshold, `3 going before Chanda -> 4 locks at threshold ${db.config.planner.lockThreshold}`);
+  const lockAt = hs.min_to_lock ?? db.config.planner.lockThreshold;
+  check(going === 3 && lockAt === 4 && going + 1 >= lockAt, `3 going before Chanda -> 4 locks (plan locks at ${lockAt})`);
   const ss = Object.values(db.suggestions).find((s) => s.pod_id === sa);
   check(ss && ss.starts_at === DEMO.southernAfrican.starts_at && ss.venue_id === "venue_big_spring_park", "Southern African: Sun Nov 15 1:00 PM at Big Spring Park");
   check(!Object.values(db.suggestions).some((x) => ["pod_rocket_city_strings", "pod_adventist_young_adults"].includes(x.pod_id)), "Strings + Adventist are on deck: plan held in plannerCache, no live suggestion");

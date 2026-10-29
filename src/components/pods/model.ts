@@ -1,5 +1,6 @@
 // Pod view models: pure selectors over DbState and the clock. Used by home, chat, details and events.
 // Status priority is BLUEPRINT §8.2. Repeat-loop stage is BLUEPRINT §7.1 / AP-06. Never returns identity fields.
+import { lockMinFor } from "@/lib/planner/lock";
 import type { DbState, Hangout, HangoutSuggestion, ID, Membership, NextHangoutVote, Pod, PublicMember, Venue } from "@/lib/types";
 import { activeSuggestion, goingUserIds, hangoutForSuggestion, membership, myMemberships, podMembers } from "@/lib/db/selectors";
 import { toPublicMember } from "@/lib/utils";
@@ -71,7 +72,7 @@ export function planVM(db: DbState, podId: ID): PlanVM | null {
     targetId,
     going,
     size: podMembers(db, podId).length,
-    threshold: db.config.planner.lockThreshold,
+    threshold: lockMinFor(db, s),
     locked: !!hangout,
     imIn: myR?.status === "going",
     cantMake: myR?.status === "not_going",

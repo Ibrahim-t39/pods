@@ -208,6 +208,13 @@ export interface HangoutSuggestion {
   round: number;
   option_index: 0 | 1 | 2;
   trace: PlannerStep[];
+  /** "I'm in" count that locks this plan (set by the AI per activity and pod size; the pod can nudge it).
+   *  Missing on old data: config.planner.lockThreshold applies (read it through lockMinFor). */
+  min_to_lock?: number;
+  /** Hard cap when the venue books seats (a class, a paint and sip). */
+  max_seats?: number;
+  /** One short plain line on why this number ("2v2 half-court works with 4; more can join"). */
+  lock_reason?: string;
 }
 
 export type RsvpStatus = "going" | "not_going";

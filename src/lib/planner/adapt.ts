@@ -132,6 +132,9 @@ export function planToSuggestion(
     round,
     option_index: optionIndex,
     trace,
+    ...(typeof plan.min_to_lock === "number" ? { min_to_lock: plan.min_to_lock } : {}),
+    ...(typeof plan.max_seats === "number" ? { max_seats: plan.max_seats } : {}),
+    ...(plan.lock_reason ? { lock_reason: plan.lock_reason } : {}),
   };
 }
 

@@ -1,5 +1,5 @@
 // Admin read helpers (pure, store-only). Every number on an admin screen comes from here, so each one has a single
-// definition: "seated" = members who have not left; "locked" = a plan with lockThreshold or more "I'm in";
+// definition: "seated" = members who have not left; "locked" = a plan with its own min_to_lock (lockMinFor) or more "I'm in";
 // "held" = 3 or more checked in (library H #1); hours together = the length of every held hangout (H #2, admin only).
 import type { DbState, Hangout, HangoutSuggestion, Pod, ReportReason } from "@/lib/types";
 import { formatInTimeZone } from "date-fns-tz";
