@@ -12,17 +12,39 @@ export type ISODateTime = string; // "2026-11-08T13:00:00-06:00"
 export type ISODate = string; // "2026-11-08"
 export type ID = string;
 
-// BLUEPRINT D3: 3 day cards (weekday evenings, Saturday, Sunday) with Morning / Afternoon / Evening sub-chips.
+// Availability: any day of the week x Morning / Afternoon / Evening (the "Your usual week" grid).
+export const WEEK_DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+export type WeekDay = (typeof WEEK_DAYS)[number];
+export const DAY_PART_KEYS = ["morning", "afternoon", "evening"] as const;
 export const SLOTS = [
-  "weekday-evening",
-  "saturday-morning",
-  "saturday-afternoon",
-  "saturday-evening",
-  "sunday-morning",
-  "sunday-afternoon",
-  "sunday-evening",
+  "monday-morning", "monday-afternoon", "monday-evening",
+  "tuesday-morning", "tuesday-afternoon", "tuesday-evening",
+  "wednesday-morning", "wednesday-afternoon", "wednesday-evening",
+  "thursday-morning", "thursday-afternoon", "thursday-evening",
+  "friday-morning", "friday-afternoon", "friday-evening",
+  "saturday-morning", "saturday-afternoon", "saturday-evening",
+  "sunday-morning", "sunday-afternoon", "sunday-evening",
 ] as const;
 export type Slot = (typeof SLOTS)[number];
+
+/** Older saved data and seeds say "weekday-evening" (Mon-Fri evenings as one cell). It is still accepted on read and
+ *  normalised by normalizeSlots(); it is never written back. */
+export const LEGACY_WEEKDAY_EVENING = "weekday-evening";
+export type SlotInput = Slot | typeof LEGACY_WEEKDAY_EVENING;
+export const WEEKDAY_EVENINGS: Slot[] = ["monday-evening", "tuesday-evening", "wednesday-evening", "thursday-evening", "friday-evening"];
+
+/** Any saved availability (current slots, the legacy weekday-evening, or junk) to clean, de-duplicated current slots in grid order. */
+export function normalizeSlots(raw: readonly string[] | null | undefined): Slot[] {
+  const set = new Set<string>();
+  for (const s of raw ?? []) {
+    if (s === LEGACY_WEEKDAY_EVENING) for (const e of WEEKDAY_EVENINGS) set.add(e);
+    else set.add(s);
+  }
+  return SLOTS.filter((s) => set.has(s)) as Slot[];
+}
+
+/** Does the person's week stay the same, or change week to week? Changes means the AI checks the week before planning. */
+export type Rhythm = "steady" | "changes";
 
 /** D3 "Keep this day free". Device-side only: the planner sees per-slot counts, never this field. */
 export const BLOCKABLE_DAYS = ["saturday", "sunday"] as const;
@@ -52,6 +74,8 @@ export interface User {
   verified: boolean;
   verified_at: ISODateTime | null;
   availability: Slot[]; // [] = didn't share
+  /** + "Same most weeks" (default) or "Changes week to week": the AI checks the week (Home's "Your time") before planning. */
+  rhythm?: Rhythm;
   blocked_days: BlockedDay[]; // + D3; never sent to the planner as a per-person value (D11)
   /** + week-specific changes to the usual week ("Busy this Saturday", "Free Thursday evening"). Device-side; the planner
    *  sees only the per-slot counts they change. Past dates are pruned on write. */

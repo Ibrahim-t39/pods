@@ -2,6 +2,7 @@
 // Bios and prompts are written to read like real 18-29s who are new to the area. By rule they carry NO heritage or faith
 // cues: those live only in identities.ts (BLUEPRINT D11, ARCHITECTURE §9.3). Chanda is NOT here: onboarding creates her.
 import type { ProfilePrompt, Slot, User } from "@/lib/types";
+import { WEEKDAY_EVENINGS } from "@/lib/types";
 import { at, addDays } from "./time";
 
 type PK = ProfilePrompt["key"];
@@ -21,8 +22,8 @@ interface Row {
   keep?: ("saturday" | "sunday")[];
 }
 
-const CODE: Record<string, Slot> = {
-  W: "weekday-evening", SM: "saturday-morning", SA: "saturday-afternoon", SE: "saturday-evening",
+const CODE: Record<string, Slot | Slot[]> = {
+  W: WEEKDAY_EVENINGS, SM: "saturday-morning", SA: "saturday-afternoon", SE: "saturday-evening",
   UM: "sunday-morning", UA: "sunday-afternoon", UE: "sunday-evening",
 };
 
@@ -130,7 +131,7 @@ export function buildUsers(pilotOpen: string): User[] {
       phone: "",
       verified: true,
       verified_at: at(addDays(pilotOpen, r.joined), "12:20"),
-      availability: r.a.split(",").map((c) => CODE[c]),
+      availability: r.a.split(",").flatMap((c) => CODE[c]),
       blocked_days: r.keep ?? [],
       created_at: created,
       status: "active",

@@ -8,24 +8,12 @@ import { z } from "zod/v4";
 import { SLOTS, type Slot } from "@/lib/types";
 export { SLOTS, type Slot };
 
-export const SLOT_LABEL: Record<Slot, string> = {
-  "weekday-evening": "weekday evenings",
-  "saturday-morning": "Saturday mornings",
-  "saturday-afternoon": "Saturday afternoons",
-  "saturday-evening": "Saturday evenings",
-  "sunday-morning": "Sunday mornings",
-  "sunday-afternoon": "Sunday afternoons",
-  "sunday-evening": "Sunday evenings",
-};
-export const SLOT_SHORT: Record<Slot, string> = {
-  "weekday-evening": "Weekday evening",
-  "saturday-morning": "Sat morning",
-  "saturday-afternoon": "Sat afternoon",
-  "saturday-evening": "Sat evening",
-  "sunday-morning": "Sun morning",
-  "sunday-afternoon": "Sun afternoon",
-  "sunday-evening": "Sun evening",
-};
+const DAY_FULL: Record<string, string> = { monday: "Monday", tuesday: "Tuesday", wednesday: "Wednesday", thursday: "Thursday", friday: "Friday", saturday: "Saturday", sunday: "Sunday" };
+const slotKey = (s: Slot) => s.split("-") as [string, string];
+/** "Tuesday evenings" */
+export const SLOT_LABEL = Object.fromEntries(SLOTS.map((s) => [s, `${DAY_FULL[slotKey(s)[0]]} ${slotKey(s)[1]}s`])) as Record<Slot, string>;
+/** "Tue evening" */
+export const SLOT_SHORT = Object.fromEntries(SLOTS.map((s) => [s, `${DAY_FULL[slotKey(s)[0]].slice(0, 3)} ${slotKey(s)[1]}`])) as Record<Slot, string>;
 
 export interface PlannerVenue {
   id: string;

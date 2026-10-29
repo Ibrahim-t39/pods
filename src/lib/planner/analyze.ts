@@ -2,10 +2,14 @@
 import { addDays, weekday } from "@/data/time";
 import { SLOTS, SLOT_SHORT, type PlannerInput, type PlannerVenue, type Slot, type SlotCount } from "./types";
 
-/** Ties prefer daytime weekend slots (public, safer first hangouts). */
+/** Ties prefer daytime weekend slots (public, safer first hangouts), then weekday evenings (Tue-Thu first), then
+ *  weekend evenings, then weekday afternoons and mornings. */
 const PREFERENCE: Slot[] = [
   "sunday-afternoon", "saturday-afternoon", "saturday-morning", "sunday-morning",
-  "weekday-evening", "saturday-evening", "sunday-evening",
+  "tuesday-evening", "wednesday-evening", "thursday-evening", "monday-evening", "friday-evening",
+  "saturday-evening", "sunday-evening",
+  "tuesday-afternoon", "wednesday-afternoon", "thursday-afternoon", "monday-afternoon", "friday-afternoon",
+  "tuesday-morning", "wednesday-morning", "thursday-morning", "monday-morning", "friday-morning",
 ];
 
 export function rankSlots(availability: SlotCount[]): SlotCount[] {
@@ -33,23 +37,28 @@ export function topTwoText(ranked: SlotCount[], size: number): string {
     .join(" · ");
 }
 
-/** Next calendar date (YYYY-MM-DD) on/after `earliest` that matches the slot's weekday (weekday evenings: Tue-Thu). */
+const WD: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+/** Next calendar date (YYYY-MM-DD) on/after `earliest` that falls on the slot's weekday. */
 export function dateForSlot(slot: Slot, earliest: string): string {
   let d = earliest;
-  const ok = (wd: number) => (slot.startsWith("saturday") ? wd === 6 : slot.startsWith("sunday") ? wd === 0 : wd >= 2 && wd <= 4);
-  for (let i = 0; i < 8 && !ok(weekday(d)); i++) d = addDays(d, 1);
+  const want = WD[slot.split("-")[0]];
+  for (let i = 0; i < 8 && weekday(d) !== want; i++) d = addDays(d, 1);
   return d;
 }
 
-export const SLOT_HOURS: Record<Slot, { start: string; end: string }> = {
-  "weekday-evening": { start: "18:00", end: "20:00" },
-  "saturday-morning": { start: "10:00", end: "12:00" },
-  "saturday-afternoon": { start: "13:00", end: "15:00" },
-  "saturday-evening": { start: "17:00", end: "19:00" },
-  "sunday-morning": { start: "10:00", end: "12:00" },
-  "sunday-afternoon": { start: "13:00", end: "15:00" }, // BLUEPRINT D1: Sun 1:00-3:00 PM
-  "sunday-evening": { start: "17:00", end: "19:00" },
-};
+const HOURS = {
+  weekday: { morning: { start: "09:00", end: "11:00" }, afternoon: { start: "13:00", end: "15:00" }, evening: { start: "18:00", end: "20:00" } },
+  weekend: { morning: { start: "10:00", end: "12:00" }, afternoon: { start: "13:00", end: "15:00" }, evening: { start: "17:00", end: "19:00" } }, // Sun afternoon: BLUEPRINT D1, 1:00-3:00 PM
+} as const;
+export const SLOT_HOURS = Object.fromEntries(
+  SLOTS.map((s) => {
+    const [d, p] = s.split("-") as [string, "morning" | "afternoon" | "evening"];
+    return [s, HOURS[d === "saturday" || d === "sunday" ? "weekend" : "weekday"][p]];
+  }),
+) as Record<Slot, { start: string; end: string }>;
+
+/** Evening slots are after work and near dark: the planner prefers indoor places there. */
+export const isEveningSlot = (slot: Slot) => slot.endsWith("-evening");
 
 /** Planner rules: public venues only, not alcohol-centered, within budget, suited to the topic, no recent repeats. */
 export function candidateVenues(input: PlannerInput) {

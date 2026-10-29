@@ -14,7 +14,9 @@ import { SNAPPY } from "@/components/brand/table-ring";
 import { useDb, useMe, useRepo } from "@/lib/db/hooks";
 import { faithLabel, faithValue, heritageLabel, heritageValue } from "@/components/onboarding/community";
 import { CommunityFields } from "@/components/onboarding/community-fields";
-import type { Slot } from "@/lib/types";
+import { normalizeSlots, type Rhythm, type Slot } from "@/lib/types";
+import { WeekGrid } from "@/components/availability/week-grid";
+import { RhythmChoice } from "@/components/availability/rhythm-choice";
 import { BlockedList, PrivacyCenter } from "@/components/safety";
 import { PageName, ChoiceRow, Rows, SheetFoot, SheetLine, GoLink } from "./kit";
 import "./you.css";
@@ -156,81 +158,48 @@ export function LikesPicker({ onAsking }: { onAsking?: (asking: boolean) => void
   );
 }
 
-/* ── Free (from "Free weekends, afternoons.") ──────────────────────────────────────────────────────────────────── */
+/* ── Free: the same week grid as sign-up ──────────────────────────────────────────────────────────────────────── */
 
-const PARTS = [
-  { key: "morning", label: "Morning" },
-  { key: "afternoon", label: "Afternoon" },
-  { key: "evening", label: "Evening" },
-] as const;
-const DAYS = [
-  { key: "saturday", label: "Sat", full: "Saturday" },
-  { key: "sunday", label: "Sun", full: "Sunday" },
-] as const;
-
-/** Free times as a grid: days down, parts of the day across; a filled cell is a time you are free. Read-only when
- *  `onToggle` is absent (the profile shows it), a control otherwise (the sheet and /app/profile/edit). */
-export function FreeGrid({ slots, onToggle }: { slots: Slot[]; onToggle?: (s: Slot) => void }) {
-  const cell = (s: Slot | null, label: string) => {
-    if (!s) return <span key={label} className="yo-free-cell" data-na aria-hidden />;
-    const on = slots.includes(s);
-    if (!onToggle) return <span key={s} className="yo-free-cell" data-on={on || undefined} role="img" aria-label={`${label}: ${on ? "free" : "busy"}`} />;
-    return <button key={s} type="button" role="checkbox" aria-checked={on} aria-label={label} onClick={() => onToggle(s)} className="yo-free-cell pressable" data-on={on || undefined} />;
+/** The week grid + rhythm, wired to the repo. Each change saves the whole week (so a drag ends on the last stroke),
+ *  and drops "keep this day free" days the new times no longer touch. Placement and planning read it as before. */
+export function FreeEditor() {
+  const repo = useRepo();
+  const me = useMe();
+  const [slots, setSlots] = useState<Slot[]>(() => normalizeSlots(me?.availability));
+  const [rhythm, setRhythm] = useState<Rhythm>(me?.rhythm ?? "steady");
+  if (!me) return null;
+  const save = async (next: Slot[], r: Rhythm) => {
+    const days = me.blocked_days.filter((d) => next.some((x) => x.startsWith(d)));
+    const res = await repo.setAvailability(next, days, r);
+    if (!res.ok) notify.error("Not saved. Try again.");
   };
   return (
-    <div className="yo-free">
-      <span />
-      {PARTS.map((p) => (
-        <span key={p.key} className="text-center">
-          {p.label}
-        </span>
-      ))}
-      {DAYS.map((d) => (
-        <FreeRow key={d.key} label={d.full}>
-          {PARTS.map((p) => cell(`${d.key}-${p.key}` as Slot, `${d.full} ${p.label.toLowerCase()}`))}
-        </FreeRow>
-      ))}
-      <FreeRow label="Weeknights">
-        {cell(null, "wk-m")}
-        {cell(null, "wk-a")}
-        {cell("weekday-evening", "Weeknight evenings")}
-      </FreeRow>
+    <div className="flex w-full flex-col items-center gap-s5">
+      <WeekGrid
+        slots={slots}
+        onChange={(next) => {
+          setSlots(next);
+          void save(next, rhythm);
+        }}
+      />
+      <RhythmChoice
+        value={rhythm}
+        onChange={(r) => {
+          setRhythm(r);
+          void save(slots, r);
+        }}
+      />
     </div>
   );
 }
 
-/** Saves a toggled slot (and drops blocked days the new free times no longer touch). */
-export function useToggleSlot() {
-  const repo = useRepo();
-  const me = useMe();
-  return async (s: Slot) => {
-    if (!me) return;
-    const slots = me.availability;
-    const next = slots.includes(s) ? slots.filter((x) => x !== s) : [...slots, s];
-    const days = me.blocked_days.filter((d) => !next.some((x) => x.startsWith(d)));
-    const r = await repo.setAvailability(next, days);
-    if (!r.ok) notify.error("Not saved. Try again.");
-  };
-}
-
 export function FreeSheet({ open, onClose }: SheetProps) {
-  const me = useMe();
-  const toggle = useToggleSlot();
   return (
     <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="When you’re free" footer={done(onClose)}>
       <PageName>You</PageName>
       <SheetLine className="-mt-s3 mb-s6">The AI plans hangouts inside these times.</SheetLine>
-      <FreeGrid slots={me?.availability ?? []} onToggle={toggle} />
+      {open && <FreeEditor />}
     </ResponsiveSheet>
-  );
-}
-
-function FreeRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <>
-      <span className="yo-free-day">{label}</span>
-      {children}
-    </>
   );
 }
 

@@ -2,6 +2,7 @@
 // Everything here is counts-only (BLUEPRINT D11): no names, heritage, faith or per-person availability in a reason or a trace,
 // and no forecast numbers (the seed never invents weather). Venue claims come only from venues.ts.
 import type { HangoutSuggestion, ID, ISODateTime, PlannerStep, PlanJson, Slot, Venue } from "@/lib/types";
+import { SLOTS, WEEKDAY_EVENINGS } from "@/lib/types";
 import { VENUES } from "./venues";
 import { addMinutes, at, dayLabel } from "./time";
 import { lockRule, type LockRule } from "@/lib/planner/lock";
@@ -142,35 +143,55 @@ export const TOPICS: Record<string, Topic> = {
   },
 };
 
-export const SLOT_PHRASE: Record<Slot, string> = {
-  "weekday-evening": "weekday evenings",
-  "saturday-morning": "Saturday mornings", "saturday-afternoon": "Saturday afternoons", "saturday-evening": "Saturday evenings",
-  "sunday-morning": "Sunday mornings", "sunday-afternoon": "Sunday afternoons", "sunday-evening": "Sunday evenings",
+/** The seeded world still thinks in the original seven cells (Mon-Fri evenings as one "weekday-evening"), which keeps
+ *  the demo story identical. Real slots are collapsed into those cells by collapseSeed(); every other slot is also valid. */
+export type PlanSlot = Slot | "weekday-evening";
+const CAP = (w: string) => w[0].toUpperCase() + w.slice(1);
+const parts = (s: Slot) => s.split("-") as [string, string];
+const isWeekend = (s: Slot) => s.startsWith("saturday") || s.startsWith("sunday");
+const OLD: Record<string, [string, string, string, number]> = {
+  // phrase, short, start, weekday (0 = Sun)
+  "weekday-evening": ["weekday evenings", "Weekday evening", "17:30", 4],
 };
-const SLOT_SHORT: Record<Slot, string> = {
-  "weekday-evening": "Weekday evening", "saturday-morning": "Sat morning", "saturday-afternoon": "Sat afternoon", "saturday-evening": "Sat evening",
-  "sunday-morning": "Sun morning", "sunday-afternoon": "Sun afternoon", "sunday-evening": "Sun evening",
-};
-export const SLOT_START: Record<Slot, string> = {
-  "weekday-evening": "17:30", "saturday-morning": "10:00", "saturday-afternoon": "13:00", "saturday-evening": "17:00",
-  "sunday-morning": "10:00", "sunday-afternoon": "13:00", "sunday-evening": "16:30",
-};
-export const SLOT_WEEKDAY: Record<Slot, number> = {
-  "weekday-evening": 4, "saturday-morning": 6, "saturday-afternoon": 6, "saturday-evening": 6,
-  "sunday-morning": 0, "sunday-afternoon": 0, "sunday-evening": 0,
-};
+const PHRASE: Record<string, string> = {}, SHORT: Record<string, string> = {}, START: Record<string, string> = {}, WDAY: Record<string, number> = {};
+for (const [k, [ph, sh, st, wd]] of Object.entries(OLD)) { PHRASE[k] = ph; SHORT[k] = sh; START[k] = st; WDAY[k] = wd; }
+const NUM: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+const WEEKEND_START: Record<string, string> = { morning: "10:00", afternoon: "13:00", evening: "17:00" };
+const WEEKDAY_START: Record<string, string> = { morning: "09:00", afternoon: "13:00", evening: "18:00" };
+for (const s of SLOTS) {
+  const [d, p] = parts(s);
+  PHRASE[s] = `${CAP(d)} ${p}s`;
+  SHORT[s] = `${CAP(d).slice(0, 3)} ${p}`;
+  START[s] = isWeekend(s) ? WEEKEND_START[p] : WEEKDAY_START[p];
+  WDAY[s] = NUM[d];
+}
+START["sunday-evening"] = "16:30";
+export const SLOT_PHRASE = PHRASE as Record<PlanSlot, string>;
+const SLOT_SHORT = SHORT as Record<PlanSlot, string>;
+export const SLOT_START = START as Record<PlanSlot, string>;
+export const SLOT_WEEKDAY = WDAY as Record<PlanSlot, number>;
 
-const SLOT_ORDER: Slot[] = ["sunday-afternoon", "saturday-morning", "saturday-afternoon", "weekday-evening", "sunday-morning", "saturday-evening", "sunday-evening"];
+/** Is this an evening cell on a weekday? */
+export const isWeekdayEvening = (s: PlanSlot) => s === "weekday-evening" || (s.endsWith("-evening") && !isWeekend(s as Slot));
+
+/** Seed availability to plan cells: Mon-Fri evenings together are one "weekday-evening". */
+export function collapseSeed(slots: readonly Slot[]): PlanSlot[] {
+  const all = WEEKDAY_EVENINGS.every((e) => slots.includes(e));
+  const rest = slots.filter((s) => !(all && WEEKDAY_EVENINGS.includes(s)));
+  return all ? ["weekday-evening", ...rest] : rest;
+}
+
+const SLOT_ORDER: PlanSlot[] = ["sunday-afternoon", "saturday-morning", "saturday-afternoon", "weekday-evening", "sunday-morning", "saturday-evening", "sunday-evening"];
 
 /** Per-slot counts of free members (counts only; the planner never sees who). */
-export function slotCounts(avail: Slot[][]): Record<Slot, number> {
-  const out = Object.fromEntries(SLOT_ORDER.map((s) => [s, 0])) as Record<Slot, number>;
-  for (const a of avail) for (const s of a) out[s]++;
+export function slotCounts(avail: Slot[][]): Record<PlanSlot, number> {
+  const out = Object.fromEntries(SLOT_ORDER.map((s) => [s, 0])) as Record<PlanSlot, number>;
+  for (const a of avail) for (const s of collapseSeed(a)) if (s in out) out[s]++;
   return out;
 }
 
 /** Slots by count desc, then the stable preference order above. */
-export function rankSlots(avail: Slot[][]): { slot: Slot; free: number }[] {
+export function rankSlots(avail: Slot[][]): { slot: PlanSlot; free: number }[] {
   const c = slotCounts(avail);
   return SLOT_ORDER.map((slot, i) => ({ slot, free: c[slot], i })).filter((x) => x.free > 0)
     .sort((a, b) => b.free - a.free || a.i - b.i).map(({ slot, free }) => ({ slot, free }));
@@ -187,9 +208,9 @@ export interface PlanInput {
   topicKey: string; // key into TOPICS
   interestTopic: string; // interest id used for the venue count ("basketball") or the community key
   members: number;
-  slot: Slot;
+  slot: PlanSlot;
   free: number;
-  topTwo: { slot: Slot; free: number }[];
+  topTwo: { slot: PlanSlot; free: number }[];
   date: string; // YYYY-MM-DD
   startHHMM?: string;
   venueId?: ID;
@@ -245,7 +266,7 @@ export function buildPlan(inp: PlanInput): { plan: PlanJson; trace: PlannerStep[
     { id: "draft", label: "Drafting the plan", detail: "Planned ahead", status: "done" },
     inp.overBudget
       ? { id: "validate", label: "Checking it against the rules", detail: `${venue.short_name ?? venue.name} ✓ public ✓ daytime ✓ on the list · over the usual $15, so a person reviews it first`, status: "warn" }
-      : { id: "validate", label: "Checking it against the rules", detail: `${venue.short_name ?? venue.name} ✓ public ✓ under $15 ✓ ${inp.slot === "weekday-evening" ? "evening" : "daytime"} ✓ on the list`, status: "done" },
+      : { id: "validate", label: "Checking it against the rules", detail: `${venue.short_name ?? venue.name} ✓ public ✓ under $15 ✓ ${isWeekdayEvening(inp.slot) ? "evening" : "daytime"} ✓ on the list`, status: "done" },
   ];
   // Per-plan lock number from the activity and pod size (Hoopers: basketball, 8 members → 4, the video script).
   const lock = lockRule({ key: inp.topicKey, size: inp.members, text: `${summary} ${t.event}`, format: inp.title, venue: { type: venue.type, costPerPerson: venue.cost_per_person } });

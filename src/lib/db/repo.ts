@@ -20,7 +20,9 @@ import type {
   RsvpStatus,
   RunItBackAnswer,
   RunItBackTally,
+  Rhythm,
   Slot,
+  SlotInput,
   BlockedDay,
   User,
   Venue,
@@ -52,7 +54,7 @@ export interface Repo {
   setInterests(interestIds: string[]): Promise<Result<void>>;
   setIdentity(input: { heritage?: HeritageValue | null; faith?: FaithValue | null; consent: boolean }): Promise<Result<void>>;
   /** D3: slots + "Keep this day free" days (device-side; planner sees counts only). */
-  setAvailability(slots: Slot[], blockedDays?: BlockedDay[]): Promise<Result<void>>;
+  setAvailability(slots: readonly SlotInput[], blockedDays?: BlockedDay[], rhythm?: Rhythm): Promise<Result<void>>;
   setPhotos(urls: string[]): Promise<Result<void>>;
   acceptPledge(): Promise<Result<void>>;
   /** DEMO ONLY: sample images, never persisted. */

@@ -11,7 +11,7 @@ import { newId } from "@/lib/ids";
 import { applyPlacementPlan, makeRun, placeUser, previewPlacement as previewDryRun, type PlacementErrorCode } from "@/lib/placement";
 import { heritageNode, faithNode } from "@/data/taxonomy";
 import type { OnboardingStep, PlacementRun, Slot, Verification } from "@/lib/types";
-import { SLOTS, BLOCKABLE_DAYS } from "@/lib/types";
+import { BLOCKABLE_DAYS, normalizeSlots } from "@/lib/types";
 import { recordMinorBlock } from "./auth";
 import { ensureStarterPlans } from "./starter";
 
@@ -122,18 +122,17 @@ export function onboardingRepo(
       refreshMatches(ctx);
       return ok(undefined);
     },
-    async setAvailability(slots, blockedDays = []) {
+    async setAvailability(slots, blockedDays = [], rhythm) {
       await ctx.latency();
       const me = ctx.meId();
       if (!me) return err({ code: "FORBIDDEN" });
       const days = [...new Set(blockedDays)].filter((b) => (BLOCKABLE_DAYS as readonly string[]).includes(b));
       // "Keep this day free" wins over any slot on that day.
-      const clean = [...new Set(slots)].filter(
-        (s): s is Slot => (SLOTS as readonly string[]).includes(s) && !days.some((day) => s.startsWith(day)),
-      );
+      const clean = normalizeSlots(slots).filter((s) => !days.some((day) => s.startsWith(day)));
       ctx.commit((d) => {
         d.users[me].availability = clean;
         d.users[me].blocked_days = days;
+        if (rhythm) d.users[me].rhythm = rhythm;
       });
       advance(me, "photo");
       return ok(undefined);

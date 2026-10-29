@@ -10,12 +10,13 @@ import type {
   RunItBack, RunItBackAnswer, Slot, User,
 } from "@/lib/types";
 import { DEMO } from "@/config/demo";
+import { WEEKDAY_EVENINGS } from "@/lib/types";
 import { ageOn } from "@/lib/utils";
 import { hash32, seededRandom } from "@/lib/ids";
 import { POD_DEFS, type PodDef } from "./pods";
 import { botId } from "./users";
 import { HOST, LINES, WHAT_WELCOME, aiBring, aiRain } from "./messages";
-import { SLOT_PHRASE, SLOT_START, SLOT_WEEKDAY, TOPICS, VENUE_BY_ID, buildPlan, candidateVenues, rankSlots, suggestionFrom } from "./plans";
+import { type PlanSlot, isWeekdayEvening, SLOT_PHRASE, SLOT_START, SLOT_WEEKDAY, TOPICS, VENUE_BY_ID, buildPlan, candidateVenues, rankSlots, suggestionFrom } from "./plans";
 import { addDays, addMinutes, at, dateOf, nextWeekday } from "./time";
 
 export interface PodWorld {
@@ -36,16 +37,16 @@ export interface PodWorld {
 const interestTopicOf = (def: PodDef) => (def.type === "interest" ? def.plan : def.plan === "sda" ? "hiking" : "any");
 
 /** Can this pod meet in this slot at this venue? (Closed days, dark evenings outdoors, no evening trips to a cafe with a bar.) */
-function slotOk(plan: string, venueId: string, slot: Slot, afterDate: string): boolean {
+function slotOk(plan: string, venueId: string, slot: PlanSlot, afterDate: string): boolean {
   if (slot === "saturday-evening" || slot === "sunday-evening") return false;
   if (venueId === "venue_lowe_mill" && SLOT_WEEKDAY[slot] === 0) return false; // closed Sun to Tue
-  if (venueId === "venue_lucky_dice" && slot === "weekday-evening") return false; // the cafe has a bar: daytime only
-  if (!VENUE_BY_ID[venueId].indoor && slot === "weekday-evening" && afterDate >= "2026-10-20") return false; // dark by 6
+  if (venueId === "venue_lucky_dice" && isWeekdayEvening(slot)) return false; // the cafe has a bar: daytime only
+  if (!VENUE_BY_ID[venueId].indoor && isWeekdayEvening(slot) && afterDate >= "2026-10-20") return false; // dark by 6
   void plan;
   return true;
 }
 
-function pickSlot(def: PodDef, ranks: { slot: Slot; free: number }[], afterDate: string): { slot: Slot; free: number } {
+function pickSlot(def: PodDef, ranks: { slot: PlanSlot; free: number }[], afterDate: string): { slot: PlanSlot; free: number } {
   const ok = ranks.filter((r) => slotOk(def.plan, TOPICS[def.plan].venue, r.slot, afterDate));
   if (!ok.length) return ranks[0];
   // Among slots nearly as good as the best, vary by pod so the calendar is not one big Sunday 1 PM.
@@ -90,7 +91,7 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
     w.memberships.push(...memberships);
 
     // free-time counts: members + the live persona for demo pods (she joins during onboarding)
-    const personaSlots: Slot[] = (def.persona ?? []).map((c) => (c === "W" ? "weekday-evening" : "sunday-afternoon"));
+    const personaSlots: Slot[] = (def.persona ?? []).map((c) => (c === "W" ? WEEKDAY_EVENINGS : ["sunday-afternoon" as Slot])).flat();
     const avail = members.map((u) => u.availability);
     if (def.persona) avail.push(personaSlots);
     const totalMembers = members.length + (def.persona ? 1 : 0);
@@ -121,7 +122,7 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
       const isHoopers = def.id === DEMO.hoopers.podId;
       const isSA = def.id === DEMO.southernAfrican.podId;
       const isStrings = def.id === "pod_rocket_city_strings";
-      const slot = isStrings ? ("weekday-evening" as Slot) : ranks[0].slot;
+      const slot = isStrings ? ("weekday-evening" as PlanSlot) : ranks[0].slot;
       const date = isHoopers ? dateOf(DEMO.hoopers.starts_at)
         : isSA ? dateOf(DEMO.southernAfrican.starts_at)
         : isStrings ? "2026-11-12" // Thu, 5:00 PM at Lowe Mill (open Wed to Sat)

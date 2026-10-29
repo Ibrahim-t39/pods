@@ -654,65 +654,6 @@
   }
 }
 
-/* Your usual week (round 10-29): a one-tap grid, days by parts of the day. Flat, quiet, select fill when on. */
-.pods-ob-grid {
-  display: grid;
-  grid-template-columns: auto repeat(3, minmax(56px, 1fr));
-  gap: var(--s2);
-  align-items: center;
-  width: min(100%, 420px);
-}
-.pods-ob-grid-col {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink-2);
-  text-align: center;
-}
-.pods-ob-grid-row {
-  padding-right: var(--s2);
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--ink);
-  white-space: nowrap;
-}
-.pods-ob-grid-short { display: none; }
-@media (max-width: 380px) {
-  .pods-ob-grid-long { display: none; }
-  .pods-ob-grid-short { display: inline; }
-}
-.pods-ob-grid-off {
-  grid-column: span 2;
-  display: grid;
-  place-items: center;
-  min-height: 48px;
-  border-radius: 14px;
-  font-size: 13px;
-  color: var(--ink-3, var(--ink-2));
-  background: repeating-linear-gradient(-45deg, transparent 0 6px, color-mix(in oklab, var(--line-2) 45%, transparent) 6px 7px);
-}
-.pods-ob-cell {
-  display: grid;
-  place-items: center;
-  min-height: 48px;
-  border-radius: 14px;
-  color: transparent;
-  background: var(--lit);
-  box-shadow: inset 0 0 0 1.5px var(--line-2);
-  transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
-  -webkit-tap-highlight-color: transparent;
-}
-.pods-ob-cell[aria-pressed="true"] {
-  color: var(--on-select);
-  background: var(--select);
-  box-shadow: var(--shadow-primary);
-}
-@media (min-width: 1024px) {
-  .pods-ob-grid { width: 460px; gap: var(--s3); }
-  .pods-ob-grid-row { font-size: 17px; }
-  .pods-ob-grid-col { font-size: 15px; }
-  .pods-ob-cell, .pods-ob-grid-off { min-height: 56px; }
-}
-
 /* Finding your pods: three glossy pods drift in and settle together, like the logo forming */
 .pods-ob-gather {
   position: relative;

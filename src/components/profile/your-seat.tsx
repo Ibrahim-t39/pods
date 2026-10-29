@@ -31,8 +31,8 @@ import type { DbState } from "@/lib/types";
 import { podHue } from "./hue";
 import { podNextLine } from "./pod-line";
 import { useSeatPrefs } from "./local-prefs";
-import { remindersValue, shortLike } from "./words";
-import { AiSheet, CommunitySheet, FreeGrid, FreeSheet, LikesSheet, SEAT_SHEETS, RemindersSheet, useMyCommunities, type SeatSheet } from "./seat-sheets";
+import { freeLine, remindersValue, shortLike } from "./words";
+import { AiSheet, CommunitySheet, FreeSheet, LikesSheet, SEAT_SHEETS, RemindersSheet, useMyCommunities, type SeatSheet } from "./seat-sheets";
 import { Card, Row, Section, TextAction, YouHead, YouPage } from "./you-kit";
 
 /** Sheets that live on /app/settings now; an old Your seat address is forwarded there. */
@@ -288,7 +288,7 @@ export function YourSeat() {
             <motion.div {...fade(4)}>
               <Section label="Free" action={<TextAction onClick={() => go("free")}>Edit</TextAction>} className="mt-s6">
                 <Card className="yo-pad">
-                  <FreeGrid slots={me.availability} />
+                  <p className="text-[17px] font-medium leading-[1.35] text-ink">{freeLine(me.availability)}</p>
                   <p className="mt-s3 text-[14px] text-ink-2">{prefs.claude ? "The AI plans hangouts inside these times." : "AI plans are off. Turn them on in Settings."}</p>
                 </Card>
               </Section>

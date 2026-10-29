@@ -1,28 +1,26 @@
-// Your usual week (3 of 6). A one-tap grid: rows are the days Pods plans (weeknights as one slot, Saturday, Sunday),
-// columns are the parts of the day. It starts on a sensible guess (weeknight evenings and weekend afternoons), so most
-// people only adjust. The sub-line says plainly that this is a rhythm, not a promise: any single week can be marked
-// busy or free later from Home or the calendar, and the AI plans around that week instead.
+// Your usual week (3 of 6). A compact Mon-Sun grid by Morning / Afternoon / Evening. It starts on a sensible guess
+// (weeknight evenings and weekend afternoons), so most people only adjust. Tap a cell, a day, or a column, or drag
+// to paint. Three quick starts fill the grid. "Changes week to week" is a promise that the AI checks the week
+// (Home's "Your time" check-in) before it plans; any single week can be marked busy or free later either way.
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Line } from "@/components/brand/line";
 import { Button } from "@/components/ui/button";
+import { WEEK_PRESETS, WeekGrid, sameSlots } from "@/components/availability/week-grid";
+import { RhythmChoice } from "@/components/availability/rhythm-choice";
 import { useDb, useRepo } from "@/lib/db/hooks";
-import type { Slot, User } from "@/lib/types";
+import { normalizeSlots, type Rhythm, type Slot, type User } from "@/lib/types";
 import { FlowStep, Sub } from "../flow";
 import { useDraft } from "../draft";
 import { Guarded } from "../guard";
 import { BACK, DOT, STEP_ROUTE, commitDraft } from "../steps";
-import { PARTS, type Part } from "../words";
 
-const ROWS = [
-  { k: "weekday", l: "Weeknights", short: "Mon–Fri", parts: ["evening"] as Part[] },
-  { k: "saturday", l: "Saturday", short: "Sat", parts: PARTS },
-  { k: "sunday", l: "Sunday", short: "Sun", parts: PARTS },
-] as const;
-const PART_LABEL: Record<Part, string> = { morning: "Morning", afternoon: "Afternoon", evening: "Evening" };
-const DEFAULT: Slot[] = ["weekday-evening", "saturday-afternoon", "sunday-afternoon"];
+const DEFAULT: Slot[] = [
+  "monday-evening", "tuesday-evening", "wednesday-evening", "thursday-evening", "friday-evening",
+  "saturday-afternoon", "sunday-afternoon",
+];
 
 export function FreeScreen() {
   return <Guarded need="none">{(me) => <Free me={me} />}</Guarded>;
@@ -33,23 +31,25 @@ function Free({ me }: { me: User | null }) {
   const repo = useRepo();
   const draft = useDraft();
   const metro = useDb((db) => db.config.placement.metro);
-  const [slots, setSlots] = useState<Slot[]>(() => (draft.free.length ? draft.free : me?.availability.length ? me.availability : DEFAULT));
+  const [slots, setSlots] = useState<Slot[]>(() => {
+    const saved = normalizeSlots(draft.free.length ? draft.free : me?.availability);
+    return saved.length ? saved : DEFAULT;
+  });
+  const [rhythm, setRhythm] = useState<Rhythm>(() => draft.rhythm ?? me?.rhythm ?? "steady");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
-
-  const toggle = (s: Slot) => setSlots((x) => (x.includes(s) ? x.filter((y) => y !== s) : [...x, s]));
   const count = slots.length;
 
   const next = async () => {
     if (!count) return;
-    draft.set({ free: slots });
+    draft.set({ free: slots, rhythm });
     if (!me) return router.push(STEP_ROUTE.seat);
     setBusy(true);
     setErr(false);
     const r = me.first_name
       ? await (async () => {
           if (draft.interests.length) await repo.setInterests(draft.interests);
-          const a = await repo.setAvailability(slots, []);
+          const a = await repo.setAvailability(slots, [], rhythm);
           return a.ok ? { ok: true as const } : { ok: false as const, code: a.error.code };
         })()
       : await commitDraft(repo, metro);
@@ -69,39 +69,25 @@ function Free({ me }: { me: User | null }) {
             Your usual week.
           </Line>
           <Sub live className="max-w-[34ch]">
-            {err ? "Not saved. Try again." : "Tap when you're usually free. Weeks change, so you can mark any day busy or free later."}
+            {err
+              ? "Not saved. Try again."
+              : rhythm === "changes"
+                ? "The AI checks your week before it plans. Mark it from Home."
+                : "Tap or drag when you're usually free. You can change any week later."}
           </Sub>
         </>
       }
       object={
-        <div className="pods-ob-grid" role="group" aria-label="Your usual week">
-          <span />
-          {PARTS.map((p) => (
-            <span key={p} className="pods-ob-grid-col">
-              {PART_LABEL[p]}
-            </span>
-          ))}
-          {ROWS.map((row) => (
-            <div key={row.k} className="contents">
-              <span className="pods-ob-grid-row">
-                <span className="pods-ob-grid-long">{row.l}</span>
-                <span className="pods-ob-grid-short">{row.short}</span>
-              </span>
-              {row.k === "weekday" ? (
-                <>
-                  <span className="pods-ob-grid-off">
-                    work hours
-                  </span>
-                  <Cell slot="weekday-evening" on={slots.includes("weekday-evening")} label="Weeknight evenings" onToggle={toggle} />
-                </>
-              ) : (
-                PARTS.map((p) => {
-                  const s = `${row.k}-${p}` as Slot;
-                  return <Cell key={p} slot={s} on={slots.includes(s)} label={`${row.l} ${p}`} onToggle={toggle} />;
-                })
-              )}
-            </div>
-          ))}
+        <div className="flex w-full flex-col items-center gap-s4">
+          <div className="pods-ob-presets" role="group" aria-label="Quick start">
+            {WEEK_PRESETS.map((p) => (
+              <button key={p.key} type="button" aria-pressed={sameSlots(slots, p.slots)} onClick={() => setSlots(p.slots)} className="pods-ob-preset pressable">
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <WeekGrid slots={slots} onChange={setSlots} />
+          <RhythmChoice value={rhythm} onChange={setRhythm} />
         </div>
       }
       dot={DOT.free}
@@ -112,15 +98,5 @@ function Free({ me }: { me: User | null }) {
         </Button>
       }
     />
-  );
-}
-
-function Cell({ slot, on, label, onToggle }: { slot: Slot; on: boolean; label: string; onToggle: (s: Slot) => void }) {
-  return (
-    <button type="button" aria-label={label} aria-pressed={on} onClick={() => onToggle(slot)} className="pods-ob-cell pressable">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M5 12.5 10 17.5 19 7" />
-      </svg>
-    </button>
   );
 }

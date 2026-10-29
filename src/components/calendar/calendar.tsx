@@ -346,7 +346,7 @@ export function YourTime({ day, today }: { day: string; today: string }) {
           );
         })}
       </div>
-      <p className="mt-s2 text-[13px] leading-[1.4] text-ink-2">Tap to change this day only. The AI plans around it.</p>
+      <p className="mt-s2 text-[13px] leading-[1.4] text-ink-2">{me.rhythm === "changes" ? "Your week changes, so set it here. The AI checks it before it plans." : "Tap to change this day only. The AI plans around it."}</p>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { plannerDefaults } from "@/config/planner";
 
 const TINY: PlannerInput = {
   pod: { kind: "interest", activity: "basketball", templateKey: "basketball", fitKey: "basketball", size: 6, city: "Huntsville" },
-  availability: [{ slot: "sunday-afternoon", free: 5 }, { slot: "weekday-evening", free: 3 }],
+  availability: [{ slot: "sunday-afternoon", free: 5 }, { slot: "thursday-evening", free: 3 }],
   sharers: 6,
   venues: [
     { id: "v_court", name: "Test Recreation Center", shortName: "Test Rec", address: "1 Test Ave", type: "community_center", isPublic: true, indoor: true, costPerPerson: 0, alcoholCentered: false, goodFor: ["basketball"] },

@@ -55,6 +55,6 @@ describe("U6 onboarding repo", () => {
     const me = useStore.getState().db.me!;
     expect(useStore.getState().db.identities[me]).toBeUndefined();
     await repo.setAvailability(["weekday-evening", "saturday-morning", "sunday-afternoon"], ["saturday"]);
-    expect(useStore.getState().db.users[me].availability).toEqual(["weekday-evening", "sunday-afternoon"]);
+    expect(useStore.getState().db.users[me].availability).toEqual(["monday-evening", "tuesday-evening", "wednesday-evening", "thursday-evening", "friday-evening", "sunday-afternoon"]);
   });
 });

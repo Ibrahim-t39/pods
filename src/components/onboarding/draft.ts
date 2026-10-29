@@ -6,7 +6,7 @@
 import { useEffect } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
-import type { Slot } from "@/lib/types";
+import type { Rhythm, Slot } from "@/lib/types";
 import { useStore } from "@/lib/db/store";
 import { clearMinorBlocks } from "@/lib/db/local/auth";
 
@@ -17,6 +17,8 @@ export interface Draft {
   age: number | null;
   interests: string[];
   free: Slot[];
+  /** "Same most weeks" (default) or "Changes week to week". */
+  rhythm?: Rhythm;
   /** Community pods (opt-in, B03s): one region and/or one denomination code. Never inferred. */
   heritage: string | null;
   faith: string | null;

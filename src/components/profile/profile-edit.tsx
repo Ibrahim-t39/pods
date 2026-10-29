@@ -16,7 +16,7 @@ import { ageOn, displayName } from "@/lib/utils";
 import { nowISO } from "@/lib/time/clock";
 import { placementDefaults } from "@/config/placement";
 import { birthdayProblem } from "./age";
-import { CommunityPicker, FreeGrid, LikesPicker, useToggleSlot } from "./seat-sheets";
+import { CommunityPicker, FreeEditor, LikesPicker } from "./seat-sheets";
 import { PillField } from "./kit";
 import { Card, Section, TextAction, YouHead, YouPage } from "./you-kit";
 
@@ -25,7 +25,6 @@ export function ProfileEdit() {
   const hydrated = useHydrated();
   const router = useRouter();
   const repo = useRepo();
-  const toggle = useToggleSlot();
   const file = useRef<HTMLInputElement>(null);
   const [first, setFirst] = useState("");
   const [nameErr, setNameErr] = useState<string | null>(null);
@@ -184,8 +183,8 @@ export function ProfileEdit() {
             <motion.div {...fade(3)}>
               <Section label="When you’re free">
                 <Card className="yo-pad">
-                  <FreeGrid slots={me.availability} onToggle={toggle} />
-                  <p className="mt-s3 text-[14px] text-ink-2">Tap a time to switch it. The AI plans inside these.</p>
+                  <FreeEditor />
+                  <p className="mt-s3 text-[14px] text-ink-2">Tap, or drag across times. The AI plans inside these.</p>
                 </Card>
               </Section>
             </motion.div>

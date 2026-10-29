@@ -93,7 +93,7 @@ export async function commitDraft(repo: Repo, metro: readonly string[]): Promise
     consent: !!(d.heritage || d.faith),
   });
   if (!r3.ok) return { ok: false, code: r3.error.code };
-  const r4 = await repo.setAvailability(d.free, []);
+  const r4 = await repo.setAvailability(d.free, [], d.rhythm);
   if (!r4.ok) return { ok: false, code: r4.error.code };
   return { ok: true };
 }

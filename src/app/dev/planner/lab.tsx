@@ -25,7 +25,7 @@ async function ensurePlaced() {
   await repo.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-14", city: "Huntsville" });
   await repo.setInterests(["basketball", "guitar"]);
   await repo.setIdentity({ heritage: { level: "country", code: "ZM" }, faith: { level: "denomination", code: "sda" }, consent: true });
-  await repo.setAvailability(["weekday-evening", "sunday-afternoon"], ["saturday"]);
+  await repo.setAvailability(["tuesday-evening", "thursday-evening", "sunday-afternoon"], ["saturday"]);
   await repo.setPhotos([]);
   await repo.acceptPledge();
   await repo.submitVerification({});

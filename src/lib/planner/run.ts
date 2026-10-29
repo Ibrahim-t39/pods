@@ -3,7 +3,7 @@
 // passes neither and gets the same pipeline with the weather step skipped, labelled "on-device rule-based plan".
 // Budget: input.rules.budgetMs total, including the one validation retry. Any exception becomes the template plan.
 import { addDays, dateOf, timeOf } from "@/data/time";
-import { bestSlot, candidateVenues, dateForSlot, SLOT_HOURS, topTwoText, venueLabel } from "./analyze";
+import { bestSlot, candidateVenues, dateForSlot, isEveningSlot, SLOT_HOURS, topTwoText, venueLabel } from "./analyze";
 import type { ClaudeJobs } from "./claude";
 import { fallbackOption3, fallbackPlan, fallbackWhyFits, fallbackWiden, ruleBasedOptions, template } from "./fallback";
 import { errorTag, validatePlan } from "./validate";
@@ -150,9 +150,12 @@ export async function* runPlanner(input: PlannerInput, deps: PlannerDeps, job: "
   }
 
   const rainy = (forecast?.precipChance ?? 0) >= input.rules.rainThreshold;
+  // After work the light is going: keep to indoor places when any fit (outdoor evenings are left out).
+  const indoorOnly = isEveningSlot(slot.slot) && venues.candidates.some((v) => v.indoor);
+  const pool = indoorOnly ? venues.candidates.filter((v) => v.indoor) : venues.candidates;
   const ordered = rainy
-    ? [...venues.candidates].sort((x, y) => Number(y.indoor) - Number(x.indoor))
-    : [...venues.candidates].sort((x, y) => Number(y.id === tpl.venue) - Number(x.id === tpl.venue));
+    ? [...pool].sort((x, y) => Number(y.indoor) - Number(x.indoor))
+    : [...pool].sort((x, y) => Number(y.id === tpl.venue) - Number(x.id === tpl.venue));
   const indoorBackup = venues.indoor.find((v) => v.id !== ordered[0].id && (v.goodFor.includes(input.pod.fitKey) || v.goodFor.includes("any")));
   const analysis: Analysis = {
     bestSlot: slot.slot, freeCount: slot.free, sharedCount: slot.shared, memberCount: size, date, candidates: ordered, forecast,

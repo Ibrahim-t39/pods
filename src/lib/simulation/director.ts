@@ -11,6 +11,7 @@ import type { Repo } from "@/lib/db/repo";
 import { hash32 } from "@/lib/ids";
 import { jumpTo, nowISO, nowMs } from "@/lib/time/clock";
 import type { DbState, Hangout, ID, RunItBackAnswer } from "@/lib/types";
+import { WEEKDAY_EVENINGS } from "@/lib/types";
 import { settleHangouts } from "./script";
 
 export interface ActionResult {
@@ -54,7 +55,7 @@ export async function skipToPlaced(repo: Repo): Promise<ActionResult> {
       phone: "+12565550142",
       verified: true,
       verified_at: at,
-      availability: ["weekday-evening", "saturday-morning", "sunday-afternoon"],
+      availability: [...WEEKDAY_EVENINGS, "saturday-morning", "sunday-afternoon"],
       blocked_days: [],
       created_at: at,
       status: "active",
