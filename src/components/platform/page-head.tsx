@@ -55,7 +55,7 @@ export function SectionLabel({ children, count, right, className }: { children: 
     <div className={cn("flex items-baseline justify-between gap-s3", className)}>
       <h2 className="text-[15px] font-semibold text-ink">
         {children}
-        {count != null && <span className="tabular ml-s2 font-normal text-ink-3">{count}</span>}
+        {count != null && <span className="tabular font-normal text-ink-3">{` · ${count}`}</span>}
       </h2>
       {right}
     </div>

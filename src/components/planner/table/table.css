@@ -1367,6 +1367,34 @@ html[data-light="night"] .pt-over {
   outline: 2px solid var(--select);
   outline-offset: 1px;
 }
+.pd-lock[data-open] {
+  flex-wrap: wrap;
+  row-gap: var(--s3);
+}
+.pd-lock[data-open] .pd-lock-text {
+  flex: 1 1 100%;
+}
+.pd-lock-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: none;
+}
+.pd-lock-link {
+  flex: none;
+  min-height: 40px;
+  padding: 0 var(--s2);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--select);
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.pd-lock-link:focus-visible {
+  outline: 2px solid var(--select);
+  outline-offset: 1px;
+}
 .pd-lock-n {
   min-width: 20px;
   text-align: center;

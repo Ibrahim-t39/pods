@@ -1,6 +1,6 @@
 // People (PLATFORM_SPEC §F7), round 1029: "non-intuitive, overwhelming" -> grouped the way people think, by pod.
 //   group   the pod's glossy sphere · pod name · when you next see that table ("Sat 10am · Brahan Spring Park")
-//   row     person disc · first name · one short line of what you share (never a truncated bio) · "Going" when they
+//   row     person disc · first name · one short line of what you share (never a truncated bio) · "In" when they
 //           said yes to the pod's next hangout · chevron. 64px rows, one line of meta.
 //   laptop  master-detail: the list left (400px), the selected person right, sticky
 //   states  loading = row skeletons · no people = points to Discover · no match = "No one matches …"
@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/components/ui/use-media-query";
 import { SearchGlyph } from "@/components/shell/nav-glyphs";
 import { ListPage } from "@/components/platform/page-head";
+import { InChip, memberLine } from "@/components/platform/kit";
+import { listFormat } from "@/lib/platform/needs-you";
 import { Icon } from "@/components/icons";
 import { PersonCard, usePersonView } from "@/components/platform/person-card";
 import { cn } from "@/lib/cn";
@@ -32,6 +34,8 @@ interface Row {
   common: string[];
   likes: string[];
   bio: string | null;
+  /** the shared pod's own interest ("basketball"), the fallback for what you share */
+  topic: string | null;
 }
 
 export function People() {
@@ -57,6 +61,7 @@ export function People() {
             common: theirs.filter((i) => mine.has(i.id)).map((i) => i.label.toLowerCase()),
             likes: theirs.filter((i) => !mine.has(i.id)).map((i) => i.label.toLowerCase()),
             bio: p.member.bio,
+            topic: p.sharedPodIds.map((id) => db.interests[db.pods[id]?.topic_key ?? ""]?.label).find(Boolean) ?? null,
           };
         });
         const tables = new Map(roomTables(db, nowMs).map((t) => [t.row.pod.id, t]));
@@ -150,12 +155,8 @@ export function People() {
                   const going = (g.pod ? [g.pod] : data.pods).some((p) => p.next && p.goingIds.includes(r.id));
                   const line =
                     g.id === "_shared"
-                      ? r.pods.map(podName).join(" and ")
-                      : r.common.length
-                        ? `${cap(r.common.slice(0, 2).join(" and "))} in common`
-                        : r.likes.length
-                          ? `Into ${r.likes.slice(0, 2).join(" and ")}`
-                          : (r.bio?.split(/[.,;]/)[0]?.trim() || "New to the pod");
+                      ? listFormat(r.pods.map(podName))
+                      : memberLine(r.age, r.common[0] ?? r.likes[0] ?? r.topic);
                   return (
                     <li key={r.id}>
                       <Link
@@ -174,9 +175,9 @@ export function People() {
                         <Disc initial={r.name.slice(0, 1)} seed={r.name} tone="ember" size={44} />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[16px] leading-[1.3] font-semibold text-ink">{r.name}</span>
-                          <span className={cn("block truncate text-[14px] leading-[1.35]", r.common.length && g.id !== "_shared" ? "text-select" : "text-ink-2")}>{line}</span>
+                          <span className={cn("block truncate text-[14px] leading-[1.35]", "text-ink-2")}>{line}</span>
                         </span>
-                        {going && <span className="shrink-0 rounded-full bg-grove-100 px-s2 py-0.5 text-[13px] font-medium text-grove-800">Going</span>}
+                        {going && <InChip />}
                         <Icon name="arrow" size={14} stroke={2} className="shrink-0 text-ink-3 lg:hidden" />
                       </Link>
                     </li>
@@ -197,8 +198,4 @@ export function People() {
       </div>
     </ListPage>
   );
-}
-
-function cap(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }

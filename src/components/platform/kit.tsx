@@ -66,3 +66,15 @@ export function Btn({ tone = "quiet", className, ...p }: ButtonHTMLAttributes<HT
 export function Empty({ children }: { children: ReactNode }) {
   return <p className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-fg-muted">{children}</p>;
 }
+
+/** The one RSVP chip everywhere a person is listed (members sheet, People): "In", grove. */
+export function InChip({ className }: { className?: string }) {
+  return <span className={cn("shrink-0 rounded-full bg-grove-100 px-s2 py-0.5 text-[13px] font-medium text-grove-800", className)}>In</span>;
+}
+
+/** "Age 22 · Basketball": a member's age and the first interest you share (or theirs, or just the age). */
+export function memberLine(age: number | null | undefined, shared: string | null): string {
+  const a = age ? `Age ${age}` : null;
+  const s = shared ? shared.charAt(0).toUpperCase() + shared.slice(1) : null;
+  return [a, s].filter(Boolean).join(" · ");
+}

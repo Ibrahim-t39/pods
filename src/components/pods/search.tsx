@@ -18,7 +18,7 @@ import { SearchGlyph } from "@/components/shell/nav-glyphs";
 import { ListPage, SectionLabel, DateBlock } from "@/components/platform/page-head";
 import { cn } from "@/lib/cn";
 import { useDb } from "@/lib/db/hooks";
-import { myPeople, myPlans, podLabel, searchAll, type SearchHit } from "@/lib/platform/selectors";
+import { myPeople, myPlans, planHref, podLabel, searchAll, type SearchHit } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
 import { toChicagoISO } from "@/lib/time/tz";
 import { roomTables, shortDay, shortTime } from "./model";
@@ -105,7 +105,7 @@ export function Search() {
                   )}
                 >
                   {label}
-                  <span className={cn("tabular", kind === k ? "text-paper/70" : "text-ink-3")}>{n}</span>
+                  <span className={cn("tabular", kind === k ? "text-paper/70" : "text-ink-3")}>{` ${n}`}</span>
                 </button>
               );
             })}
@@ -189,7 +189,7 @@ function Suggestions({ now, marks, onPick }: { now: number; marks: Record<string
           .filter((m) => m.user_id === db.me && !m.left_at && m.activation === "active" && db.pods[m.pod_id])
           .map((m) => db.pods[m.pod_id]);
         return {
-          next: myPlans(db, now).upcoming.slice(0, 3),
+          next: myPlans(db, now).upcoming.slice(0, 3).map((p) => ({ ...p, href: planHref(db, p) })),
           pods: pods.map((p) => ({ id: p.id, label: podLabel(db, p), sub: `${db.memberships.filter((m) => m.pod_id === p.id && !m.left_at).length} people` })),
           people: myPeople(db, iso).slice(0, 10).map((p) => ({ id: p.member.id, label: p.member.display_name })),
           topics: [...new Set(Object.values(db.pods).filter((p) => p.type === "interest" && p.status !== "closed").map((p) => p.topic_key))]
@@ -211,7 +211,7 @@ function Suggestions({ now, marks, onPick }: { now: number; marks: Record<string
           <ul className="mt-s2">
             {data.next.map((p) => (
               <li key={p.id}>
-                <Link href={`/app/plans/${p.id}`} className="pressable -mx-s3 flex min-h-[56px] items-center gap-s3 rounded-xl px-s3 py-s2 hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)]">
+                <Link href={p.href} className="pressable -mx-s3 flex min-h-[56px] items-center gap-s3 rounded-xl px-s3 py-s2 hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)]">
                   <DateBlock iso={p.starts_at} size={40} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-semibold text-ink">{p.title}</span>

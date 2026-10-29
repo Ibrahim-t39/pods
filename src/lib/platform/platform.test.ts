@@ -218,7 +218,8 @@ describe("discover, invites, safety, inbox, search", () => {
     const target = rows.find((r) => r.verdict === "join")!;
     const req = await repo().requestPod(target.pod.id);
     expect(req.ok && req.data.status).toBe("joined");
-    expect(activeSuggestion(db(), target.pod.id)).toBeDefined();
+    // before the first hangout the seat is saved on deck; the pod opens (and gets planned) after that hangout
+    expect(myMemberships(db()).find((m) => m.pod_id === target.pod.id)?.activation).toBe("on_deck");
     expect(discoverPods(db(), nowISO()).some((r) => r.pod.id === target.pod.id)).toBe(false);
     const community = Object.values(db().pods).find((p) => p.type === "community")!;
     const c = await repo().requestPod(community.id);

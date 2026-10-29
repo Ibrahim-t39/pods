@@ -28,6 +28,7 @@ import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { planTitle as planTitleOf } from "../plan-display";
 import { hm, placeWord, sourceLine, type TableModel } from "./model";
+import { lockCopy } from "@/lib/planner/lock";
 
 /** "Saturday pickup" from the plan, the same title as every other surface (plan-display). */
 export function planTitle(m: TableModel, iso: string | null): string {
@@ -237,8 +238,7 @@ export function PlanCard({
           ) : v.imIn ? (
             href ? (
               <Link href={href} scroll={false} className="pc-go pressable">
-                You&apos;re in · {Math.max(0, v.threshold - going)} more locks
-                it
+                You&apos;re in · {lockCopy(v.threshold - going)}
                 <Icon name="arrow" size={18} />
               </Link>
             ) : null

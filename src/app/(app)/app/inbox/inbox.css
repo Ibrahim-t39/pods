@@ -707,3 +707,66 @@ button.inbx-bar[data-on] {
 /* Needs you, split by kind of answer (final fixes 10/29) */
 .inbx-subgroup + .inbx-subgroup { margin-top: var(--s5, 20px); }
 .inbx-subhead { margin: 0 0 var(--s2); font-size: 13px; font-weight: 500; color: var(--ink-2); }
+
+/* sweep 10/29 (inbox_people): head on one baseline, 44px actions, selected ring, pane sized to its content */
+.inbx-head {
+  display: block;
+}
+.inbx-head-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s4);
+}
+.inbx-markall {
+  min-height: 0;
+  height: auto;
+  padding: 10px var(--s3);
+  line-height: 1;
+  align-self: baseline;
+}
+.inbx-btn,
+.inbx-detail-foot .inbx-btn {
+  height: 44px !important;
+  padding: 0 20px !important;
+  font-size: 15px !important;
+}
+.inbx-opt {
+  height: 44px;
+  padding: 0 16px;
+}
+.inbx-reply {
+  height: 44px;
+  padding: 0 16px;
+}
+.inbx-card[data-selected] {
+  box-shadow: inset 0 0 0 1.5px var(--ink-2), 0 1px 2px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.inbx-seats > i[data-in] {
+  background: var(--color-ember);
+}
+.inbx-row-deck {
+  align-items: center;
+}
+.inbx-deck-marks {
+  display: inline-flex;
+  flex: none;
+  width: 40px;
+  opacity: 0.85;
+}
+.inbx-deck-marks > * + * {
+  margin-left: -20px;
+  margin-top: 10px;
+}
+@media (min-width: 1024px) {
+  .inbx-pane {
+    height: auto;
+    max-height: calc(100dvh - 2 * var(--s6));
+  }
+  .inbx-pane-in {
+    flex: 0 1 auto;
+  }
+  .inbx-detail-body {
+    flex: 0 1 auto;
+  }
+}

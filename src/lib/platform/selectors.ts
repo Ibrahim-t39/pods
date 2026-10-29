@@ -160,13 +160,33 @@ export type SearchHit =
   | { kind: "plan"; id: ID; label: string; sub: string; href: string; starts_at: string }
   | { kind: "interest"; id: ID; label: string; sub: string; href: string };
 
-const norm = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").trim();
+const norm = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").trim();
+/** A crude stem so "hike", "hikes" and "hiking" meet: drop -ing / -s / -e. */
+export const stem = (w: string) => w.replace(/(ing|s)$/, "").replace(/e$/, "");
 
-/** Search my pods, the people in them, our plans, and interests (to Discover). Empty query → no hits. Max 20. */
+/** Does `field` contain the query, as text or by word stems ("hike" finds "Hiking", "hikes")? */
+export function searchMatch(field: string | null | undefined, query: string): boolean {
+  if (!field) return false;
+  const f = norm(field);
+  const q = norm(query);
+  if (!q) return false;
+  if (f.includes(q)) return true;
+  const words = f.split(/[^a-z0-9]+/).filter(Boolean).map(stem);
+  const qs = q.split(/[^a-z0-9]+/).filter(Boolean).map(stem).filter((w) => w.length >= 3);
+  return qs.length > 0 && qs.every((w) => words.some((x) => x.startsWith(w)));
+}
+
+/** The canonical plan sheet for a plan item: /app/pods/[podId]/plan/[suggestionId]. */
+export function planHref(db: DbState, it: Pick<PlanItem, "id" | "podId" | "kind">): string {
+  const sid = it.kind === "hangout" ? (db.hangouts[it.id]?.suggestion_id ?? it.id) : it.id;
+  return `/app/pods/${it.podId}/plan/${sid}`;
+}
+
+/** Search my pods, the people in them, our plans (and pods with open seats), and interests. Empty query → no hits. */
 export function searchAll(db: DbState, query: string, nowISO: string, limit = 20): SearchHit[] {
   const q = norm(query);
   if (q.length < 1 || !db.me) return [];
-  const hit = (...fields: (string | null | undefined)[]) => fields.some((f) => f && norm(f).includes(q));
+  const hit = (...fields: (string | null | undefined)[]) => fields.some((f) => searchMatch(f, q));
   const out: SearchHit[] = [];
   for (const pod of myPods(db)) {
     const label = podLabel(db, pod);
@@ -178,8 +198,19 @@ export function searchAll(db: DbState, query: string, nowISO: string, limit = 20
   }
   const { upcoming, past } = myPlans(db, Date.parse(nowISO));
   for (const it of [...upcoming, ...past]) {
-    if (hit(it.title, it.venue?.name, it.venue?.short_name)) {
-      out.push({ kind: "plan", id: it.id, label: it.title, sub: it.podName, starts_at: it.starts_at, href: `/app/plans/${it.id}` });
+    const sug = it.kind === "hangout" ? db.suggestions[db.hangouts[it.id]?.suggestion_id ?? ""] : db.suggestions[it.id];
+    const pod = db.pods[it.podId];
+    if (hit(it.title, it.venue?.name, it.venue?.short_name, sug?.plan_json.event, sug?.summary, pod?.topic)) {
+      out.push({ kind: "plan", id: it.id, label: it.title, sub: it.podName, starts_at: it.starts_at, href: planHref(db, it) });
+    }
+  }
+  // plans in pods with open seats (Discover): "hike" finds the Wanderers' trail walk; it opens Discover on that interest
+  for (const r of discoverPods(db, nowISO)) {
+    if (!r.next) continue;
+    const sug = Object.values(db.suggestions).find((x) => x.pod_id === r.pod.id && x.status !== "replaced" && x.starts_at === r.next!.starts_at);
+    const title = sug?.plan_json.event || sug?.summary || r.pod.name;
+    if (hit(title, sug?.summary, r.pod.name, r.pod.topic, r.next.venueName)) {
+      out.push({ kind: "plan", id: `discover:${r.pod.id}`, label: title, sub: `${r.pod.name} · open seats`, starts_at: r.next.starts_at, href: db.interests[r.pod.topic_key] ? `/app/discover?i=${r.pod.topic_key}` : "/app/discover" });
     }
   }
   for (const i of Object.values(db.interests)) {

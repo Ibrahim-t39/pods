@@ -18,6 +18,7 @@ import { useClock } from "@/lib/time/clock";
 import { formatRelative } from "@/lib/time/format";
 import { toChicagoISO } from "@/lib/time/tz";
 import { firstName, planVM, shortDay } from "./model";
+import { InChip, memberLine } from "@/components/platform/kit";
 
 type SheetProps = { open: boolean; onOpenChange: (o: boolean) => void; podId: string; podName: string; hue: PodHueKey };
 
@@ -27,9 +28,26 @@ export function MembersSheet({ open, onOpenChange, podId, podName, hue }: SheetP
   const members = useDb(useCallback((db) => podPublicMembers(db, podId, iso), [podId, iso]));
   const going = useDb(useCallback((db) => planVM(db, podId)?.going ?? [], [podId]));
   const when = useDb(useCallback((db) => { const p = planVM(db, podId); return p ? shortDay(p.startsAt) : null; }, [podId]));
+  // the first interest each member shares with you (else their own first), skipping the pod's own topic
+  const shared = useDb(
+    useCallback(
+      (db) => {
+        const topic = db.pods[podId]?.topic_key;
+        const mine = new Set(db.userInterests.filter((u) => u.user_id === db.me).map((u) => u.interest_id));
+        const out: Record<string, string | null> = {};
+        for (const m of db.memberships.filter((x) => x.pod_id === podId && !x.left_at)) {
+          const theirs = db.userInterests.filter((u) => u.user_id === m.user_id && u.interest_id !== topic).map((u) => u.interest_id);
+          const pick = theirs.find((i) => mine.has(i)) ?? theirs[0];
+          out[m.user_id] = db.interests[pick ?? topic ?? ""]?.label ?? null;
+        }
+        return out;
+      },
+      [podId],
+    ),
+  );
   const list = [...members].sort((a, b) => Number(b.id === me) - Number(a.id === me) || Number(going.includes(b.id)) - Number(going.includes(a.id)));
   return (
-    <ResponsiveSheet open={open} onOpenChange={onOpenChange} title={podName} description={<span className="tabular">{list.length} people{when ? ` · ${going.length} in for ${when}` : ""}</span>}>
+    <ResponsiveSheet open={open} onOpenChange={onOpenChange} title={`Members · ${list.length}`} description={<span className="tabular">{podName}{when ? ` · ${going.length} in for ${when}` : ""}</span>}>
       <ul className="border-t border-line">
         {list.map((m) => {
           const you = m.id === me;
@@ -43,9 +61,9 @@ export function MembersSheet({ open, onOpenChange, podId, podName, hue }: SheetP
                 <Disc initial={m.display_name.slice(0, 1).toUpperCase()} tone={you ? "you" : hue} seed={m.display_name} size={40} />
                 <span className="min-w-0 flex-1">
                   <span className="block text-[17px] font-semibold text-ink">{you ? "You" : m.display_name}</span>
-                  <span className="tabular block text-label text-ink-2">{m.age}</span>
+                  <span className="tabular block truncate text-label text-ink-2">{memberLine(m.age, shared[m.id] ?? null)}</span>
                 </span>
-                {when && going.includes(m.id) && <span className="rounded-full bg-[color-mix(in_oklab,var(--select)_12%,var(--lit))] px-2.5 py-1 text-[13px] font-medium text-select">In for {when}</span>}
+                {when && going.includes(m.id) && <InChip />}
               </Link>
             </li>
           );

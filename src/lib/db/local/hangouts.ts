@@ -11,7 +11,7 @@ import { newId } from "@/lib/ids";
 import type { AppNotification, DbState, HangoutSuggestion, ID, NextHangoutVote, RunItBackAnswer, RunItBackTally, RsvpStatus } from "@/lib/types";
 import { podMembers } from "@/lib/db/selectors";
 import { displayName } from "@/lib/utils";
-import { lockBounds, lockMinFor, lockRuleForPod } from "@/lib/planner/lock";
+import { isFirstHangout, lockBounds, lockMinFor, lockRuleForPod } from "@/lib/planner/lock";
 
 type D = Draft<DbState>;
 const HOUR = 3_600_000;
@@ -197,7 +197,7 @@ export function applyLockMin(d: D, suggestionId: ID, userId: ID, n: number, now:
   const s = d.suggestions[suggestionId];
   if (!s || (s.status !== "suggested" && s.status !== "pending_review")) return null;
   const going = goingOn(d, s.id);
-  const b = lockBounds(podSize(d, s.pod_id), going, s.max_seats);
+  const b = lockBounds(podSize(d, s.pod_id), going, s.max_seats, isFirstHangout(d as DbState, s.pod_id));
   const next = Math.max(b.min, Math.min(b.max, Math.round(n)));
   if (next === lockMinFor(d, s)) return { min: next, locked: false };
   // Keep the AI's pick visible once the pod has nudged it ("Set by the pod · AI picked 4").

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
-import { Disc, DiscStack, POD_SOLID, type PodHueKey } from "@/components/brand/disc";
+import { Disc, DiscStack, POD_SOLID, personColor, type PodHueKey } from "@/components/brand/disc";
 import { PodSphere } from "@/components/brand/pod-sphere";
 import { Stage } from "@/components/brand/stage";
 import { GENTLE, SNAPPY } from "@/components/brand/motion";
@@ -19,7 +19,7 @@ import { Icon } from "@/components/icons";
 import { Button, notify } from "@/components/ui";
 import { useMediaQuery } from "@/components/ui/use-media-query";
 import { podHue, podOnDeck } from "@/components/profile/hue";
-import { shortTime } from "@/components/pods/model";
+import { opensAfter, roomTables, shortTime } from "@/components/pods/model";
 import { useDb, useHydrated, useRepo } from "@/lib/db/hooks";
 import { useClock } from "@/lib/time/clock";
 import { chicagoDaysBetween } from "@/lib/time/tz";
@@ -28,10 +28,12 @@ import { TZ } from "@/lib/time/tz";
 import { cardView } from "@/lib/planner/card-state";
 import { maskText, podLabel } from "@/lib/notifications/rules";
 import { useDevicePrefs } from "@/lib/notifications/prefs";
+import { listFormat, needsYouCount, needsYouLine } from "@/lib/platform/needs-you";
 import type { DbState, ID } from "@/lib/types";
 import { cn } from "@/lib/cn";
-import { buildActivity, needsYou, type Act, type Activity } from "./activity";
+import { buildActivity, counted, needsYou, type Act, type Activity } from "./activity";
 import "./inbox.css";
+import { lockCopy } from "@/lib/planner/lock";
 
 const SEEN = "pods:inbox-seen";
 function readSeen(): Set<string> {
@@ -79,7 +81,7 @@ function buildThreads(db: DbState, items: Activity[], now: Date, discreet: boole
   if (!db.me) return [];
   const nowISO = now.toISOString();
   const out: Thread[] = [];
-  for (const m of db.memberships.filter((x) => x.user_id === db.me && !x.left_at)) {
+  for (const m of db.memberships.filter((x) => x.user_id === db.me && !x.left_at && x.activation !== "on_deck")) {
     const pod = db.pods[m.pod_id];
     if (!pod) continue;
     const lines = (db.messages[m.pod_id] ?? []).filter((x) => x.kind === "text" && x.created_at <= nowISO);
@@ -123,20 +125,31 @@ export function InboxScreen() {
   const items = useMemo(() => (seen ? buildActivity(db, now, seen, discreet) : []), [db, now, seen, discreet]);
   const threads = useMemo(() => buildThreads(db, items, now, discreet), [db, items, now, discreet]);
   const RANK: Record<string, number> = { checkin: 0, rsvp: 1, ballot: 2, vote: 3, join: 4, poll: 5 };
-  const pending = items.filter(needsYou).sort((a, b) => (RANK[a.act?.type ?? ""] ?? 9) - (RANK[b.act?.type ?? ""] ?? 9) || b.created_at.localeCompare(a.created_at));
+  const answerable = items.filter(needsYou).sort((a, b) => (RANK[a.act?.type ?? ""] ?? 9) - (RANK[b.act?.type ?? ""] ?? 9) || b.created_at.localeCompare(a.created_at));
+  // Needs you = the plan-level answers Home counts; chat polls and new-pod offers wait in their own quiet groups.
+  const pending = answerable.filter(counted);
+  const polls = answerable.filter((n) => n.act?.type === "poll");
+  const offers = answerable.filter((n) => n.act?.type === "join");
+  const minute = Math.floor(now.getTime() / 60_000) * 60_000;
+  const needCount = useDb((d) => needsYouCount(d, minute));
+  const onDeck = useMemo(() => {
+    const tables = roomTables(db, minute);
+    const deck = tables.filter((t) => !t.open);
+    return deck.length ? { ids: deck.map((t) => t.row.pod.id), names: listFormat(deck.map((t) => podLabel(t.row.pod, discreet))), when: opensAfter(tables, minute) } : null;
+  }, [db, minute, discreet]);
   const isThreadItem = (n: Activity) => n.kind === "messages" && n.act?.type === "reply";
   const updates = items.filter((n) => !needsYou(n) && !isThreadItem(n));
   const updatesShown = allUpdates ? updates : updates.slice(0, UPDATES_SHOWN);
   const unread = items.filter((i) => !i.read);
   const newCount = unread.filter((i) => !needsYou(i)).length;
-  const all = [...pending, ...updates, ...threads.map((t) => t.view)];
+  const all = [...pending, ...offers, ...polls, ...updates, ...threads.map((t) => t.view)];
   const pick = all.find((n) => n.id === chosen) ?? all[0] ?? null;
   const ready = hydrated && seen !== null;
 
   async function markRead(list: Activity[], quiet = true) {
     list = list.filter((i) => !i.id.startsWith("t:"));
     if (!list.length) return;
-    const stored = list.filter((i) => i.stored && !i.read).map((i) => i.id);
+    const stored = list.filter((i) => i.stored && !i.read).flatMap((i) => i.ids ?? [i.id]);
     if (stored.length) {
       const r = await repo.markNotificationsRead(stored);
       if (!r.ok && !quiet) notify.error("Not marked. Try again.");
@@ -162,7 +175,18 @@ export function InboxScreen() {
     setChosen(n.id);
     void markRead([n, ...also]);
   }
-  const lead = pending.length === 0 ? "Nothing needs you right now." : pending.length === 1 ? "One thing needs your answer." : `${NUM[pending.length] ?? pending.length} things need your answer.`;
+
+  const cards = (list: Activity[]) => (
+    <ul className="inbx-cards">
+      <AnimatePresence initial={false}>
+        {list.map((n) => (
+          <motion.li key={n.id} layout="position" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={GENTLE}>
+            <NeedCard n={n} db={db} now={now} wide={wide} discreet={discreet} selected={wide && pick?.id === n.id} onOpen={() => open(n)} onChoose={() => choose(n)} onDone={() => void markRead([n])} />
+          </motion.li>
+        ))}
+      </AnimatePresence>
+    </ul>
+  );
 
   return (
     <div className="inbx-pg">
@@ -171,16 +195,15 @@ export function InboxScreen() {
       <div className="inbx-wrap">
         <section className="inbx-col" aria-label="Inbox">
           <header className="inbx-head">
-            <div className="min-w-0">
+            <div className="inbx-head-row">
               <h1 className="inbx-title">Inbox</h1>
-              {ready && <p className="inbx-lead">{lead}</p>}
+              {ready && newCount > 0 && (
+                <button type="button" onClick={() => void markAll()} className="inbx-quiet inbx-markall pressable">
+                  Mark all read
+                </button>
+              )}
             </div>
-            {ready && newCount > 0 && (
-              <button type="button" onClick={() => void markAll()} className="inbx-quiet pressable">
-                <Icon name="check" size={18} />
-                Mark all read
-              </button>
-            )}
+            {ready && <p className="inbx-lead tabular-nums">{needsYouLine(needCount)}</p>}
           </header>
 
           {!ready && <Skeleton />}
@@ -189,32 +212,38 @@ export function InboxScreen() {
             <>
               <div className="inbx-group">
                 <h2 className="inbx-section" data-needs="">
-                  Needs you {pending.length > 0 && <span className="inbx-count tabular-nums">{pending.length}</span>}
+                  Needs you {needCount > 0 && <span className="inbx-count tabular-nums">{needCount}</span>}
                 </h2>
                 {pending.length === 0 ? (
                   <AllSet />
                 ) : (
                   ([
-                    ["Say if you're in", pending.filter((n) => n.act?.type !== "poll" && n.act?.type !== "vote")],
-                    ["Votes", pending.filter((n) => n.act?.type === "poll" || n.act?.type === "vote")],
-                  ] as const).map(([label, list]) =>
+                    ["Say if you're in", pending.filter((n) => n.act?.type !== "vote")],
+                    ["Pick the next hangout", pending.filter((n) => n.act?.type === "vote")],
+                  ] as const).map(([label, list], _, groups) =>
                     list.length === 0 ? null : (
                       <div key={label} className="inbx-subgroup">
-                        <h3 className="inbx-subhead">{label}</h3>
-                        <ul className="inbx-cards">
-                          <AnimatePresence initial={false}>
-                            {list.map((n) => (
-                              <motion.li key={n.id} layout="position" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={GENTLE}>
-                                <NeedCard n={n} db={db} now={now} wide={wide} discreet={discreet} selected={wide && pick?.id === n.id} onOpen={() => open(n)} onChoose={() => choose(n)} onDone={() => void markRead([n])} />
-                              </motion.li>
-                            ))}
-                          </AnimatePresence>
-                        </ul>
+                        {groups.every(([, l]) => l.length > 0) && <h3 className="inbx-subhead">{label}</h3>}
+                        {cards(list)}
                       </div>
                     ),
                   )
                 )}
               </div>
+
+              {offers.length > 0 && (
+                <div className="inbx-group">
+                  <h2 className="inbx-section">New pods for you</h2>
+                  {cards(offers)}
+                </div>
+              )}
+
+              {polls.length > 0 && (
+                <div className="inbx-group">
+                  <h2 className="inbx-section">Votes in your pods</h2>
+                  {cards(polls)}
+                </div>
+              )}
 
               {updates.length > 0 && (
                 <div className="inbx-group">
@@ -234,7 +263,7 @@ export function InboxScreen() {
                 </div>
               )}
 
-              {threads.length > 0 && (
+              {(threads.length > 0 || onDeck) && (
                 <div className="inbx-group">
                   <h2 className="inbx-section">Messages</h2>
                   <ul className="inbx-list">
@@ -243,6 +272,21 @@ export function InboxScreen() {
                         <ThreadRow t={t} db={db} now={now} wide={wide} discreet={discreet} selected={wide && pick?.id === t.view.id} onOpen={() => open(t.view, t.items)} onChoose={() => choose(t.view, t.items)} />
                       </li>
                     ))}
+                    {onDeck && (
+                      <li>
+                        <Link href="/app/pods" className="inbx-row inbx-row-deck pressable" aria-label={`${onDeck.names}. ${onDeck.when}.`}>
+                          <span className="inbx-deck-marks" aria-hidden>
+                            {onDeck.ids.slice(0, 2).map((id) => (
+                              <PodMark key={id} db={db} podId={id} size={onDeck.ids.length > 1 ? 30 : 40} discreet={discreet} />
+                            ))}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="inbx-line block text-ink-2">{onDeck.names}</span>
+                            <span className="inbx-body block">{onDeck.when}</span>
+                          </span>
+                        </Link>
+                      </li>
+                    )}
                   </ul>
                 </div>
               )}
@@ -490,7 +534,7 @@ function Actions({ n, act, onDone, compact }: { n: Activity; act: Act; db: DbSta
         <div className="inbx-acts">
           {act.imIn ? (
             <span className="inbx-state">
-              <Icon name="check" size={16} /> You're in · {act.going} of {act.size}
+              <Icon name="check" size={16} /> You&apos;re in · {act.going} of {act.size}
             </span>
           ) : (
             <>
@@ -506,7 +550,7 @@ function Actions({ n, act, onDone, compact }: { n: Activity; act: Act; db: DbSta
                   notify.success(r.data.locked ? "Locked. You're in." : `You're in. ${r.data.goingCount} of ${act.size}.`);
                 }}
               >
-                I'm in
+                I&apos;m in
               </Button>
               {compact && (
                 <span className="text-[14px] text-ink-2 tabular-nums">
@@ -741,7 +785,7 @@ function Seats({ db, going, size }: { db: DbState; going: ID[]; size: number }) 
     <span className="inbx-seats" role="img" aria-label={`${going.length} of ${size} in`}>
       {Array.from({ length: size }, (_, i) => {
         const id = going[i];
-        return <i key={i} data-in={id ? "" : undefined} data-you={id && id === db.me ? "" : undefined} />;
+        return <i key={i} data-in={id ? "" : undefined} data-you={id && id === db.me ? "" : undefined} style={id && id !== db.me ? { background: personColor(id).bg } : undefined} />;
       })}
     </span>
   );
@@ -763,7 +807,7 @@ function planPane({ n, db, now, discreet, onRead }: { n: Activity; db: DbState; 
   const plan = s.plan_json;
   const venue = db.venues[plan.venue_id];
   const rain = plan.rain_venue_id ? db.venues[plan.rain_venue_id] : null;
-  const status = `${v.going.length} of ${v.size} in${!v.locked && v.threshold > v.going.length ? ` · locks at ${v.threshold}` : v.locked ? " · locked" : ""}`;
+  const status = `${v.going.length} of ${v.size} in · ${lockCopy(v.threshold - v.going.length, v.locked)}`;
   const body = (
     <>
       <p className="text-[14px] font-medium text-ink-2">{v.locked ? "Locked" : v.phase === "vote" ? "Vote open" : v.imIn ? "You're in" : "Needs your answer"}</p>

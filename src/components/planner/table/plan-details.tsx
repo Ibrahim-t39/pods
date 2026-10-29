@@ -25,6 +25,7 @@ import { useRepo } from "@/lib/db/hooks";
 import { downloadIcs, directionsUrl } from "../plan-utils";
 import { usePlanActions } from "../use-plan-actions";
 import { LockStepper } from "./lock-stepper";
+import { lockCopy } from "@/lib/planner/lock";
 import { ProposeSheet } from "./propose-sheet";
 import { GiveUpSheet } from "./sheets";
 import { placeWord, rainWord, sourceLine, type TableModel } from "./model";
@@ -143,7 +144,7 @@ export function PlanDetails({
     : v.imIn
       ? "You're in"
       : toLock > 0
-        ? `${toLock} more to lock`
+        ? lockCopy(toLock)
         : "Proposed";
   const soon = iso ? planSoon(iso, m.nowMs) : "";
   // "Sat 10am–12pm" / "Nov 7 · In 3 days" (one date style app-wide, plan-display)
@@ -260,7 +261,7 @@ export function PlanDetails({
           <ul className="pd-facts">
             {iso && (
               <li>
-                <Icon name="clock" size={20} />
+                <Icon name="clockFace" size={20} />
                 <span className="pd-fact">
                   <span className="pd-fact-k tabular">{when}</span>
                   {whenSub && (
@@ -332,7 +333,7 @@ export function PlanDetails({
                   Rain backup
                 </h2>
                 <p className="pd-rain">
-                  <Icon name="rain" size={20} />
+                  <Icon name="cloud" size={20} />
                   <span>
                     <span className="pd-fact-k">{rain.line}</span>
                     <span className="pd-fact-s">{rain.sub}</span>
@@ -355,13 +356,6 @@ export function PlanDetails({
               />
               <p className="pd-who-names">
                 {goingNames.length ? goingNames.join(", ") : "No one yet"}
-                <span className="pd-fact-s">
-                  {locked
-                    ? `${going} going · locked at ${v.threshold}`
-                    : toLock > 0
-                      ? `${toLock} more and it locks`
-                      : `${going} of ${of}`}
-                </span>
               </p>
             </div>
             {!locked && m.plan && v.suggestion?.id === m.plan.id && (m.plan.status === "suggested" || m.plan.status === "pending_review") ? (
@@ -459,7 +453,7 @@ export function PlanDetails({
                   ? "You're going"
                   : "Still room for you"
                 : toLock > 0
-                  ? `${toLock} more and it locks`
+                  ? lockCopy(toLock)
                   : soon}
             </span>
           </span>

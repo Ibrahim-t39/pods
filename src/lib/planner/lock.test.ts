@@ -6,7 +6,7 @@ import { applyLockMin, applyRsvp, ensureLock } from "@/lib/db/local/hangouts";
 import { goingUserIds, hangoutForSuggestion, podMembers } from "@/lib/db/selectors";
 import { DEMO } from "@/config/demo";
 import type { DbState, HangoutSuggestion } from "@/lib/types";
-import { clampLock, lockBounds, lockMinFor, lockMinForTarget, lockRule, resolveLock } from "./lock";
+import { clampLock, isFirstHangout, lockBounds, lockMinFor, lockMinForTarget, lockRule, resolveLock } from "./lock";
 
 const NOW = "2026-11-04T09:00:00-06:00";
 const hoopers = (db: DbState) => db.suggestions[DEMO.hoopers.suggestionId];
@@ -35,7 +35,7 @@ describe("lockMinFor", () => {
 
 describe("lockRule (AI fallback)", () => {
   it("picks per activity", () => {
-    expect(lockRule({ key: "basketball", size: 8 })).toEqual({ min_to_lock: 4, lock_reason: "2v2 half-court works with 4; more can join" });
+    expect(lockRule({ key: "basketball", size: 8 })).toEqual({ min_to_lock: 4, lock_reason: "Four is enough for a game. More can join." });
     expect(lockRule({ key: "picnic", size: 8 }).min_to_lock).toBe(3);
     expect(lockRule({ key: "board_games", size: 8 }).min_to_lock).toBe(3);
     expect(lockRule({ key: "running", size: 8 }).min_to_lock).toBe(2);
@@ -69,6 +69,18 @@ describe("stepper bounds", () => {
     expect(lockBounds(8, 3)).toEqual({ min: 3, max: 8 });
     expect(lockBounds(8, 3, 6)).toEqual({ min: 3, max: 6 });
     expect(lockBounds(8, 9)).toEqual({ min: 8, max: 8 });
+  });
+  it("a pod's hangout #1 never goes below 3", () => {
+    expect(lockBounds(8, 0, undefined, true)).toEqual({ min: 3, max: 8 });
+    expect(lockBounds(8, 1, undefined, true).min).toBe(3);
+    expect(lockBounds(2, 0, undefined, true)).toEqual({ min: 2, max: 2 });
+    const db = produce(freshDb(), (d) => {
+      const s = d.suggestions[DEMO.hoopers.suggestionId];
+      d.rsvps = d.rsvps.filter((r) => r.hangout_id !== s.id);
+      applyLockMin(d, s.id, d.memberships.find((m) => m.pod_id === s.pod_id)!.user_id, 2, NOW);
+    });
+    expect(isFirstHangout(db, DEMO.hoopers.podId)).toBe(true);
+    expect(hoopers(db).min_to_lock).toBe(3);
   });
   it("applyLockMin clamps, posts a quiet line, and locks when already met", () => {
     let db = freshDb();
@@ -133,7 +145,7 @@ describe("locking at the plan's number", () => {
     expect(lockMinFor(db, hoopers(db))).toBe(4); // global fallback
     db = produce(db, (d) => { ensureLock(d, d.suggestions[s.id]); });
     expect(hoopers(db).min_to_lock).toBe(4);
-    expect(hoopers(db).lock_reason).toMatch(/2v2/);
+    expect(hoopers(db).lock_reason).toMatch(/Four is enough/);
   });
   it("every seeded plan has a sane number", () => {
     const db = freshDb();

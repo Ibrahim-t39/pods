@@ -7,6 +7,7 @@
 import { Disc, type PodHueKey, type Seat } from "@/components/brand";
 import { cn } from "@/lib/cn";
 import { PodOrb } from "./pod-orb";
+import { lockCopy } from "@/lib/planner/lock";
 
 export function WhoIn({
   seats,
@@ -34,7 +35,7 @@ export function WhoIn({
       : left > 0
         ? `Locked with ${count}. ${left === 1 ? "1 seat" : `${left} seats`} left`
         : `Locked with ${count}. Full`
-    : need === 0 ? "Enough to go" : need === 1 ? "1 more locks it" : `${need} more lock it`;
+    : need === 0 ? "Enough to go" : lockCopy(need);
   // you first, then the people who said yes, then the open seats
   const ordered = [...seats.slice(1).filter((s) => s && !s.open), seats[0], ...seats.slice(1).filter((s) => !s || s.open)];
   return (

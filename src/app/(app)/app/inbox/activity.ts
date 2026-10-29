@@ -6,6 +6,8 @@ import { cardView, optionLabel } from "@/lib/planner/card-state";
 import { chicagoDaysBetween } from "@/lib/time/tz";
 import type { DbState, ID } from "@/lib/types";
 import { shortDay, shortTime } from "@/components/pods/model";
+import { listFormat } from "@/lib/platform/needs-you";
+import { lockCopy } from "@/lib/planner/lock";
 
 export type Kind = "plans" | "messages" | "pods";
 
@@ -27,6 +29,8 @@ export interface Activity extends InboxItem {
   act: Act | null;
   /** one plain line on why it matters right now (Needs you cards only) */
   why?: string;
+  /** stored notifications folded into this one row (activation updates): marking it read marks them all */
+  ids?: string[];
 }
 
 /** Plan-level things only you can settle: they sit on top in "Needs you" until answered. */
@@ -39,6 +43,13 @@ export function needsYou(n: Activity): boolean {
   if (a.type === "join") return a.status === "new";
   if (a.type === "poll") return !a.mine;
   return false;
+}
+
+/** The answers Home counts as "need you" (one per pod): I'm in, the next-hangout vote, a check-in, meet again.
+ *  Chat polls and new-pod offers are optional and never counted. */
+export function counted(n: Activity): boolean {
+  const t = n.act?.type;
+  return needsYou(n) && (t === "rsvp" || t === "vote" || t === "checkin" || t === "ballot");
 }
 
 export type Section = "Needs you" | "Today" | "Yesterday" | "This week" | "Earlier";
@@ -60,6 +71,8 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
   const first = (id: ID) => db.users[id]?.first_name ?? "Someone";
   const mine = db.memberships.filter((m) => m.user_id === me && !m.left_at);
   const myPods = new Set(mine.map((m) => m.pod_id));
+  // An on-deck pod's chat is quiet until it opens: no previews, no unread counts, no polls.
+  const openPods = new Set(mine.filter((m) => m.activation !== "on_deck").map((m) => m.pod_id));
 
   // ── plans: one per pod, from the card's state machine ───────────────────────────
   for (const m of mine) {
@@ -77,7 +90,7 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
         body: `${maskText(s.summary, pod, discreet)} · ${shortDay(s.plan_json.starts_at, nowMs)} ${shortTime(s.plan_json.starts_at)}${venue && !s.summary.includes(venue) ? ` · ${venue}` : ""}`,
         href: `/app/pods/${m.pod_id}`, created_at: s.created_at, read: seen.has(id),
         act: { type: "rsvp", targetId: s.id, going: v.going.length, size: v.size, imIn: v.imIn, imOut: v.imOut },
-        why: v.going.length >= v.threshold ? `${v.going.length} of ${v.size} are in.` : `${v.going.length} of ${v.size} are in. It locks at ${v.threshold}, so your answer counts.`,
+        why: v.going.length >= v.threshold ? `${v.going.length} of ${v.size} are in.` : `${v.going.length} of ${v.size} are in. ${lockCopy(v.threshold - v.going.length)}, so your answer counts.`,
       });
     }
     if (v.phase === "vote" && v.vote) {
@@ -122,7 +135,7 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
   }
 
   // ── messages: the newest line from someone else per pod, with how many more came in ────
-  for (const podId of myPods) {
+  for (const podId of openPods) {
     const pod = db.pods[podId];
     const recent = (db.messages[podId] ?? []).filter((x) => x.kind === "text" && x.user_id && x.user_id !== me && nowMs - Date.parse(x.created_at) < WINDOW_MS && x.created_at <= nowISO);
     const last = recent[recent.length - 1];
@@ -141,7 +154,7 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
   // ── polls: open ones you haven't settled ────────────────────────────────────────
   const pollsShown = new Set<string>();
   for (const p of Object.values(db.polls ?? {})) {
-    if (!myPods.has(p.pod_id) || p.status !== "open" || p.created_by === me || p.created_at > nowISO) continue;
+    if (!openPods.has(p.pod_id) || p.status !== "open" || p.created_by === me || p.created_at > nowISO) continue;
     const pod = db.pods[p.pod_id];
     const id = `d:poll:${p.id}`;
     const votes = Object.values(p.votes);
@@ -159,7 +172,26 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
   const readyPods = new Set(out.filter((a) => a.act?.type === "rsvp").map((a) => a.podId));
   const inbox = buildInbox(db, nowISO, seen, discreet);
   const lockedPods = new Set(inbox.filter((n) => n.id.startsWith("d:locked:")).map((n) => n.podId));
+  // Pods that opened later (after your first hangout) each wrote a stored "placed" line; they fold into one update per
+  // moment, and the "You're in N pods" update keeps saying what was open when you were placed.
+  const activations = inbox.filter((n) => n.stored && n.trigger === "placed" && n.podId);
+  const openedLater = new Set(activations.map((n) => n.podId));
+  const byMoment = new Map<string, InboxItem[]>();
+  for (const n of activations) {
+    const k = n.created_at.slice(0, 16);
+    byMoment.set(k, [...(byMoment.get(k) ?? []), n]);
+  }
+  for (const group of byMoment.values()) {
+    const pods = [...new Set(group.map((n) => n.podId as ID))];
+    const names = pods.map((id) => (db.pods[id] ? podLabel(db.pods[id], discreet) : "A pod"));
+    out.push({
+      ...group[0], kind: "pods", podId: pods.length === 1 ? pods[0] : null, podName: pods.length === 1 ? names[0] : null, who: null, act: null,
+      title: `${listFormat(names)} ${pods.length === 1 ? "is" : "are"} open now.`, body: "", href: pods.length === 1 ? `/app/pods/${pods[0]}` : "/app/pods",
+      read: group.every((n) => n.read), ids: group.map((n) => n.id),
+    });
+  }
   for (const n of inbox) {
+    if (n.stored && n.trigger === "placed" && n.podId) continue;
     // the stored "It's on" line repeats the derived locked item for the same pod
     if (n.stored && n.trigger === "plan_locked" && n.podId && lockedPods.has(n.podId)) continue;
     if (n.id.startsWith("d:locked:") && n.podId && !readyPods.has(n.podId)) {
@@ -182,9 +214,14 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
     }
     const base = { ...n, podName: name(n.podId), who: null as Activity["who"], act: null as Act | null };
     if (n.trigger === "placed" && !n.stored) {
-      const open = mine.filter((m) => m.activation === "active").map((m) => podLabel(db.pods[m.pod_id], discreet));
+      const open = mine.filter((m) => m.activation === "active" && !openedLater.has(m.pod_id)).map((m) => podLabel(db.pods[m.pod_id], discreet));
       const later = mine.length - open.length;
-      out.push({ ...base, kind: "pods", title: `You're in ${mine.length} pods`, body: `${open.join(" and ")} ${open.length === 1 ? "is" : "are"} open${later ? `. ${later} more open after your first hangout` : ""}.` });
+      out.push({ ...base, kind: "pods", title: `You're in ${mine.length} pods`, body: `${listFormat(open)} ${open.length === 1 ? "is" : "are"} open${later ? `. ${later} more open after your first hangout` : ""}.` });
+      continue;
+    }
+    if (n.trigger === "pod_request" && (n.body.trim() === "You're in." || n.body.trim() === "Seat saved.")) {
+      const saved = n.body.trim() === "Seat saved.";
+      out.push({ ...base, kind: "pods", title: saved ? `You saved a seat in ${base.podName ?? n.title}.` : `You joined ${base.podName ?? n.title}.`, body: saved ? "It opens after your first hangout." : "" });
       continue;
     }
     if (n.trigger === "new_match") {

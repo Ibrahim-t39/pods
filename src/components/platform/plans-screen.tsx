@@ -9,7 +9,7 @@
 // Titles, times and places come from plan-display, the one plan display helper every surface uses.
 "use client";
 
-import { lockMinFor } from "@/lib/planner/lock";
+import { lockCopy, lockMinFor } from "@/lib/planner/lock";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
@@ -153,7 +153,7 @@ function statusOf(p: PlanItem, x: Extra | undefined, past: boolean): Status {
   if (p.me === "not_going") return { key: "out", label: "Can't make it" };
   const left = x ? Math.max(0, x.threshold - p.going) : 0;
   return left > 0
-    ? { key: "lock", label: `${left} more to lock` }
+    ? { key: "lock", label: lockCopy(left) }
     : { key: "needs", label: "Needs you" };
 }
 
@@ -631,9 +631,7 @@ function NextUp({
         <Fact k="Who's in" icon="person">
           {x?.names.length ? x.names.join(", ") : "No one yet"}
           <span className="block font-normal text-ink-2">
-            {p.locked
-              ? "Locked"
-              : `${Math.max(0, (x?.threshold ?? 4) - p.going)} more and it locks`}{" "}
+            {lockCopy((x?.threshold ?? 4) - p.going, p.locked)}{" "}
             · {p.going} of {x?.size ?? p.going}
           </span>
         </Fact>

@@ -5,6 +5,7 @@ import { cardView } from "./card-state";
 import { firstName } from "@/components/pods/model";
 import type { DbState, ID } from "@/lib/types";
 import { aiRain } from "@/data/messages";
+import { lockCopy } from "@/lib/planner/lock";
 
 export const AI_MENTION = /(^|\s)@ai\b[:,]?\s*/i;
 
@@ -71,7 +72,7 @@ export function aiReply(db: DbState, podId: ID, question: string, nowMs: number)
       const why = s.lock_reason ? ` (${s.lock_reason.replace(/\.$/, "")})` : "";
       facts.push(`Locks at ${view!.threshold}${why}`);
       const text = going.length
-        ? `${going.length} of ${view!.size} are in: ${list(going)}.${view!.locked ? " It's locked." : need ? ` ${need} more and it's locked${why}.` : ""}`
+        ? `${going.length} of ${view!.size} are in: ${list(going)}.${view!.locked ? " It's locked." : need ? ` ${lockCopy(need)}${why}.` : ""}`
         : `Nobody's in yet. It locks when ${view!.threshold} people are in${why}.`;
       return { intent, facts, text, chips: view!.imIn ? [AI_CHIPS.bring] : [AI_CHIPS.rain, AI_CHIPS.bring] };
     }

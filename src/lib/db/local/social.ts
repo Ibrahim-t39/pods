@@ -57,8 +57,10 @@ export function joinVerdict(db: DbState, podId: ID, userId: ID, nowISO: string):
   return members.length < cfg.podMax && fitsAge ? "join" : "waitlist";
 }
 
-function joinNow(d: D, podId: ID, userId: ID, now: string) {
-  d.memberships.push({ pod_id: podId, user_id: userId, role: "member", muted: false, card_dismissed: false, card_dismissed_for: null, activation: "active", joined_at: now, left_at: null });
+/** Before your first hangout a pod you pick in Discover waits on deck (it opens after that hangout, like placement's). */
+function joinNow(d: D, podId: ID, userId: ID, now: string, queue = false) {
+  const onDeck = queue && !d.rsvps.some((r) => r.user_id === userId && r.checked_in);
+  d.memberships.push({ pod_id: podId, user_id: userId, role: "member", muted: false, card_dismissed: false, card_dismissed_for: null, activation: onDeck ? "on_deck" : "active", joined_at: now, left_at: null });
   const key = d.pods[podId].topic_key;
   if (d.interests[key] && !d.userInterests.some((u) => u.user_id === userId && u.interest_id === key)) d.userInterests.push({ user_id: userId, interest_id: key });
 }
@@ -250,8 +252,9 @@ export function socialRepo(
         d.podRequests.push(req);
         const pod = d.pods[podId];
         if (v === "join") {
-          joinNow(d, podId, me, now);
-          notify(d, me, podId, "pod_request", pod.name, "You're in.", `/app/pods/${podId}`, now);
+          joinNow(d, podId, me, now, true);
+          const queued = d.memberships.some((m) => m.pod_id === podId && m.user_id === me && !m.left_at && m.activation === "on_deck");
+          notify(d, me, podId, "pod_request", pod.name, queued ? "Seat saved." : "You're in.", `/app/pods/${podId}`, now);
         } else if (!d.waitlist.some((w) => w.user_id === me && w.topic_key === pod.topic_key)) {
           d.waitlist.push({ user_id: me, pod_kind: pod.type, topic_key: pod.topic_key, reason: "under_min", created_at: now });
         }

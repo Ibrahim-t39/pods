@@ -20,7 +20,7 @@ import type { PodHueKey } from "@/components/brand/disc";
 import { cn } from "@/lib/cn";
 import { useDb, useRepo } from "@/lib/db/hooks";
 import { isBlockedByMe } from "@/lib/safety/selectors";
-import { myPlans, podLabel } from "@/lib/platform/selectors";
+import { myPlans, planHref, podLabel } from "@/lib/platform/selectors";
 import { nowISO, nowMs } from "@/lib/time/clock";
 import { toPublicMember } from "@/lib/utils";
 import type { DbState, ProfilePrompt } from "@/lib/types";
@@ -42,7 +42,7 @@ export interface PersonView {
   since: string | null;
   common: string[];
   other: string[];
-  next: { id: string; title: string; starts_at: string; podName: string; venue: string | null } | null;
+  next: { id: string; href: string; title: string; starts_at: string; podName: string; venue: string | null } | null;
   together: string | null;
   blocked: boolean;
 }
@@ -81,7 +81,7 @@ export function personView(db: DbState, userId: string): PersonView | null {
     common: theirs.filter((i) => myLikes.has(i.id)).map((i) => i.label),
     other: theirs.filter((i) => !myLikes.has(i.id)).map((i) => i.label),
     next: upcoming
-      ? { id: upcoming.id, title: upcoming.title, starts_at: upcoming.starts_at, podName: upcoming.podName, venue: upcoming.venue?.short_name ?? upcoming.venue?.name ?? null }
+      ? { id: upcoming.id, href: planHref(db, upcoming), title: upcoming.title, starts_at: upcoming.starts_at, podName: upcoming.podName, venue: upcoming.venue?.short_name ?? upcoming.venue?.name ?? null }
       : null,
     together,
     blocked: isBlockedByMe(db, userId),
@@ -162,7 +162,7 @@ export function PersonCard({ view, className, wide }: { view: PersonView; classN
           {/* round 1029: one calm block of what you share, in the order you'd ask it: when do I see them, where, what about */}
           <section className="mt-s6 overflow-hidden rounded-2xl bg-surface shadow-[inset_0_0_0_1px_var(--line)]" aria-label="What you share">
             {view.next ? (
-              <Link href={`/app/plans/${view.next.id}`} className="pressable flex items-center gap-s3 px-s4 py-s4 hover:bg-[color-mix(in_srgb,var(--ink)_3%,transparent)]">
+              <Link href={view.next.href} className="pressable flex items-center gap-s3 px-s4 py-s4 hover:bg-[color-mix(in_srgb,var(--ink)_3%,transparent)]">
                 <DateBlock iso={view.next.starts_at} size={44} />
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13px] font-medium text-ink-3">Next time you&apos;ll see {m.display_name}</span>

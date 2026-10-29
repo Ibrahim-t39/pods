@@ -60,7 +60,8 @@ export function InviteScreen() {
 
   const me = db.me;
   const pods = db.memberships
-    .filter((m) => m.user_id === me && !m.left_at)
+    // an on-deck pod has no seat to save yet: it opens after your first hangout
+    .filter((m) => m.user_id === me && !m.left_at && m.activation !== "on_deck")
     .map((m) => db.pods[m.pod_id])
     .filter(Boolean)
     .map((p) => ({ id: p.id, name: podLabel(db, p), hue: podHue(db, p.id), members: db.memberships.filter((m) => m.pod_id === p.id && !m.left_at).length }));

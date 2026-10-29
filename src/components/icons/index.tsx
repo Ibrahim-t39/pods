@@ -19,6 +19,10 @@ export const ICON_PATHS = {
   more: '<circle cx="7" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="17" cy="12" r="3"/>',
   /** Talk: two overlapping circles; the overlap is the conversation. */
   talk: '<circle cx="9" cy="11" r="5.4"/><circle cx="15" cy="13" r="5.4"/>',
+  /** Time (plan sheet): a plain clock face, so a time never reads as a loading spinner. */
+  clockFace: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>',
+  /** Rain backup (plan sheet): a soft cloud built from arcs. */
+  cloud: '<path d="M7.5 18a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17.6 9.6 4.2 4.2 0 0 1 17 18Z"/>',
   /** Time: no clock hands; a dot riding the rim. */
   clock: '<circle cx="12" cy="12" r="7.5" stroke-opacity=".45"/><path d="M12 4.5a7.5 7.5 0 0 1 6.5 3.75"/><circle cx="18.5" cy="8.25" r="1.7" fill="currentColor" stroke="none"/>',
   /** Place: a table (ring) with your seat dot pulled up to it, not a map pin. */

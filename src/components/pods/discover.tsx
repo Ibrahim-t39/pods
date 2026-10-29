@@ -25,7 +25,7 @@ import { discoverPods, myPeople, type DiscoverRow } from "@/lib/platform/selecto
 import { useClock } from "@/lib/time/clock";
 import { toChicagoISO } from "@/lib/time/tz";
 import { displayName } from "@/lib/utils";
-import { shortDay, shortTime } from "./model";
+import { opensAfter, roomTables, shortDay, shortTime } from "./model";
 import { PodOrb } from "./pod-orb";
 
 /** A pod's kind decides its colour, so the list reads as different places, not one card repeated. */
@@ -49,7 +49,7 @@ const FILTERS: [Filter, string][] = [
 ];
 
 interface Enriched extends DiscoverRow {
-  known: { id: string; name: string }[];
+  known: { id: string; name: string; pod: string }[];
   faces: { id: string; name: string }[];
   title: string | null;
   free: boolean;
@@ -71,10 +71,16 @@ export function Discover() {
     useCallback(
       (db) => {
         const people = new Map(myPeople(db, iso).map((p) => [p.member.id, p.member.display_name]));
+        // the pod you share with them, so "Tendai (Southern African) is in it" says where you know them from
+        const myPodIds = db.memberships.filter((m) => m.user_id === db.me && !m.left_at).map((m) => m.pod_id);
+        const sharedPod = (uid: string) => {
+          const id = myPodIds.find((p) => db.memberships.some((m) => m.pod_id === p && m.user_id === uid && !m.left_at));
+          return id ? (db.pods[id]?.name ?? "your pods") : "your pods";
+        };
         const likes = new Set(db.userInterests.filter((u) => u.user_id === db.me).map((u) => u.interest_id));
         return discoverPods(db, iso, interest).map((r): Enriched => {
           const ms = db.memberships.filter((m) => m.pod_id === r.pod.id && !m.left_at);
-          const known = ms.filter((m) => people.has(m.user_id)).map((m) => ({ id: m.user_id, name: people.get(m.user_id)! }));
+          const known = ms.filter((m) => people.has(m.user_id)).map((m) => ({ id: m.user_id, name: people.get(m.user_id)!, pod: sharedPod(m.user_id) }));
           const faces = ms.map((m) => db.users[m.user_id]).filter(Boolean).map((u) => ({ id: u.id, name: displayName(u) }));
           const h = Object.values(db.hangouts).filter((x) => x.pod_id === r.pod.id && x.status === "upcoming").sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0];
           const s = Object.values(db.suggestions).find((x) => x.pod_id === r.pod.id && x.status !== "replaced" && r.next && x.starts_at === r.next.starts_at);
@@ -82,7 +88,7 @@ export function Discover() {
           const venue = venueId ? db.venues[venueId] : undefined;
           const met = Object.values(db.hangouts).filter((x) => x.pod_id === r.pod.id && x.status === "done").length;
           const why = known.length
-            ? `${known.length === 1 ? known[0].name : `${known[0].name} +${known.length - 1}`} from your pods ${known.length === 1 ? "is" : "are"} in it`
+            ? `${known.length === 1 ? known[0].name : `${known[0].name} +${known.length - 1}`} (${known[0].pod}) ${known.length === 1 ? "is" : "are"} in it`
             : likes.has(r.pod.topic_key)
               ? `You picked ${r.pod.topic}`
               : met >= 2
@@ -94,6 +100,16 @@ export function Discover() {
         });
       },
       [iso, interest],
+    ),
+  );
+  // Before your first hangout a new pod waits on deck: the button saves a seat and says when it opens.
+  const queue = useDb(
+    useCallback(
+      (db) => {
+        if (!db.me || db.rsvps.some((r) => r.user_id === db.me && r.checked_in)) return null;
+        return opensAfter(roomTables(db, nowMs), nowMs);
+      },
+      [nowMs],
     ),
   );
   const interestLabel = useDb(useCallback((db) => (interest ? (db.interests[interest]?.label ?? null) : null), [interest]));
@@ -174,10 +190,11 @@ export function Discover() {
         )}
         <section aria-label="Pods" className="min-w-0 lg:col-start-1 lg:row-start-1">
           <SectionLabel count={shown.length}>{filter === "people" ? "Pods with your people" : "Pods for you"}</SectionLabel>
+          {queue && <p className="mt-1 text-[14px] text-ink-2 lg:hidden">Save a seat now. New pods {queue.replace(/^Opens/, "open").replace(/^open soon$/, "open soon")}.</p>}
           {shown.length ? (
             <ul className="mt-s3 border-t border-line lg:rounded-2xl lg:border-t-0 lg:bg-surface lg:shadow-[inset_0_0_0_1px_var(--line)]">
               {shown.map((r, i) => (
-                <PodItem key={r.pod.id} row={r} i={i} now={nowMs} lead={i < 3 && r.known.length > 0} onPeek={() => setPeek(r)} />
+                <PodItem key={r.pod.id} row={r} i={i} now={nowMs} queue={queue} onPeek={() => setPeek(r)} />
               ))}
             </ul>
           ) : rows.length ? (
@@ -200,12 +217,12 @@ export function Discover() {
         </section>
 
       </div>
-      <SeatPreview row={peek} now={nowMs} onClose={() => setPeek(null)} />
+      <SeatPreview row={peek} now={nowMs} queue={queue} onClose={() => setPeek(null)} />
     </ListPage>
   );
 }
 
-function useJoin(row: Enriched | null, after?: () => void) {
+function useJoin(row: Enriched | null, queue: string | null, after?: () => void) {
   const repo = useRepo();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -217,7 +234,7 @@ function useJoin(row: Enriched | null, after?: () => void) {
     if (!r.ok) return notify.error(r.error.message ?? "Not sent.");
     after?.();
     if (r.data.status === "joined") {
-      notify.success(`You're in ${row.pod.name}.`);
+      notify.success(queue ? `Seat saved in ${row.pod.name}. ${queue}.` : `You're in ${row.pod.name}.`);
       router.push(`/app/pods/${row.pod.id}`);
     } else {
       const id = r.data.id;
@@ -227,9 +244,9 @@ function useJoin(row: Enriched | null, after?: () => void) {
   return { busy, take };
 }
 
-function PodItem({ row, i, now, lead, onPeek }: { row: Enriched; i: number; now: number; lead: boolean; onPeek: () => void }) {
+function PodItem({ row, i, now, queue, onPeek }: { row: Enriched; i: number; now: number; queue: string | null; onPeek: () => void }) {
   const reduce = useReducedMotion();
-  const { busy, take } = useJoin(row);
+  const { busy, take } = useJoin(row, queue);
   const when = row.next ? `${shortDay(row.next.starts_at, now)} ${shortTime(row.next.starts_at)}` : "First plan after you join";
   return (
     <motion.li
@@ -241,7 +258,7 @@ function PodItem({ row, i, now, lead, onPeek }: { row: Enriched; i: number; now:
       <button
         type="button"
         onClick={onPeek}
-        className="pressable flex w-full items-start gap-s3 py-s4 pr-[92px] text-left outline-offset-[-2px] lg:px-s4 lg:pr-[112px]"
+        className={cn("pressable flex w-full items-start gap-s3 py-s4 text-left outline-offset-[-2px] lg:px-s4", queue ? "pr-[124px] lg:pr-[144px]" : "pr-[92px] lg:pr-[112px]")}
         aria-label={`${row.pod.name}, ${row.pod.topic}. ${row.why}.`}
       >
         <PodOrb hue={hueOf(row.pod.topic_key)} people={row.members + row.seatsOpen} inCount={row.members} you={false} size={40} />
@@ -252,7 +269,7 @@ function PodItem({ row, i, now, lead, onPeek }: { row: Enriched; i: number; now:
           </span>
           <span className={cn("mt-s2 flex items-center gap-s2 text-[13px] leading-[1.3]", row.known.length ? "font-medium text-ink-2" : "text-ink-3")}>
             {row.known.length > 0 && <DiscStack size={20} max={3} people={row.known.map((k) => ({ initial: k.name.slice(0, 1), seed: k.name, tone: "ember" as const }))} />}
-            <span className="truncate">{row.why}</span>
+            <span className="line-clamp-2">{row.why}</span>
           </span>
         </span>
       </button>
@@ -262,17 +279,17 @@ function PodItem({ row, i, now, lead, onPeek }: { row: Enriched; i: number; now:
         ) : row.verdict === "cap" ? (
           <span className="inline-flex h-9 items-center text-[13px] text-ink-3">At your limit</span>
         ) : (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void take()}
-            className={cn(
-              "pressable inline-flex h-9 min-w-[76px] items-center justify-center rounded-full px-s4 text-[14px] font-semibold disabled:opacity-60",
-              lead ? "bg-ink text-paper hover:opacity-90" : "text-ink shadow-[inset_0_0_0_1.5px_var(--line-2)] hover:bg-ink hover:text-paper hover:shadow-none",
-            )}
-          >
-            {row.verdict === "join" ? "Join" : "Ask"}
-          </button>
+          <span className="flex flex-col items-end gap-1">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void take()}
+              className="pressable inline-flex h-9 min-w-[76px] items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-ember)_14%,transparent)] px-s4 text-[14px] font-semibold text-ember-text hover:bg-spark hover:text-on-spark disabled:opacity-60"
+            >
+              {row.verdict !== "join" ? "Ask" : queue ? "Save a seat" : "Join"}
+            </button>
+            {queue && row.verdict === "join" && <span className="hidden text-[12px] text-ink-3 lg:block">{queue}</span>}
+          </span>
         )}
       </div>
     </motion.li>
@@ -280,9 +297,9 @@ function PodItem({ row, i, now, lead, onPeek }: { row: Enriched; i: number; now:
 }
 
 /** Who, when, where, then one seat. A small preview before anyone joins (QA core r1). */
-function SeatPreview({ row, now, onClose }: { row: Enriched | null; now: number; onClose: () => void }) {
+function SeatPreview({ row, now, queue, onClose }: { row: Enriched | null; now: number; queue: string | null; onClose: () => void }) {
   const repo = useRepo();
-  const { busy, take } = useJoin(row, onClose);
+  const { busy, take } = useJoin(row, queue, onClose);
   const band = useDb(useCallback((db) => (row ? db.pods[row.pod.id] : null), [row]));
   const requestId = useDb(
     useCallback((db) => (row ? (db.podRequests.find((r) => r.user_id === db.me && r.pod_id === row.pod.id && r.status !== "cancelled")?.id ?? null) : null), [row]),
@@ -329,7 +346,7 @@ function SeatPreview({ row, now, onClose }: { row: Enriched | null; now: number;
         ))}
       </dl>
       <div className="mt-s6 flex items-center justify-between gap-s4">
-        <p className="text-[14px] text-ink-2">{row.verdict === "join" ? "Leave anytime." : "We'll hold the next seat for you."}</p>
+        <p className="text-[14px] text-ink-2">{row.verdict !== "join" ? "We'll hold the next seat for you." : queue ? `${queue}. Leave anytime.` : "Leave anytime."}</p>
         {row.requested ? (
           <Button variant="secondary" size="md" onClick={() => void cancel()}>
             Cancel ask
@@ -337,8 +354,8 @@ function SeatPreview({ row, now, onClose }: { row: Enriched | null; now: number;
         ) : row.verdict === "cap" ? (
           <span className="text-[14px] text-ink-2">At your limit</span>
         ) : (
-          <Button size="md" loading={busy} onClick={() => void take()}>
-            {row.verdict === "join" ? "Take a seat" : "Ask to join"}
+          <Button variant="spark" size="md" loading={busy} onClick={() => void take()}>
+            {row.verdict !== "join" ? "Ask to join" : queue ? "Save a seat" : "Take a seat"}
           </Button>
         )}
       </div>

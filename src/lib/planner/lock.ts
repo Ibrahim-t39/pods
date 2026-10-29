@@ -13,13 +13,21 @@ export interface LockRule {
 
 /** The smallest group that still makes a hangout. */
 export const LOCK_FLOOR = 2;
+/** A pod's first hangout never locks with fewer than 3: two strangers alone is not a pod meeting. */
+export const FIRST_FLOOR = 3;
+/** The one lock phrase, everywhere a plan shows its count: "1 more and it's on", then "Locked". */
+export const LOCKED_WORD = "Locked";
+export function lockCopy(need: number, locked = false): string {
+  return locked || need <= 0 ? LOCKED_WORD : `${need} more and it's on`;
+}
+
 /** Seats when a class or studio booking needs a headcount and the venue gives no number. */
 export const CLASS_SEATS = 8;
 
 type Base = { min: number; reason: string; team?: boolean };
 /** Keyed by interest id, community key, or the planner's neutral template alias. */
 const BASE: Record<string, Base> = {
-  basketball: { min: 4, reason: "2v2 half-court works with 4; more can join", team: true },
+  basketball: { min: 4, reason: "Four is enough for a game. More can join.", team: true },
   soccer: { min: 4, reason: "A small-sided game works with 4; more can join", team: true },
   pickleball: { min: 4, reason: "Doubles needs 4 on a court" },
   running: { min: 2, reason: "Two is enough for an easy loop" },
@@ -27,7 +35,7 @@ const BASE: Record<string, Base> = {
   trail_walk: { min: 3, reason: "Three on a trail, so nobody walks alone" },
   sda: { min: 3, reason: "Three on a trail, so nobody walks alone" },
   volunteering: { min: 3, reason: "Three makes a real crew" },
-  climbing: { min: 3, reason: "Three keeps the table talking" },
+  climbing: { min: 3, reason: "Three lets you take turns on the wall" },
   climbing_gym: { min: 3, reason: "Three lets you take turns on the wall" },
   disc_golf: { min: 3, reason: "A group of 3 keeps a round moving" },
   guitar: { min: 3, reason: "A jam needs at least 3" },
@@ -116,11 +124,16 @@ export function lockMinForTarget(db: Pick<DbState, "config" | "suggestions" | "h
   return lockMinFor(db, s);
 }
 
-/** Stepper bounds: 2 to pod size, and never below the people already in. */
-export function lockBounds(size: number, going: number, seats?: number): { min: number; max: number } {
+/** Stepper bounds: 2 (3 on a pod's hangout #1) to pod size, and never below the people already in. */
+export function lockBounds(size: number, going: number, seats?: number, first = false): { min: number; max: number } {
   const max = Math.max(1, seats ? Math.min(size, seats) : size);
-  const min = Math.min(max, Math.max(LOCK_FLOOR, going));
+  const min = Math.min(max, Math.max(first ? FIRST_FLOOR : LOCK_FLOOR, going));
   return { min, max };
+}
+
+/** True while the pod has never had a hangout (so the plan in front of it is #1). */
+export function isFirstHangout(db: Pick<DbState, "hangouts">, podId: ID): boolean {
+  return !Object.values(db.hangouts).some((h) => h.pod_id === podId && h.status !== "cancelled");
 }
 
 /** The rule for a pod in the db (member proposals, starters, anything saved without a number). */
