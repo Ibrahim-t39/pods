@@ -31,6 +31,17 @@ export const BACK: Partial<Record<StepId, string>> = {
   seat: STEP_ROUTE.free,
 };
 
+/** The draft steps in order; a later one opens only when every earlier one is answered (see openBefore). */
+export const DRAFT_ORDER: StepId[] = ["you", "likes", "free", "seat"];
+
+/** For a draft step, the earliest unanswered step before it (null = it may open). Stops skipping ahead by URL. */
+export function openBefore(step: StepId, d: Pick<Draft, "firstName" | "age" | "interests" | "free">): StepId | null {
+  const at = DRAFT_ORDER.indexOf(step);
+  if (at <= 0) return null;
+  const open = firstOpenDraftStep(d);
+  return open && DRAFT_ORDER.indexOf(open) < at ? open : null;
+}
+
 /** The first draft step that still needs an answer (null = all answered). */
 export function firstOpenDraftStep(d: Pick<Draft, "firstName" | "age" | "interests" | "free">): StepId | null {
   if (!d.firstName.trim() || d.age === null || d.age < 18) return "you";
@@ -42,8 +53,9 @@ export function firstOpenDraftStep(d: Pick<Draft, "firstName" | "age" | "interes
 /** Where a person belongs right now (signed in or not). Used by /app and by every step's guard. */
 export function resumeRoute(me: User | null, d: Draft = useDraft.getState()): string {
   if (!me || me.status === "deleted") {
-    const open = firstOpenDraftStep(d);
-    return STEP_ROUTE[open ?? "seat"];
+    // No account yet: always start at You. Saved answers are pre-filled there, so a person sees and confirms them
+    // instead of being dropped mid-flow by an old draft (founder: Get started skipped to step 4 of 6).
+    return STEP_ROUTE.you;
   }
   switch (me.onboarding_step) {
     case "done":
