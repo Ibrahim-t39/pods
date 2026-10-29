@@ -6,10 +6,11 @@ const c = await b.newContext({viewport:{width:W,height:m?844:900},deviceScaleFac
 const p = await c.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message.slice(0,100)));
 let k=0; const shot=async(t)=>{await p.waitForTimeout(1200);await p.screenshot({path:'/private/tmp/claude-501/-Users-ibrahimtraore-Documents-PROPEL/192ac6d2-3129-48a3-9409-2f4587345c61/scratchpad/qa/qa/r'+W+'-'+String(++k).padStart(2,'0')+'-'+t+'.png'});console.log(k,t,p.url().replace('http://localhost:3000',''),'|',(await p.evaluate(()=>document.body.innerText)).replace(/\n+/g,' / ').slice(0,200));};
 await p.goto('http://localhost:3000/app/home?mode=demo&director=1',{waitUntil:'networkidle'}); await p.waitForTimeout(1500);
-const dir=async(t)=>{ if(!(await p.getByText('Video beats').isVisible().catch(()=>false))) await p.getByText('Director',{exact:true}).first().click({timeout:2500}).catch(()=>{}); await p.waitForTimeout(700); console.log('panel',await p.getByText('Video beats').isVisible().catch(()=>false)); await p.waitForTimeout(600); await p.getByText(t).first().click({timeout:4000}).catch(e=>console.log('dir fail',t)); };
+const open=()=>p.getByText('Video beats').isVisible().catch(()=>false);
+const dir=async(t)=>{ await p.waitForTimeout(3500); for(let i=0;i<3&&!(await open());i++){ if(i==0) await p.getByText('Director',{exact:true}).first().click({timeout:1500}).catch(()=>{}); else await p.keyboard.press('Control+.'); await p.waitForTimeout(800);} console.log('open',await open()); await p.getByText(t).first().click({timeout:3000}).catch(e=>console.log('dir fail',t)); };
 await dir('Skip sign-up'); await p.waitForTimeout(3000); await shot('after-skip');
-await dir('Jump to after hangout'); await p.waitForTimeout(3000); await shot('after-hangout');
-await dir('Everyone checks in'); await p.waitForTimeout(3000); await shot('checkins');
-await dir('Answer for the pod'); await p.waitForTimeout(3000); await shot('answers');
-await p.goto('http://localhost:3000/app/home',{waitUntil:'networkidle'}); await shot('home-after');
+await p.waitForTimeout(3000);
+await p.goto('http://localhost:3000/app/pods/pod_hoopers',{waitUntil:'networkidle'}); await shot('pod');
+await p.goto('http://localhost:3000/app/plans',{waitUntil:'networkidle'}); await shot('plans');
+await p.goto('http://localhost:3000/app/inbox',{waitUntil:'networkidle'}); await shot('inbox');
 await b.close(); console.log(errs);
