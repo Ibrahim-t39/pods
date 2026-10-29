@@ -1374,3 +1374,11 @@ html[data-light="night"] .pt-over {
   font-weight: 600;
   color: var(--ink);
 }
+
+/* explicit fallback to the scroll-timeline fade: once scrolled, the bar is solid so nothing shows through */
+.pd-scroll[data-scrolled] .pd-grab::before {
+  animation: none;
+  opacity: 1;
+  background: var(--lit);
+  box-shadow: 0 1px 0 var(--line);
+}

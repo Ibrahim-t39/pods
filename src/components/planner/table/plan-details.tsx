@@ -221,7 +221,11 @@ export function PlanDetails({
           if (info.offset.y > 120 || info.velocity.y > 600) onClose();
         }}
       >
-        <div className="pd-scroll">
+        <div
+          className="pd-scroll"
+          // the top bar turns solid once the details scroll under it (no overlap with the title)
+          onScroll={(e) => e.currentTarget.toggleAttribute("data-scrolled", e.currentTarget.scrollTop > 8)}
+        >
           <span className="pd-field" aria-hidden />
           <div className="pd-grab" onPointerDown={(e) => drag.start(e)}>
             <span className="pd-handle" aria-hidden />
