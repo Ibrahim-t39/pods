@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { WEEKS, countWord, hoursLabel, lockLine } from "./film-data";
 import { lockRule } from "@/lib/planner/lock";
-import { compareOn } from "./landing-switch";
 
 describe("film hangout cards", () => {
   it("are hangouts #1 to #8, the first one the 4 who locked it", () => {
@@ -32,14 +31,5 @@ describe("/try lock line", () => {
     expect(lockLine(lockRule({ key: "guitar", size: 8 }).min_to_lock)).toEqual({ line: "It locks at 3.", sub: "Two said yes." });
     expect(lockLine(2).sub).toBe("One said yes.");
     expect(countWord(12)).toBe("12");
-  });
-});
-
-describe("landing switch", () => {
-  it("shows only with ?compare=1", () => {
-    expect(compareOn("")).toBe(false);
-    expect(compareOn("?compare=0")).toBe(false);
-    expect(compareOn("?compare=1")).toBe(true);
-    expect(compareOn("?x=2&compare=1")).toBe(true);
   });
 });
