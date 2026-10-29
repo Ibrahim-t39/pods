@@ -13,6 +13,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { Button, notify } from "@/components/ui";
 import { POD_SOLID, type PodHueKey } from "@/components/brand/disc";
+import "@/components/brand/pod-sphere.css";
 import { Icon } from "@/components/icons";
 import { useDb, useRepo } from "@/lib/db/hooks";
 import { cardView } from "@/lib/planner/card-state";
@@ -32,13 +33,8 @@ export function MatchMark({ hue, people, size = 72, joined = false }: { hue: Pod
   return (
     <span aria-hidden className="relative block shrink-0" style={{ width: size * 1.2, height: size }}>
       <motion.span
-        className="absolute top-0 right-0 block rounded-full"
-        style={{
-          width: size,
-          height: size,
-          background: `radial-gradient(circle at 34% 28%, color-mix(in oklab, white 30%, ${POD_SOLID[hue]}) 0, ${POD_SOLID[hue]} 62%, color-mix(in oklab, black 12%, ${POD_SOLID[hue]}) 100%)`,
-          boxShadow: `inset 0 0 0 1px color-mix(in oklab, white 35%, transparent), 0 14px 28px -16px ${POD_SOLID[hue]}`,
-        }}
+        className="pod-sphere absolute top-0 right-0"
+        style={{ ["--ps" as string]: `${size}px`, ["--ps-h" as string]: POD_SOLID[hue] }}
         initial={reduce ? false : { scale: 0.7, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={GENTLE}
@@ -48,7 +44,7 @@ export function MatchMark({ hue, people, size = 72, joined = false }: { hue: Pod
           return (
             <motion.span
               key={d}
-              className="absolute block rounded-full bg-white"
+              className="absolute z-[1] block rounded-full bg-white shadow-[0_1px_2px_rgb(22_12_58/.3)]"
               style={{ width: "11%", height: "11%", left: `${50 + Math.cos(a) * 31}%`, top: `${50 + Math.sin(a) * 31}%`, x: "-50%", y: "-50%" }}
               initial={reduce ? false : { scale: 0 }}
               animate={{ scale: 1 }}

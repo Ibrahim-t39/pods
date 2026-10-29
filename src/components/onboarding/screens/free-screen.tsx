@@ -1,8 +1,7 @@
-// B04 Free (3 of 6). "Free weeknights, Saturdays." The week reads as a line of named days (QA round 1: a ring of
-// single letters had two Ts and two Ss). Mon to Fri are one joined pill because Pods plans weeknights as one slot
-// (BLUEPRINT D3): tapping any of them lights all five, so what you see is what is saved. Sat and Sun stand alone.
-// The parts of the day are real chips, always shown, live once a weekend day is on. The line writes itself from the
-// same value. At least one day (D3); the hint says so while Next is off.
+// Your usual week (3 of 6). A one-tap grid: rows are the days Pods plans (weeknights as one slot, Saturday, Sunday),
+// columns are the parts of the day. It starts on a sensible guess (weeknight evenings and weekend afternoons), so most
+// people only adjust. The sub-line says plainly that this is a rhythm, not a promise: any single week can be marked
+// busy or free later from Home or the calendar, and the AI plans around that week instead.
 "use client";
 
 import { useState } from "react";
@@ -10,25 +9,20 @@ import { useRouter } from "next/navigation";
 import { Line } from "@/components/brand/line";
 import { Button } from "@/components/ui/button";
 import { useDb, useRepo } from "@/lib/db/hooks";
-import type { User } from "@/lib/types";
+import type { Slot, User } from "@/lib/types";
 import { FlowStep, Sub } from "../flow";
 import { useDraft } from "../draft";
 import { Guarded } from "../guard";
 import { BACK, DOT, STEP_ROUTE, commitDraft } from "../steps";
-import { PARTS, freeWords, fromSlots, toSlots, type Free as FreeValue, type Part } from "../words";
+import { PARTS, type Part } from "../words";
 
-const WEEKNIGHTS = [
-  { k: "mon", l: "Mon", name: "Monday" },
-  { k: "tue", l: "Tue", name: "Tuesday" },
-  { k: "wed", l: "Wed", name: "Wednesday" },
-  { k: "thu", l: "Thu", name: "Thursday" },
-  { k: "fri", l: "Fri", name: "Friday" },
+const ROWS = [
+  { k: "weekday", l: "Weeknights", short: "Mon–Fri", parts: ["evening"] as Part[] },
+  { k: "saturday", l: "Saturday", short: "Sat", parts: PARTS },
+  { k: "sunday", l: "Sunday", short: "Sun", parts: PARTS },
 ] as const;
-const WEEKEND = [
-  { k: "saturday", l: "Sat", name: "Saturday" },
-  { k: "sunday", l: "Sun", name: "Sunday" },
-] as const;
-const PART_LABEL: Record<Part, string> = { morning: "Mornings", afternoon: "Afternoons", evening: "Evenings" };
+const PART_LABEL: Record<Part, string> = { morning: "Morning", afternoon: "Afternoon", evening: "Evening" };
+const DEFAULT: Slot[] = ["weekday-evening", "saturday-afternoon", "sunday-afternoon"];
 
 export function FreeScreen() {
   return <Guarded need="none">{(me) => <Free me={me} />}</Guarded>;
@@ -39,18 +33,17 @@ function Free({ me }: { me: User | null }) {
   const repo = useRepo();
   const draft = useDraft();
   const metro = useDb((db) => db.config.placement.metro);
-  const [v, setV] = useState<FreeValue>(() => fromSlots(draft.free.length ? draft.free : (me?.availability ?? [])));
+  const [slots, setSlots] = useState<Slot[]>(() => (draft.free.length ? draft.free : me?.availability.length ? me.availability : DEFAULT));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
-  const words = freeWords(v);
-  const weekend = v.saturday || v.sunday;
-  const slots = toSlots(v);
+
+  const toggle = (s: Slot) => setSlots((x) => (x.includes(s) ? x.filter((y) => y !== s) : [...x, s]));
+  const count = slots.length;
 
   const next = async () => {
-    if (!slots.length) return;
+    if (!count) return;
     draft.set({ free: slots });
     if (!me) return router.push(STEP_ROUTE.seat);
-    // Already holding a seat (came back on another device): save straight away.
     setBusy(true);
     setErr(false);
     const r = me.first_name
@@ -65,95 +58,69 @@ function Free({ me }: { me: User | null }) {
     router.push(STEP_ROUTE.promise);
   };
 
-  const togglePart = (p: Part) => setV((x) => ({ ...x, parts: x.parts.includes(p) ? x.parts.filter((y) => y !== p) : [...x.parts, p] }));
-
   return (
     <FlowStep
       screen="free"
       back={BACK.free}
-      label="Free"
+      label="Your week"
       head={
         <>
-          <Line size={words.join(", ").length > 20 ? "md" : "lg"} className="max-w-[12ch]">
-            Free{" "}
-            {words.length ? (
-              words.map((w, i) => (
-                <span key={w}>
-                  <span className="u">{w}</span>
-                  {i < words.length - 1 ? ", " : ""}
-                </span>
-              ))
-            ) : (
-              <span aria-label="when" className="inline-block w-[2.2ch] translate-y-[-0.12em] border-b-2 border-line-2 align-baseline">
-                &nbsp;
-              </span>
-            )}
-            .
+          <Line size="lg" className="max-w-[12ch]">
+            Your usual week.
           </Line>
-          <Sub live className="min-h-6">
-            {err ? "Not saved. Try again." : ""}
+          <Sub live className="max-w-[34ch]">
+            {err ? "Not saved. Try again." : "Tap when you're usually free. Weeks change, so you can mark any day busy or free later."}
           </Sub>
         </>
       }
       object={
-        <div className="pods-ob-week">
-          <div className="pods-ob-week-group" role="group" aria-label="Days">
-            <p>Days</p>
-            <div className="pods-ob-week-row" data-days="">
-              <span className="pods-ob-joined" data-on={v.weeknights ? "" : undefined} title="Weeknights">
-                {WEEKNIGHTS.map((d) => (
-                  <button
-                    key={d.k}
-                    type="button"
-                    aria-label={d.name}
-                    aria-pressed={v.weeknights}
-                    onClick={() => setV((x) => ({ ...x, weeknights: !x.weeknights }))}
-                    className="pressable"
-                  >
-                    {d.l}
-                  </button>
-                ))}
+        <div className="pods-ob-grid" role="group" aria-label="Your usual week">
+          <span />
+          {PARTS.map((p) => (
+            <span key={p} className="pods-ob-grid-col">
+              {PART_LABEL[p]}
+            </span>
+          ))}
+          {ROWS.map((row) => (
+            <div key={row.k} className="contents">
+              <span className="pods-ob-grid-row">
+                <span className="pods-ob-grid-long">{row.l}</span>
+                <span className="pods-ob-grid-short">{row.short}</span>
               </span>
-              {WEEKEND.map((d) => (
-                <button
-                  key={d.k}
-                  type="button"
-                  aria-label={d.name}
-                  aria-pressed={v[d.k]}
-                  onClick={() => setV((x) => ({ ...x, [d.k]: !x[d.k] }))}
-                  className="pods-ob-like pressable"
-                >
-                  {d.l}
-                </button>
-              ))}
+              {row.k === "weekday" ? (
+                <>
+                  <span className="pods-ob-grid-off">
+                    work hours
+                  </span>
+                  <Cell slot="weekday-evening" on={slots.includes("weekday-evening")} label="Weeknight evenings" onToggle={toggle} />
+                </>
+              ) : (
+                PARTS.map((p) => {
+                  const s = `${row.k}-${p}` as Slot;
+                  return <Cell key={p} slot={s} on={slots.includes(s)} label={`${row.l} ${p}`} onToggle={toggle} />;
+                })
+              )}
             </div>
-          </div>
-          <div className="pods-ob-week-group" role="group" aria-label="Weekend times">
-            <p>Weekend times</p>
-            <div className="pods-ob-week-row">
-              {PARTS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  disabled={!weekend}
-                  aria-pressed={weekend && v.parts.includes(p)}
-                  onClick={() => togglePart(p)}
-                  className="pods-ob-like pressable"
-                >
-                  {PART_LABEL[p]}
-                </button>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       }
       dot={DOT.free}
-      hint={slots.length ? undefined : "Pick at least one day."}
+      hint={count ? undefined : "Tap at least one time."}
       action={
-        <Button size="xl" disabled={!slots.length} loading={busy} onClick={next}>
+        <Button size="xl" disabled={!count} loading={busy} onClick={next}>
           Next
         </Button>
       }
     />
+  );
+}
+
+function Cell({ slot, on, label, onToggle }: { slot: Slot; on: boolean; label: string; onToggle: (s: Slot) => void }) {
+  return (
+    <button type="button" aria-label={label} aria-pressed={on} onClick={() => onToggle(slot)} className="pods-ob-cell pressable">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M5 12.5 10 17.5 19 7" />
+      </svg>
+    </button>
   );
 }

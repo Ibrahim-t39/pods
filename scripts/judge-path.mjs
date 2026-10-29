@@ -174,9 +174,8 @@ async function run(vpName, vp, mode) {
       await btn(/^Next$/).click();
       await page.waitForURL(/onboarding\/availability/);
       await wait(600);
-      await page.getByRole("button", { name: "Saturday" }).first().click();
-      await page.getByRole("button", { name: "Sunday" }).first().click();
-      await page.getByRole("button", { name: "Wednesday" }).first().click();
+      // the usual-week grid starts on weeknight evenings and weekend afternoons; add Saturday morning (pickup is 10am)
+      await page.getByRole("button", { name: "Saturday morning" }).first().click();
       await wait(400);
     });
     await step("seat", async () => {

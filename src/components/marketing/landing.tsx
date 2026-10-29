@@ -1,5 +1,5 @@
 // The landing (/): one clear story you can play (PODS/v3/landing/STORY.md).
-// Hero (the circles move together: signature motion #1) -> the problem in one line -> Try it (Fit, Pod, Plan,
+// HeroStory (the one pinned scene: glossy circles form a pod, plan, I'm in, lock, run it back) -> Try it (Fit, Pod, Plan,
 // I'm in, Repeat; playable, no account; the progress rail is the page's one sticky element) -> built for meeting
 // in person -> who it's for -> your seat is saved (the mark assembles) -> footer.
 // Founder notes: fewer bubbles (flat circles; colour mixes only inside the mark), fewer icons (none: words and the
@@ -14,7 +14,7 @@ import { Logo } from "@/components/brand/logo";
 import { LogoAnimated } from "@/components/brand/logo-animated";
 import { SNAPPY, useCalmMotion } from "@/components/brand/motion";
 import { Button } from "@/components/ui/button";
-import { Converge } from "./converge";
+import { HeroStory } from "./hero-story";
 import { TryIt } from "./try-it";
 import "./landing.css";
 
@@ -36,8 +36,7 @@ export function Landing() {
     <div className="lp">
       <SiteNav showPill={past} />
       <main id="main">
-        <Hero ctaRef={heroCta} />
-        <Problem />
+        <HeroStory ctaRef={heroCta} start={START} tryHref="#fit" />
         <TryIt />
         <Safe />
         <ForWhom />
@@ -76,48 +75,6 @@ function SiteNav({ showPill }: { showPill: boolean }) {
         </div>
       </div>
     </header>
-  );
-}
-
-/* ── Hero: the tagline, and three people whose worlds move together into the mark ──────────────────────────── */
-function Hero({ ctaRef }: { ctaRef: React.RefObject<HTMLDivElement | null> }) {
-  return (
-    <section className="lp-hero" aria-labelledby="lp-hero-h">
-      <Converge from={0} to={1} duration={2.2} delay={0.35} className="lp-hero-cv" />
-      <div className="lp-hero-copy">
-        <h1 id="lp-hero-h" className="lp-h1">
-          Find your people. <span>Then keep them.</span>
-        </h1>
-        <p className="lp-lede">Small friend groups that meet again.</p>
-        <div ref={ctaRef} className="lp-hero-cta">
-          <Button asChild size="xl">
-            <Link href={START}>Get started</Link>
-          </Button>
-          <a href="#fit" className="lp-link">
-            Try it first
-          </a>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── The problem: three people meet once and drift apart ───────────────────────────────────────────────────── */
-function Problem() {
-  return (
-    <section className="lp-sec lp-prob" aria-labelledby="lp-prob-h">
-      <div className="lp-drift lp-in" aria-hidden>
-        <span className="d1" />
-        <span className="d2" />
-        <span className="d3" />
-      </div>
-      <div className="lp-head lp-in">
-        <h2 id="lp-prob-h" className="lp-h2">
-          New somewhere? You meet people. <span className="lp-mute">They don&apos;t stick.</span>
-        </h2>
-        <p className="lp-sub">Pods fixes the second part.</p>
-      </div>
-    </section>
   );
 }
 

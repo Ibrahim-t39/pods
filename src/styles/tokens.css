@@ -282,7 +282,18 @@
      where more meet). Sits behind the object, never behind body text. */
   /* POLISH: the light is a quiet corner glow, not a fog: three small circles tucked off the top-right edge at low alpha,
      so headlines and cards always sit on clean paper. */
-  --mesh-page: radial-gradient(circle 150px at calc(100% + 10px) -20px, rgba(253,97,35,.13) 0 55%, rgba(253,97,35,0) 100%), radial-gradient(circle 160px at calc(100% - 110px) -60px, rgba(27,120,254,.12) 0 55%, rgba(27,120,254,0) 100%), radial-gradient(circle 160px at calc(100% + 40px) 90px, rgba(25,193,133,.12) 0 55%, rgba(25,193,133,0) 100%);
+  /* ROUND 10-29 (founder: "the background looks generic across the app"): the page is lit by the logo itself, drawn
+     huge and quiet. Three great circles (the mark's geometry) sit mostly off-canvas, so only their arcs cross the page:
+     a faint fill that brightens toward a hairline rim, like the rim light on a pod sphere. Crisp edges, never fog; the
+     content area stays near-white (fill alpha <= .05, AA untouched). The lead circle follows the time of day
+     (--bg-a/b/c, set in globals.css from html[data-daypart]): morning blue, day green, evening ember. */
+  --bg-a: 27 120 254;
+  --bg-b: 253 97 35;
+  --bg-c: 25 193 133;
+  --mesh-page:
+    radial-gradient(circle 64vmax at calc(100% + 14vmax) -36vmax, rgb(var(--bg-a) / 0) 0 58%, rgb(var(--bg-a) / .055) calc(100% - 2px), rgb(var(--bg-a) / .2) calc(100% - 1px), rgb(var(--bg-a) / 0) 100%),
+    radial-gradient(circle 48vmax at calc(100% - 26vmax) -34vmax, rgb(var(--bg-b) / 0) 0 56%, rgb(var(--bg-b) / .05) calc(100% - 2px), rgb(var(--bg-b) / .18) calc(100% - 1px), rgb(var(--bg-b) / 0) 100%),
+    radial-gradient(circle 54vmax at -22vmax calc(100% + 30vmax), rgb(var(--bg-c) / 0) 0 60%, rgb(var(--bg-c) / .05) calc(100% - 2px), rgb(var(--bg-c) / .18) calc(100% - 1px), rgb(var(--bg-c) / 0) 100%);
   /* the moment (lock, #2 is on): the centre of the logo. A deep field (the all-three overlap) with the three circles
      converging on the table as GLASS ORBS (bubble round, COLOR_LIFE §15): clear bodies, lit rims, a window each, so the
      overlaps are luminous instead of muddy (founder: "muddy brown/olive overlaps look dirty"). */
@@ -401,7 +412,11 @@
    (the text column stays on the deep field, PB 1.1). */
 @media (min-width: 1024px) {
   :root {
-    --mesh-page: radial-gradient(circle 240px at calc(100% + 20px) -40px, rgba(253,97,35,.10) 0 55%, rgba(253,97,35,0) 100%), radial-gradient(circle 260px at calc(100% - 200px) -100px, rgba(27,120,254,.09) 0 55%, rgba(27,120,254,0) 100%), radial-gradient(circle 260px at calc(100% + 60px) 140px, rgba(25,193,133,.09) 0 55%, rgba(25,193,133,0) 100%);
+    /* the arcs come a little further in on a wide canvas, so they cross the page instead of hiding in the corners */
+    --mesh-page:
+      radial-gradient(circle 50vmax at calc(100% + 6vmax) -28vmax, rgb(var(--bg-a) / 0) 0 58%, rgb(var(--bg-a) / .05) calc(100% - 2px), rgb(var(--bg-a) / .18) calc(100% - 1px), rgb(var(--bg-a) / 0) 100%),
+      radial-gradient(circle 38vmax at calc(100% - 24vmax) -26vmax, rgb(var(--bg-b) / 0) 0 56%, rgb(var(--bg-b) / .045) calc(100% - 2px), rgb(var(--bg-b) / .16) calc(100% - 1px), rgb(var(--bg-b) / 0) 100%),
+      radial-gradient(circle 40vmax at -12vmax calc(100% + 20vmax), rgb(var(--bg-c) / 0) 0 60%, rgb(var(--bg-c) / .045) calc(100% - 2px), rgb(var(--bg-c) / .16) calc(100% - 1px), rgb(var(--bg-c) / 0) 100%);
     --moment: radial-gradient(ellipse 80px 44px at calc(70% - 70px) calc(30% - 140px), rgb(255 255 255 / .70) 0, rgb(255 255 255 / 0) 100%), radial-gradient(ellipse 80px 44px at calc(60% - 80px) calc(64% - 150px), rgb(255 255 255 / .60) 0, rgb(255 255 255 / 0) 100%), radial-gradient(ellipse 80px 44px at calc(80% - 80px) calc(64% - 150px), rgb(255 255 255 / .55) 0, rgb(255 255 255 / 0) 100%), radial-gradient(circle 230px at 70% 30%, rgb(255 150 110 / .34) 0 52%, rgb(253 97 35 / .62) 88%, rgb(255 200 176 / .95) 97.5%, rgb(253 97 35 / 0) 100%), radial-gradient(circle 250px at 60% 64%, rgb(110 170 255 / .34) 0 52%, rgb(27 120 254 / .66) 88%, rgb(190 220 255 / .95) 97.5%, rgb(27 120 254 / 0) 100%), radial-gradient(circle 250px at 80% 64%, rgb(110 230 185 / .30) 0 52%, rgb(25 193 133 / .62) 88%, rgb(190 255 228 / .95) 97.5%, rgb(25 193 133 / 0) 100%), linear-gradient(170deg, #0B2F26 0%, #022634 100%);
   }
 }

@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Line } from "@/components/brand/line";
-import { CirclesLoader } from "@/components/brand/circles-loader";
+import { PodSphere } from "@/components/brand/pod-sphere";
 import { podName as shortName } from "@/components/planner/table/model";
 import { Button } from "@/components/ui/button";
 import { useHydrated, useMe, useRepo } from "@/lib/db/hooks";
@@ -127,7 +127,7 @@ function Finding({ initial }: { initial: string }) {
       object={
         state === "finding" ? (
           <div className="grid place-items-center" style={{ width: S * 1.8, height: S * 1.8 }}>
-            <CirclesLoader size={wide ? 200 : 168} label="Finding your pods" />
+            <Gather size={wide ? 200 : 168} />
           </div>
         ) : state === "placed" ? (
           <FoundPods size={S} pods={found} initial={initial} />
@@ -156,5 +156,31 @@ function Finding({ initial }: { initial: string }) {
         ) : undefined
       }
     />
+  );
+}
+
+/** Finding your pods: three glossy pods (the logo's hues) drift in from apart and settle into the logo's overlap,
+ * then breathe while placement runs. Reduced motion: they simply sit together. */
+function Gather({ size }: { size: number }) {
+  const d = size * 0.56;
+  const r = size * 0.22;
+  const spots = [
+    { hue: "ember" as const, x: 0, y: -r, from: { x: 0, y: -size * 0.9 }, people: 7 },
+    { hue: "signal" as const, x: -r * 0.9, y: r * 0.55, from: { x: -size, y: size * 0.5 }, people: 6 },
+    { hue: "grove" as const, x: r * 0.9, y: r * 0.55, from: { x: size, y: size * 0.5 }, people: 8 },
+  ];
+  return (
+    <div className="pods-ob-gather" role="img" aria-label="Finding your pods" style={{ width: size, height: size }}>
+      {spots.map((p, i) => (
+        <motion.span
+          key={p.hue}
+          initial={{ opacity: 0, x: p.from.x, y: p.from.y, scale: 0.7 }}
+          animate={{ opacity: 1, x: p.x, y: p.y, scale: [0.7, 1, 0.96, 1] }}
+          transition={{ type: "spring", stiffness: 70, damping: 14, delay: 0.15 * i, scale: { duration: 2.4, times: [0, 0.45, 0.75, 1], delay: 0.15 * i } }}
+        >
+          <PodSphere hue={p.hue} people={p.people} inCount={p.people} you={false} size={d} />
+        </motion.span>
+      ))}
+    </div>
   );
 }

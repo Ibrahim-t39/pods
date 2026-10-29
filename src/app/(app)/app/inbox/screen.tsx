@@ -15,7 +15,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
-import { Disc, DiscStack, ON_HUE, POD_SOLID, type PodHueKey } from "@/components/brand/disc";
+import { Disc, DiscStack, POD_SOLID, type PodHueKey } from "@/components/brand/disc";
+import { PodSphere } from "@/components/brand/pod-sphere";
 import { Stage } from "@/components/brand/stage";
 import { GENTLE, SNAPPY } from "@/components/brand/motion";
 import { Chrome } from "@/components/shell/chrome";
@@ -223,21 +224,11 @@ export function InboxScreen() {
 
 // ── marks ──────────────────────────────────────────────────────────────────────
 
-function PodMark({ db, podId, size = 40, discreet }: { db: DbState; podId: ID; size?: number; discreet: boolean }) {
-  const pod = db.pods[podId];
+function PodMark({ db, podId, size = 40 }: { db: DbState; podId: ID; size?: number; discreet: boolean }) {
+  // a pod is always its glossy sphere (one bead per person), never a letter: the same mark as Pods and the pod page
   const hue: PodHueKey = podHue(db, podId);
-  const initial = pod && !(pod.type === "community" && discreet) ? pod.name.slice(0, 1) : "";
-  return (
-    <span data-nc aria-hidden className="inbx-podmark" style={{ width: size, height: size, backgroundColor: POD_SOLID[hue], color: ON_HUE[hue], fontSize: Math.round(size * 0.44) }}>
-      {initial || (
-        <span className="inbx-people">
-          <i />
-          <i />
-          <i />
-        </span>
-      )}
-    </span>
-  );
+  const people = db.memberships.filter((m) => m.pod_id === podId && !m.left_at).length;
+  return <PodSphere hue={hue} people={Math.max(1, people)} you={db.memberships.some((m) => m.pod_id === podId && m.user_id === db.me && !m.left_at)} inCount={people} size={size} />;
 }
 
 /** The row's mark: the person who did it (wearing their pod's colour), the pod, or your pods together (placed). */

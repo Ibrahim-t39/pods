@@ -23,6 +23,9 @@ export const EASE = [0.2, 0, 0, 1] as const;
 /** Every first-run step that shows progress: You, Likes, Free, Keep your seat (number + code), Promise, Check. */
 export const TOTAL_STEPS = 6;
 
+/** What each step is for, named beside the dots so progress says where you are, not only how far. */
+const STEP_NAME = ["About you", "What you like", "Your week", "Your number", "The promise", "Quick check"];
+
 export interface FlowStepProps {
   /** key for the head's slide (sub-screens inside one route change it) */
   screen: string;
@@ -87,7 +90,12 @@ export function FlowStep({ screen, light = "dawn", back, head, object, dot, stat
           dot || status || action ? (
             <>
               <div className="pods-ob-foot-left">
-                {dot ? <ProgressDots step={dot} total={TOTAL_STEPS} className="pods-ob-dots-progress" /> : null}
+                {dot ? (
+                  <span className="pods-ob-progress">
+                    <ProgressDots step={dot} total={TOTAL_STEPS} className="pods-ob-dots-progress" />
+                    <span className="pods-ob-stepname">{STEP_NAME[dot - 1]}</span>
+                  </span>
+                ) : null}
                 {status}
                 {hint ? (
                   <p className="pods-ob-hint" aria-live="polite">

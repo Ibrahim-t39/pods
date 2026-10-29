@@ -1,0 +1,117 @@
+/* <PodSphere>: a pod's identity as a solid glossy sphere (founder 2026-10-29: "I would prefer the pods be 3D glossy").
+   One light source, top-left. Layers, top to bottom:
+   glint (a sharp catch-light) > specular (soft window) > bounce (the hue reflected up from the ground) > body
+   (lit hue to a deep hue-shade, never grey or brown: the shade mixes toward deep indigo, not black).
+   Edges: a cool rim light low-right, a soft inner shade, a hue-tinted contact shadow.
+   Everything scales from --ps (the sphere's px size) so it reads the same at 24px and 220px. */
+@layer components {
+.pod-sphere {
+  --ps-h: var(--color-signal);
+  --ps-deep: color-mix(in oklch, var(--ps-h) 62%, #160c3a);
+  --ps-lite: color-mix(in oklch, var(--ps-h) 68%, white);
+  position: relative;
+  display: block;
+  flex: none;
+  width: var(--ps);
+  height: var(--ps);
+  border-radius: 9999px;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 30% 20% at 33% 19%, rgb(255 255 255 / .92) 0, rgb(255 255 255 / .42) 48%, rgb(255 255 255 / 0) 100%),
+    radial-gradient(ellipse 62% 30% at 56% 100%, color-mix(in oklch, var(--ps-lite) 80%, transparent) 0, rgb(255 255 255 / 0) 72%),
+    radial-gradient(circle at 38% 30%, var(--ps-lite) 0%, var(--ps-h) 44%, color-mix(in oklch, var(--ps-h) 70%, var(--ps-deep)) 78%, var(--ps-deep) 100%);
+  box-shadow:
+    inset calc(var(--ps) * -0.05) calc(var(--ps) * -0.07) calc(var(--ps) * 0.12) calc(var(--ps) * -0.02) color-mix(in oklch, var(--ps-deep) 55%, transparent),
+    inset calc(var(--ps) * 0.03) calc(var(--ps) * 0.04) calc(var(--ps) * 0.06) rgb(255 255 255 / .28),
+    0 calc(var(--ps) * 0.14) calc(var(--ps) * 0.22) calc(var(--ps) * -0.12) color-mix(in oklch, var(--ps-h) 70%, transparent),
+    0 1px 2px rgb(14 26 34 / .14);
+}
+/* rim light: a thin cool crescent low-right, the edge catching the room */
+.pod-sphere::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset calc(var(--ps) * -0.022) calc(var(--ps) * -0.03) calc(var(--ps) * 0.035) rgb(225 240 255 / .45);
+}
+/* the glint: a small sharp catch-light; above the dots so the sphere reads as glass-hard, sized so it never hides one */
+.pod-sphere::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 22%;
+  top: 13%;
+  width: 13%;
+  height: 8%;
+  border-radius: 50%;
+  transform: rotate(-32deg);
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgb(255 255 255 / .95), rgb(255 255 255 / 0));
+}
+.pod-sphere[data-size="xs"]::before { display: none; }
+.pod-sphere[data-size="xs"] {
+  box-shadow:
+    inset calc(var(--ps) * -0.05) calc(var(--ps) * -0.07) calc(var(--ps) * 0.12) calc(var(--ps) * -0.02) color-mix(in oklch, var(--ps-deep) 55%, transparent),
+    0 1px 2px rgb(14 26 34 / .16);
+}
+
+/* a pod that is not open yet: the same sphere in clear tinted glass, dots in the hue */
+.pod-sphere[data-open="false"] {
+  background:
+    radial-gradient(ellipse 30% 20% at 33% 19%, rgb(255 255 255 / .95) 0, rgb(255 255 255 / 0) 100%),
+    radial-gradient(circle at 38% 30%, color-mix(in oklch, var(--ps-h) 6%, white) 0%, color-mix(in oklch, var(--ps-h) 16%, white) 60%, color-mix(in oklch, var(--ps-h) 34%, white) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--ps-h) 34%, white),
+    inset calc(var(--ps) * -0.04) calc(var(--ps) * -0.06) calc(var(--ps) * 0.1) color-mix(in oklch, var(--ps-h) 18%, transparent),
+    0 calc(var(--ps) * 0.1) calc(var(--ps) * 0.18) calc(var(--ps) * -0.12) color-mix(in oklch, var(--ps-h) 40%, transparent);
+}
+
+/* a person: a small white bead inside the sphere (the logo's dot) */
+.pod-sphere__dot {
+  position: absolute;
+  z-index: 1;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 36% 30%, #fff 0 52%, rgb(232 240 250) 100%);
+  box-shadow: 0 calc(var(--ps) * 0.012) calc(var(--ps) * 0.02) color-mix(in oklch, var(--ps-deep) 60%, transparent);
+}
+.pod-sphere__dot[data-dim] {
+  background: rgb(255 255 255 / .5);
+  box-shadow: none;
+}
+.pod-sphere[data-open="false"] .pod-sphere__dot {
+  background: color-mix(in oklch, var(--ps-h) 40%, white);
+  box-shadow: none;
+}
+.pod-sphere[data-open="false"] .pod-sphere__dot[data-lit] {
+  background: color-mix(in oklch, var(--ps-h) 85%, white);
+}
+
+/* the "waits on you" spark */
+.pod-sphere__spark {
+  position: absolute;
+  z-index: 3;
+  top: -2%;
+  right: -2%;
+  width: 26%;
+  height: 26%;
+  min-width: 10px;
+  min-height: 10px;
+  border-radius: 9999px;
+  background: var(--color-spark, var(--color-ember));
+  box-shadow: 0 0 0 2px var(--paper);
+}
+
+/* hero: a slow float (the pod page, the reveal); the shadow stays on the ground */
+@media (prefers-reduced-motion: no-preference) {
+  .pod-sphere[data-float] {
+    animation: pod-sphere-float 6s ease-in-out infinite;
+  }
+}
+}
+@keyframes pod-sphere-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 calc(var(--ps) * -0.025); }
+}
