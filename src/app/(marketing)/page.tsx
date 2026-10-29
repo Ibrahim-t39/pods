@@ -1,6 +1,7 @@
 // The landing (/): a film in eight chapters, played by scroll. See components/marketing/film.tsx.
 import type { Metadata } from "next";
 import { Film } from "@/components/marketing/film";
+import { LandingSwitch } from "@/components/marketing/landing-switch";
 
 export const metadata: Metadata = {
   title: { absolute: "Pods" },
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function LandingPage() {
-  return <Film />;
+  return (
+    <>
+      <Film />
+      <LandingSwitch />
+    </>
+  );
 }

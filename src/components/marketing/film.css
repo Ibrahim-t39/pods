@@ -460,22 +460,24 @@ html:has(.fm) { background: var(--dusk-0); }
 .fm-week header small { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgb(14 26 34 / .6); }
 .fm-week header span { color: rgb(14 26 34 / .66); }
 .fm-week > b { display: block; margin-top: 10px; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
-.fm-venn { position: relative; height: calc(var(--cw) * 0.42); margin-top: 10px; }
+/* the week's three people-circles: always inside their box (top 55% leaves room for the top circle at its widest);
+   d = 1 in week 1 (apart) to 0 in week 8 (deep overlap). Each circle keeps its white dot, the person. */
+.fm-venn { position: relative; height: calc(var(--cw) * 0.44); margin-top: 12px; overflow: hidden; }
 .fm-venn i {
-  --r: calc(var(--cw) * 0.17);
+  --r: calc(var(--cw) * 0.11);
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 55%;
   width: calc(var(--r) * 2);
   height: calc(var(--r) * 2);
   margin: calc(var(--r) * -1);
   border-radius: 50%;
-  mix-blend-mode: multiply;
-  opacity: .85;
+  opacity: .9;
 }
-.fm-venn i[data-h="ember"] { background: var(--pods-ember); translate: 0 calc(var(--r) * (-0.55 - var(--d) * 0.7)); }
-.fm-venn i[data-h="signal"] { background: var(--pods-signal); translate: calc(var(--r) * (-0.55 - var(--d) * 0.7)) calc(var(--r) * (0.35 + var(--d) * 0.35)); }
-.fm-venn i[data-h="grove"] { background: var(--pods-grove); translate: calc(var(--r) * (0.55 + var(--d) * 0.7)) calc(var(--r) * (0.35 + var(--d) * 0.35)); }
+.fm-venn i::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22%; height: 22%; translate: -50% -50%; border-radius: 50%; background: #fff; }
+.fm-venn i[data-h="ember"] { background: var(--pods-ember); translate: 0 calc(var(--r) * (-0.5 - var(--d) * 0.5)); z-index: 1; }
+.fm-venn i[data-h="signal"] { background: var(--pods-signal); translate: calc(var(--r) * (-0.5 - var(--d) * 0.5)) calc(var(--r) * (0.3 + var(--d) * 0.3)); }
+.fm-venn i[data-h="grove"] { background: var(--pods-grove); translate: calc(var(--r) * (0.5 + var(--d) * 0.5)) calc(var(--r) * (0.3 + var(--d) * 0.3)); }
 .fm-hrs { height: 6px; margin-top: 12px; border-radius: 9999px; background: rgb(14 26 34 / .08); overflow: hidden; }
 .fm-hrs i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--pods-signal), var(--pods-grove)); }
 .fm-hrs-l { display: block; margin-top: 6px; font-size: 12.5px; color: rgb(14 26 34 / .64); }

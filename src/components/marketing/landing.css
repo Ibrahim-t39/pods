@@ -475,3 +475,4 @@ html:has(.lp) { scroll-padding-top: 140px; }
 /* the pod itself: the glossy sphere (gloss is for pods), name under it */
 .tr-sphere { display: grid; justify-items: center; gap: 12px; }
 .tr-sphere-l { font-size: 17px; font-weight: 600; color: var(--ink); }
+

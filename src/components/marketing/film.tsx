@@ -25,7 +25,6 @@ const S = H.reduce<number[]>((a, h, i) => [...a, i ? a[i - 1] + H[i - 1] - 100 :
 const L = S[H.length - 1] + H[H.length - 1] - 100;
 /** page progress (0-1) at chapter i, local progress p */
 const g = (i: number, p: number) => (S[i] + p * (H[i] - 100)) / L;
-const CHAPTERS = ["Arrival", "Fit", "The plan", "I'm in", "Saturday", "Repeat", "Safe", "Pods"];
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 function rng(seed: number) {
@@ -62,18 +61,14 @@ export function Film() {
 function useTone() {
   const { scrollYProgress } = useScroll();
   const [tone, setTone] = useState<"dark" | "light">("dark");
-  const [ch, setCh] = useState(0);
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     setTone(v > g(4, 0.3) && v < g(6, 1) + 0.01 ? "light" : "dark");
-    let c = 0;
-    for (let i = 0; i < H.length; i++) if (v >= g(i, 0) - 0.004) c = i;
-    setCh(c);
   });
-  return { tone, ch };
+  return { tone };
 }
 
 export function FilmNav({ tone: forced }: { tone?: "dark" | "light" }) {
-  const { tone, ch } = useTone();
+  const { tone } = useTone();
   const t = forced ?? tone;
   return (
     <>
@@ -93,13 +88,6 @@ export function FilmNav({ tone: forced }: { tone?: "dark" | "light" }) {
           </Link>
         </nav>
       </header>
-      {!forced && (
-        <p className="fm-chapter" data-tone={t} aria-hidden>
-          <span>{String(ch + 1).padStart(2, "0")}</span>
-          <i />
-          {CHAPTERS[ch]}
-        </p>
-      )}
     </>
   );
 }
