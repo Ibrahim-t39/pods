@@ -14,11 +14,12 @@ import { notify } from "@/components/ui/toast";
 import { Icon } from "@/components/icons";
 import { BlockSheet, ReportSheet } from "@/components/safety";
 import { DateBlock } from "@/components/platform/page-head";
+import { shortDay, shortTime } from "@/components/pods/model";
 import { cn } from "@/lib/cn";
 import { useDb, useRepo } from "@/lib/db/hooks";
 import { isBlockedByMe } from "@/lib/safety/selectors";
-import { podLabel } from "@/lib/platform/selectors";
-import { nowISO } from "@/lib/time/clock";
+import { myPlans, podLabel } from "@/lib/platform/selectors";
+import { nowISO, nowMs } from "@/lib/time/clock";
 import { toPublicMember } from "@/lib/utils";
 import type { DbState, ProfilePrompt } from "@/lib/types";
 
@@ -54,9 +55,7 @@ export function personView(db: DbState, userId: string): PersonView | null {
   const theirs = db.userInterests.filter((x) => x.user_id === userId).map((x) => db.interests[x.interest_id]).filter(Boolean);
   const podIds = new Set(pods.map((p) => p.id));
   const now = nowISO();
-  const upcoming = Object.values(db.hangouts)
-    .filter((h) => podIds.has(h.pod_id) && h.status === "upcoming" && h.starts_at > now)
-    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0];
+  const upcoming = myPlans(db, Date.parse(now)).upcoming.find((p) => podIds.has(p.podId));
   const together = Object.values(db.hangouts).filter(
     (h) =>
       podIds.has(h.pod_id) &&
@@ -70,13 +69,7 @@ export function personView(db: DbState, userId: string): PersonView | null {
     common: theirs.filter((i) => myLikes.has(i.id)).map((i) => i.label),
     other: theirs.filter((i) => !myLikes.has(i.id)).map((i) => i.label),
     next: upcoming
-      ? {
-          id: upcoming.id,
-          title: upcoming.title,
-          starts_at: upcoming.starts_at,
-          podName: podLabel(db, db.pods[upcoming.pod_id]),
-          venue: db.venues[upcoming.venue_id]?.short_name ?? db.venues[upcoming.venue_id]?.name ?? null,
-        }
+      ? { id: upcoming.id, title: upcoming.title, starts_at: upcoming.starts_at, podName: upcoming.podName, venue: upcoming.venue?.short_name ?? upcoming.venue?.name ?? null }
       : null,
     together,
     blocked: isBlockedByMe(db, userId),
@@ -88,7 +81,7 @@ export function usePersonView(userId: string | null) {
 }
 
 function when(iso: string) {
-  return new Date(iso).toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" }).replace(":00", "");
+  return `${shortDay(iso, nowMs())} ${shortTime(iso)}`;
 }
 
 export function PersonCard({ view, className, wide }: { view: PersonView; className?: string; wide?: boolean }) {
@@ -152,7 +145,7 @@ export function PersonCard({ view, className, wide }: { view: PersonView; classN
 
           <div className={cn("mt-s6 grid gap-s6", wide && "lg:grid-cols-2 lg:gap-x-s8")}>
             <section>
-              <h3 className="text-[13px] font-medium text-ink-3">In common</h3>
+              <h3 className="text-[13px] font-medium text-ink-3">{view.common.length ? `Likes · ${view.common.length} in common` : "Likes"}</h3>
               {view.common.length || view.other.length ? (
                 <div className="mt-s2 flex flex-wrap gap-s2">
                   {view.common.map((l) => (

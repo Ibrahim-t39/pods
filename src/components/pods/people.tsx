@@ -27,6 +27,7 @@ interface Row {
   pods: string[];
   common: string[];
   likes: string[];
+  bio: string | null;
 }
 
 export function People() {
@@ -40,7 +41,9 @@ export function People() {
       (db) => {
         const mine = new Set(db.userInterests.filter((x) => x.user_id === db.me).map((x) => x.interest_id));
         const rows: Row[] = myPeople(db, iso).map((p) => {
-          const theirs = db.userInterests.filter((x) => x.user_id === p.member.id).map((x) => db.interests[x.interest_id]).filter(Boolean);
+          // the pod's own topic is a given for everyone at that table, so it never counts as "in common" here
+          const topics = new Set(p.sharedPodIds.map((id) => db.pods[id]?.topic_key));
+          const theirs = db.userInterests.filter((x) => x.user_id === p.member.id && !topics.has(x.interest_id)).map((x) => db.interests[x.interest_id]).filter(Boolean);
           return {
             id: p.member.id,
             name: p.member.display_name,
@@ -48,6 +51,7 @@ export function People() {
             pods: p.sharedPodIds,
             common: theirs.filter((i) => mine.has(i.id)).map((i) => i.label.toLowerCase()),
             likes: theirs.filter((i) => !mine.has(i.id)).map((i) => i.label.toLowerCase()),
+            bio: p.member.bio,
           };
         });
         const podIds = [...new Set(rows.flatMap((r) => r.pods))];
@@ -107,7 +111,7 @@ export function People() {
               onChange={(e) => setQ(e.target.value)}
               placeholder="Find someone or a like"
               autoComplete="off"
-              className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-3"
+              className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-3 [&::-webkit-search-cancel-button]:hidden"
             />
           </label>
 
@@ -119,7 +123,7 @@ export function People() {
               <ul className="mt-s2">
                 {g.rows.map((r) => {
                   const on = wide && r.id === selected;
-                  const likeLine = r.common.length ? `Also into ${r.common.slice(0, 2).join(", ")}` : r.likes.length ? `Into ${r.likes.slice(0, 2).join(", ")}` : "New here";
+                  const likeLine = r.common.length ? `Also into ${r.common.slice(0, 2).join(", ")}` : r.likes.length ? `Into ${r.likes.slice(0, 2).join(", ")}` : (r.bio ?? "New here");
                   return (
                     <li key={r.id}>
                       <Link

@@ -141,13 +141,39 @@ export function Discover() {
   );
 
   return (
-    <ListPage title={interestLabel ? `${interestLabel} pods` : "Discover"} sub="Small pods near you with seats open. Join one, we plan the first hangout.">
+    <ListPage title="Discover" sub="Pods near you with open seats. Join one, we plan the rest.">
       {chips}
       <div className="mt-s6 grid grid-cols-1 gap-s8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-s12">
-        <section aria-label="Pods" className="min-w-0 lg:order-1">
+        {open.length > 0 && (
+          <aside aria-label="Open hangouts" className="min-w-0 lg:sticky lg:top-s8 lg:col-start-2 lg:row-start-1 lg:self-start">
+            <SectionLabel>Open hangouts</SectionLabel>
+            <p className="mt-1 hidden text-[14px] text-ink-2 lg:block">Pods meeting soon with room for one more.</p>
+            <ul className="-mx-gutter mt-s3 flex snap-x gap-s3 overflow-x-auto px-gutter pb-1 [scrollbar-width:none] lg:mx-0 lg:block lg:overflow-visible lg:rounded-2xl lg:bg-surface lg:px-0 lg:pb-0 lg:shadow-[inset_0_0_0_1px_var(--line)]">
+              {open.map((r, i) => (
+                <li key={r.pod.id} className={cn("w-[272px] shrink-0 snap-start rounded-2xl bg-surface shadow-[inset_0_0_0_1px_var(--line)] lg:w-auto lg:rounded-none lg:bg-transparent lg:shadow-none", i > 0 && "lg:border-t lg:border-line")}>
+                  <button type="button" onClick={() => setPeek(r)} className="pressable flex w-full items-center gap-s3 px-s4 py-s3 text-left outline-offset-[-2px]">
+                    <DateBlock iso={r.next!.starts_at} size={40} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-semibold text-ink">{r.title ?? r.pod.name}</span>
+                      <span className="tabular block truncate text-[13px] text-ink-2">
+                        {shortDay(r.next!.starts_at, nowMs)} {shortTime(r.next!.starts_at)}
+                        {r.next!.venueName ? ` · ${r.next!.venueName}` : ""}
+                      </span>
+                      <span className="block truncate text-[13px] text-ink-3">
+                        {r.pod.name} · {r.free ? "Free · " : ""}
+                        {r.seatsOpen} open
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
+        <section aria-label="Pods" className="min-w-0 lg:col-start-1 lg:row-start-1">
           <SectionLabel count={shown.length}>{filter === "people" ? "Pods with your people" : "Pods for you"}</SectionLabel>
           {shown.length ? (
-            <ul className="mt-s3 grid grid-cols-1 border-t border-line xl:grid-cols-2 xl:gap-s4 xl:border-t-0">
+            <ul className="mt-s3 border-t border-line lg:rounded-2xl lg:border-t-0 lg:bg-surface lg:shadow-[inset_0_0_0_1px_var(--line)]">
               {shown.map((r, i) => (
                 <PodItem key={r.pod.id} row={r} i={i} now={nowMs} onPeek={() => setPeek(r)} />
               ))}
@@ -171,32 +197,6 @@ export function Discover() {
           )}
         </section>
 
-        {open.length > 0 && (
-          <aside aria-label="Open hangouts" className="lg:order-2 lg:sticky lg:top-s8 lg:self-start">
-            <SectionLabel>Open hangouts</SectionLabel>
-            <p className="mt-1 text-[14px] text-ink-2">Pods meeting soon with room for one more.</p>
-            <ul className="mt-s3 rounded-2xl bg-surface shadow-[inset_0_0_0_1px_var(--line)]">
-              {open.map((r, i) => (
-                <li key={r.pod.id} className={cn(i > 0 && "border-t border-line", i >= 3 && "hidden lg:block")}>
-                  <button type="button" onClick={() => setPeek(r)} className="pressable flex w-full items-center gap-s3 px-s4 py-s3 text-left outline-offset-[-2px]">
-                    <DateBlock iso={r.next!.starts_at} size={40} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-semibold text-ink">{r.title ?? r.pod.name}</span>
-                      <span className="tabular block truncate text-[13px] text-ink-2">
-                        {shortDay(r.next!.starts_at, nowMs)} {shortTime(r.next!.starts_at)}
-                        {r.next!.venueName ? ` · ${r.next!.venueName}` : ""}
-                      </span>
-                      <span className="block truncate text-[13px] text-ink-3">
-                        {r.pod.name} · {r.free ? "Free · " : ""}
-                        {r.seatsOpen} open
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </aside>
-        )}
       </div>
       <SeatPreview row={peek} now={nowMs} onClose={() => setPeek(null)} />
     </ListPage>
@@ -258,7 +258,7 @@ function PodItem({ row, i, now, onPeek }: { row: Enriched; i: number; now: numbe
   const when = row.next ? `${shortDay(row.next.starts_at, now)} ${shortTime(row.next.starts_at)}` : "First plan after you join";
   return (
     <motion.li
-      className="relative border-b border-line xl:rounded-2xl xl:border-b-0 xl:bg-surface xl:shadow-[inset_0_0_0_1px_var(--line)]"
+      className="relative border-b border-line lg:last:border-b-0"
       initial={reduce ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...SNAPPY, delay: Math.min(i, 8) * STAGGER }}
@@ -266,7 +266,7 @@ function PodItem({ row, i, now, onPeek }: { row: Enriched; i: number; now: numbe
       <button
         type="button"
         onClick={onPeek}
-        className="pressable flex w-full items-start gap-s3 py-s4 pr-[104px] text-left outline-offset-[-2px] xl:rounded-2xl xl:px-s4"
+        className="pressable flex w-full items-start gap-s3 py-s4 pr-[92px] text-left outline-offset-[-2px] lg:px-s4 lg:pr-[112px]"
         aria-label={`${row.pod.name}, ${row.pod.topic}. ${row.why}.`}
       >
         <PodDots members={row.members} open={row.seatsOpen} hue={hueOf(row.pod.topic_key)} size={44} />
@@ -281,7 +281,7 @@ function PodItem({ row, i, now, onPeek }: { row: Enriched; i: number; now: numbe
           </span>
         </span>
       </button>
-      <div className="absolute top-s4 right-0 xl:right-s4">
+      <div className="absolute top-s4 right-0 lg:top-1/2 lg:right-s4 lg:-translate-y-1/2">
         {row.requested ? (
           <span className="inline-flex h-9 items-center rounded-full px-s3 text-[14px] font-medium text-ink-2 shadow-[inset_0_0_0_1px_var(--line)]">Asked</span>
         ) : row.verdict === "cap" ? (
@@ -293,7 +293,7 @@ function PodItem({ row, i, now, onPeek }: { row: Enriched; i: number; now: numbe
             onClick={() => void take()}
             className={cn(
               "pressable inline-flex h-9 min-w-[76px] items-center justify-center rounded-full px-s4 text-[14px] font-semibold disabled:opacity-60",
-              row.verdict === "join" ? "bg-primary text-on-primary" : "text-ink shadow-[inset_0_0_0_1.5px_var(--line-2)]",
+              "text-ink shadow-[inset_0_0_0_1.5px_var(--line-2)] hover:bg-ink hover:text-paper hover:shadow-none",
             )}
           >
             {row.verdict === "join" ? "Join" : "Ask"}

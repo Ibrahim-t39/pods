@@ -150,7 +150,20 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
 
   // ── stored notifications + the derived basics (placed, locked, reports) ─────────────
   const readyPods = new Set(out.filter((a) => a.act?.type === "rsvp").map((a) => a.podId));
-  for (const n of buildInbox(db, nowISO, seen, discreet)) {
+  const inbox = buildInbox(db, nowISO, seen, discreet);
+  const lockedPods = new Set(inbox.filter((n) => n.id.startsWith("d:locked:")).map((n) => n.podId));
+  for (const n of inbox) {
+    // the stored "It's on" line repeats the derived locked item for the same pod
+    if (n.stored && n.trigger === "plan_locked" && n.podId && lockedPods.has(n.podId)) continue;
+    if (n.id.startsWith("d:locked:") && n.podId && !readyPods.has(n.podId)) {
+      const h = db.hangouts[n.id.slice("d:locked:".length)];
+      if (h) {
+        const going = db.rsvps.filter((r) => r.hangout_id === h.id && r.status === "going").length;
+        const label = podLabel(db.pods[n.podId], discreet);
+        out.push({ ...n, kind: "plans", podName: label, who: null, act: null, title: `${label} is locked`, body: `${maskText(h.title, db.pods[n.podId], discreet)} · ${shortDay(h.starts_at, nowMs)} ${shortTime(h.starts_at)} · ${going} going` });
+        continue;
+      }
+    }
     if (n.trigger === "poll_opened" && n.podId && pollsShown.has(`${n.podId}|${db.pods[n.podId] ? n.body : ""}`)) continue;
     if (n.id.startsWith("d:locked:") && n.podId && readyPods.has(n.podId)) continue;
     const base = { ...n, podName: name(n.podId), who: null as Activity["who"], act: null as Act | null };

@@ -154,7 +154,7 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
             <span className="pd-handle" aria-hidden />
             <p className="pd-over">
               <span className="pd-dot" aria-hidden />
-              {m.name} <span className="tabular">· Hangout #{v.round}</span>
+              <span className="truncate">{`${m.name} · Hangout #${v.round}`}</span>
             </p>
             <button type="button" className="pd-x pressable" onClick={onClose} aria-label="Close">
               <Icon name="close" size={22} />

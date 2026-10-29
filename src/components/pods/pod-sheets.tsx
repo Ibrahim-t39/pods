@@ -17,7 +17,7 @@ import { podMemories } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
 import { formatRelative } from "@/lib/time/format";
 import { toChicagoISO } from "@/lib/time/tz";
-import { firstName } from "./model";
+import { firstName, planVM, shortDay } from "./model";
 
 type SheetProps = { open: boolean; onOpenChange: (o: boolean) => void; podId: string; podName: string; hue: PodHueKey };
 
@@ -25,9 +25,11 @@ export function MembersSheet({ open, onOpenChange, podId, podName, hue }: SheetP
   const iso = toChicagoISO(useClock(60_000).getTime());
   const me = useDb((db) => db.me);
   const members = useDb(useCallback((db) => podPublicMembers(db, podId, iso), [podId, iso]));
-  const list = [...members].sort((a, b) => Number(b.id === me) - Number(a.id === me));
+  const going = useDb(useCallback((db) => planVM(db, podId)?.going ?? [], [podId]));
+  const when = useDb(useCallback((db) => { const p = planVM(db, podId); return p ? shortDay(p.startsAt) : null; }, [podId]));
+  const list = [...members].sort((a, b) => Number(b.id === me) - Number(a.id === me) || Number(going.includes(b.id)) - Number(going.includes(a.id)));
   return (
-    <ResponsiveSheet open={open} onOpenChange={onOpenChange} title={podName} description={<span className="tabular">{list.length} people</span>}>
+    <ResponsiveSheet open={open} onOpenChange={onOpenChange} title={podName} description={<span className="tabular">{list.length} people{when ? ` · ${going.length} in for ${when}` : ""}</span>}>
       <ul className="border-t border-line">
         {list.map((m) => {
           const you = m.id === me;
@@ -39,8 +41,11 @@ export function MembersSheet({ open, onOpenChange, podId, podName, hue }: SheetP
                 className="pressable flex min-h-16 items-center gap-s4 outline-offset-[-2px]"
               >
                 <Disc initial={m.display_name.slice(0, 1).toUpperCase()} tone={you ? "you" : hue} seed={m.display_name} size={40} />
-                <span className="flex-1 text-[17px] font-semibold text-ink">{you ? "You" : m.display_name}</span>
-                <span className="tabular text-label text-ink-2">{m.age}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[17px] font-semibold text-ink">{you ? "You" : m.display_name}</span>
+                  <span className="tabular block text-label text-ink-2">{m.age}</span>
+                </span>
+                {when && going.includes(m.id) && <span className="rounded-full bg-[color-mix(in_oklab,var(--select)_12%,var(--lit))] px-2.5 py-1 text-[13px] font-medium text-select">In for {when}</span>}
               </Link>
             </li>
           );

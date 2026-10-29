@@ -100,7 +100,7 @@ export function SafetyPage() {
                     <>
                       <div className="yo-pad">
                         <p className="text-[13px] font-medium text-ink-2" data-nc>
-                          {soon.podName} · {soon.locked ? "Locked" : "Planned"}
+                          {soon.podName} · {soon.locked ? "Locked" : `${soon.going} going`}
                         </p>
                         <p className="mt-s1 text-[18px] font-semibold tracking-[-0.01em]" data-nc>
                           {soon.title}

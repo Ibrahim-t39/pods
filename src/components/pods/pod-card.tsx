@@ -140,7 +140,7 @@ export function PodCard({ t, minute, closed, unread, widened }: { t: RoomTable; 
           )}
         </>
       ) : (
-        <p className="mt-s4 text-[14px] leading-[1.4] text-ink-2">Opens once your first hangout is done, so you meet one pod at a time.</p>
+        <p className="mt-s4 text-[14px] leading-[1.4] text-ink-2">One pod at a time: this one opens after your first hangout.</p>
       )}
     </>
   );

@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useCallback, type ReactNode } from "react";
-import { Disc, DiscStack, type PodHueKey } from "@/components/brand";
+import { Disc, DiscStack, WidenGlyph, type PodHueKey } from "@/components/brand";
 import { Icon, type IconName } from "@/components/icons";
 import { buttonVariants } from "@/components/ui/button";
 import { useDb } from "@/lib/db/hooks";
@@ -19,16 +19,34 @@ import { PodOrb } from "./pod-orb";
 
 export function PodIdentity({ podId, name, hue, kind, going, held, actions }: { podId: string; name: string; hue: PodHueKey; kind: string; going: number; held: number; actions?: ReactNode }) {
   const size = useDb(useCallback((db) => podMembers(db, podId).length, [podId]));
+  // beat 3: a community pod widened from a smaller group says so, once, under its name
+  const widened = useDb(
+    useCallback((db) => {
+      const w = db.pods[podId]?.widened_from;
+      if (!w || w.kind !== "group") return null;
+      const entry = (db.plannerCache as Record<string, { output?: unknown }>)[`${podId}:widen_explainer`];
+      const m = ((entry?.output as { body?: string } | undefined)?.body ?? "").match(/Only (\d+) (\S+)/);
+      return `${m ? `Only ${m[1]} ${m[2]} nearby` : `Not many ${w.from}s nearby`}. Widened to ${w.to}.`;
+    }, [podId]),
+  );
   return (
-    <div className="flex items-center gap-s3">
-      <PodOrb hue={hue} people={size} inCount={going} size={48} />
-      <div className="min-w-0 flex-1">
-        <h1 className="truncate font-display text-[24px] leading-[1.15] font-semibold tracking-[-0.02em] text-ink lg:text-[28px]">{name}</h1>
-        <p className="text-label text-ink-2">
-          {kind} · {size} people{held > 0 ? ` · ${held} ${held === 1 ? "hangout" : "hangouts"}` : ""}
-        </p>
+    <div>
+      <div className="flex items-center gap-s3">
+        <PodOrb hue={hue} people={size} inCount={going} size={48} />
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate font-display text-[24px] leading-[1.15] font-semibold tracking-[-0.02em] text-ink lg:text-[28px]">{name}</h1>
+          <p className="text-label text-ink-2">
+            {kind} · {size} people{held > 0 ? ` · ${held} ${held === 1 ? "hangout" : "hangouts"}` : ""}
+          </p>
+        </div>
+        {actions}
       </div>
-      {actions}
+      {widened && (
+        <p className="mt-s3 flex items-start gap-s2 text-[14px] leading-[1.35] text-ink-2">
+          <WidenGlyph size={16} className="mt-0.5 shrink-0 text-grove-text" />
+          <span>{widened}</span>
+        </p>
+      )}
     </div>
   );
 }
@@ -150,7 +168,7 @@ export function PodSections({
                     <img src={m.photo_url} alt="" className="size-12 shrink-0 rounded-[10px] object-cover" />
                   ) : (
                     <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-[10px] bg-sunken text-ink-2">
-                      <Icon name="again" size={20} />
+                      <Icon name="edit" size={20} />
                     </span>
                   )}
                   <span className="min-w-0 flex-1">
@@ -165,7 +183,7 @@ export function PodSections({
           ) : (
             <span className="flex items-center gap-s3">
               <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-[10px] bg-sunken text-ink-2">
-                <Icon name="again" size={20} />
+                <Icon name="edit" size={20} />
               </span>
               <span className="text-[15px] leading-[1.35] text-ink-2">After a hangout, keep a line or a photo from the day here.</span>
             </span>

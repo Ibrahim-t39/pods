@@ -21,7 +21,7 @@ export function ListPage({ title, sub, actions, children, className }: { title: 
           <header className="flex items-end justify-between gap-s4">
             <div className="min-w-0">
               <h1 className="text-[28px] leading-[1.15] font-semibold tracking-[-0.02em] text-ink lg:text-[32px]">{title}</h1>
-              {sub && <p className="mt-1 text-[15px] leading-[1.4] text-ink-2">{sub}</p>}
+              {sub && <p className="mt-1 min-h-[21px] text-[15px] leading-[1.4] text-ink-2">{hydrated ? sub : "\u00a0"}</p>}
             </div>
             {actions && <div className="flex shrink-0 items-center gap-s2">{actions}</div>}
           </header>

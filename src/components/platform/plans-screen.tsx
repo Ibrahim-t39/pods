@@ -339,7 +339,7 @@ function NextUp({ p, x, hue, now }: { p: PlanItem; x?: Extra; hue: PodHueKey; no
   const answer = p.me !== "going" && p.me !== "not_going" && s.key !== "vote";
   return (
     <div className="overflow-hidden rounded-[24px] bg-lit shadow-[inset_0_0_0_1px_var(--line),var(--shadow-md)]">
-      <div className="px-s6 pt-s5 pb-s5" style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${POD_SOLID[hue]} 10%, var(--lit)), var(--lit))` }}>
+      <div className="px-s6 pt-s6 pb-s4" style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${POD_SOLID[hue]} 10%, var(--lit)), var(--lit))` }}>
         <div className="flex items-center justify-between gap-s2">
           <span className="text-[13px] leading-[18px] font-semibold tracking-[0.02em] text-ink-2 uppercase">Next up · {when}</span>
           <Pill s={s} />
@@ -418,7 +418,6 @@ function Loop() {
     <ol aria-label="How plans work" className="flex flex-wrap items-center gap-x-s2 gap-y-s1 text-[13px] leading-[18px] text-ink-2">
       {steps.map((s, i) => (
         <li key={s} className="flex items-center gap-s2">
-          <span className="tabular grid size-5 place-items-center rounded-full bg-sunken text-[11px] font-semibold text-ink-2">{i + 1}</span>
           {s}
           {i < steps.length - 1 && <span aria-hidden className="text-ink-3">›</span>}
         </li>

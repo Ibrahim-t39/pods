@@ -9,6 +9,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { Disc } from "@/components/brand";
 import { POD_SOLID } from "@/components/brand/disc";
@@ -33,13 +34,17 @@ const KINDS: [Kind | "all", string][] = [
 const GROUP: Record<Kind, string> = { pod: "Pods", person: "People", plan: "Plans", interest: "Find a pod for" };
 
 export function Search() {
-  const [q, setQ] = useState("");
+  const initial = useSearchParams().get("q") ?? "";
+  const [q, setQ] = useState(initial);
   const [kind, setKind] = useState<Kind | "all">("all");
   const nowMs = useClock(60_000).getTime();
   const iso = toChicagoISO(nowMs);
   const hits = useDb(useCallback((db) => searchAll(db, q, iso, 40), [q, iso]));
   const hues = useDb(useCallback((db) => Object.fromEntries(roomTables(db, nowMs).map((t) => [t.row.pod.id, t.hue])), [nowMs]));
   const typed = q.trim().length > 0;
+  const personPods = useDb(
+    useCallback((db) => Object.fromEntries(myPeople(db, iso).map((p) => [p.member.id, p.sharedPodIds.map((id) => (db.pods[id] ? podLabel(db, db.pods[id]) : "")).filter(Boolean).join(" · ")])), [iso]),
+  );
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: hits.length };
     for (const h of hits) c[h.kind] = (c[h.kind] ?? 0) + 1;
@@ -60,7 +65,7 @@ export function Search() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Pods, people, plans, places"
-            className="h-full min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-ink-3"
+            className="h-full min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-ink-3 [&::-webkit-search-cancel-button]:hidden"
             autoComplete="off"
           />
           {typed && (
@@ -72,14 +77,13 @@ export function Search() {
 
         {typed && (
           <div className="-mx-gutter mt-s3 flex gap-s2 overflow-x-auto px-gutter [scrollbar-width:none] lg:mx-0 lg:px-0">
-            {KINDS.map(([k, label]) => {
+            {KINDS.filter(([k]) => k === "all" || (counts[k] ?? 0) > 0).map(([k, label]) => {
               const n = counts[k] ?? 0;
               return (
                 <button
                   key={k}
                   type="button"
                   aria-pressed={kind === k}
-                  disabled={k !== "all" && !n}
                   onClick={() => setKind(k)}
                   className={cn(
                     "pressable inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-s4 text-[14px] font-medium disabled:opacity-40",
@@ -119,7 +123,7 @@ export function Search() {
                         <Mark text={h.label} q={q} />
                       </span>
                       <span className="tabular block truncate text-[13px] text-ink-2">
-                        {h.kind === "plan" ? `${shortDay(h.starts_at, nowMs)} ${shortTime(h.starts_at)} · ${h.sub}` : h.kind === "interest" ? "See pods with open seats" : h.sub}
+                        {h.kind === "plan" ? `${shortDay(h.starts_at, nowMs)} ${shortTime(h.starts_at)} · ${h.sub}` : h.kind === "interest" ? "See pods with open seats" : h.kind === "person" ? personPods[h.id] || h.sub : h.sub}
                       </span>
                     </span>
                     <Icon name="arrow" size={18} className="shrink-0 text-ink-3" />
