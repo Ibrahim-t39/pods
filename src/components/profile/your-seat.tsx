@@ -4,7 +4,7 @@
 //   into       interests as chips: × removes, + Add opens the picker (adding one looks for a new pod)
 //   community  your community pods in your own words, Edit
 //   free       the week grid (read-only here; Edit opens the sheet)
-//   more       Invite a friend · Settings · If something's off
+//   more       Invite a friend · Settings · If something's off · Sign out · Delete my account (opens the confirm flow in Settings)
 //   phone   one stack; laptop   identity + more on the left (sticky), pods / into / community / free on the right.
 // Sheets are addressed by ?sheet= (likes, free, community, texts, ai); account sheets forward to /app/settings.
 "use client";
@@ -20,6 +20,7 @@ import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { notify } from "@/components/ui";
 import { useStore } from "@/lib/db/store";
+import { signOut } from "@/lib/safety/sign-out";
 import { useDb, useHydrated, useMe, useRepo } from "@/lib/db/hooks";
 import { myPlans, podLabel } from "@/lib/platform/selectors";
 import { opensAfter, roomTables, shortDay } from "@/components/pods/model";
@@ -177,6 +178,17 @@ export function YourSeat() {
         <Row icon="bell" label="Texts" value={textsValue(me.notification_prefs.sms, prefs.texts)} onClick={() => go("texts")} arrow />
         <Row icon="more" label="Settings" href="/app/settings" arrow />
         <Row icon="here" tone="safe" label="If something’s off" href="/app/safety" arrow />
+      </Card>
+      <Card className="mt-s3">
+        <Row
+          icon="exit"
+          label="Sign out"
+          onClick={() => {
+            signOut();
+            router.replace("/");
+          }}
+        />
+        <Row icon="trash" tone="danger" label="Delete my account" hint="Removes your profile and pods for good" href="/app/settings?sheet=delete" />
       </Card>
     </Section>
   );
