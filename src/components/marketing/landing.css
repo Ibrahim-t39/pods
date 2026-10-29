@@ -442,7 +442,7 @@ html:has(.lp) { scroll-padding-top: 140px; }
 .tr-votes i { width: 20px; height: 20px; border-radius: 999px; background: var(--pods-ember); }
 .tr-votes i[data-no] { background: transparent; box-shadow: inset 0 0 0 2px var(--line-2); }
 .tr-vote-n { font-size: 17px; font-weight: 600; }
-.tr-vote-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.tr-auto { font-size: 14px; font-weight: 500; color: var(--ink-2); }
 .tr-again {
   min-height: 44px;
   padding-inline: 16px;

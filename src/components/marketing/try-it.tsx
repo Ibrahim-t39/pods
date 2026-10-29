@@ -1,6 +1,7 @@
 // <TryIt />: the landing's playable story (STORY.md §2, beats 2-6). No account, nothing stored; "Start over" resets.
 // Fit (pick interests) -> Pod (circles move together, the pod lands) -> Plan (AI shows its work, the card assembles)
 // -> I'm in (3 of 8 ticks to 4, Locked, the four move together) -> Repeat (run it back, overlaps deepen).
+// Every beat plays as you scroll to it; nothing waits for a tap (picking interests only changes which pod you see).
 // Every beat also plays on its own: no interest picked = Basketball, the demo pod. Plan facts come from the seed
 // (data/plans TOPICS + venues), so the page and the app agree. The one sticky element is the progress rail.
 "use client";
@@ -198,8 +199,8 @@ function Fit() {
             );
           })}
         </div>
-        <Button size="lg" onClick={go} disabled={!picked.length}>
-          Find my pod
+        <Button size="lg" variant={picked.length ? "primary" : "secondary"} onClick={go}>
+          {picked.length ? "Find my pod" : "Skip, show me one"}
         </Button>
       </div>
     </div>
@@ -349,10 +350,18 @@ function Plan() {
 
 /* ── 4 I'm in: you tap it; the count ticks to the plan's lock number (Hoopers: 3 of 8 to 4) and it locks ──────────────────────────── */
 function ImIn() {
-  const { n, locked, imIn, pod } = useTry();
+  const { n, locked, imIn, pod, run } = useTry();
   const wait = lockLine(pod.lockAt);
+  const ref = useRef<HTMLDivElement>(null);
+  const seen = useInView(ref, { amount: 0.6 });
+  // scroll plays it: a beat after it's in view, you say yes and it locks
+  useEffect(() => {
+    if (!seen || n >= pod.lockAt) return;
+    const id = window.setTimeout(imIn, 900);
+    return () => clearTimeout(id);
+  }, [seen, n, pod.lockAt, imIn, run]);
   return (
-    <div id="in" className="tr-beat">
+    <div id="in" className="tr-beat" ref={ref}>
       <Head k="I'm in" line={locked ? "Locked. It's on." : wait.line} sub={locked ? `${pod.what}, ${pod.when}.` : wait.sub} />
       <div className="tr-obj tr-inobj">
         <div className="tr-sphere" data-locked={locked ? "" : undefined}>
@@ -361,11 +370,7 @@ function ImIn() {
         <Faces names={["You", ...MEMBERS.slice(0, pod.lockAt - 1)]} youIn={n >= pod.lockAt} />
         <div className="tr-in-row">
           <InCount n={n} of={8} locked={locked} className="tr-count" />
-          {!locked && (
-            <Button variant="spark" size="lg" onClick={imIn} disabled={n >= pod.lockAt}>
-              I&apos;m in
-            </Button>
-          )}
+          {!locked && <span className="tr-auto">{n >= pod.lockAt ? "You're in" : "Saying yes for you…"}</span>}
         </div>
       </div>
     </div>
@@ -377,8 +382,16 @@ function Repeat() {
   const { votes, vote, reset, pod } = useTry();
   const yes = votes.filter((v) => v === "yes").length;
   const all = votes.length === 4;
+  const ref = useRef<HTMLDivElement>(null);
+  const seen = useInView(ref, { amount: 0.6 });
+  // scroll plays it: Pods asks, the four answer
+  useEffect(() => {
+    if (!seen || votes.length) return;
+    const id = window.setTimeout(() => vote("yes"), 900);
+    return () => clearTimeout(id);
+  }, [seen, votes.length, vote]);
   return (
-    <div id="repeat" className="tr-beat">
+    <div id="repeat" className="tr-beat" ref={ref}>
       <Head k="Repeat" line={all ? "Hangout #2 is on." : "Afterwards: run it back?"} sub={all ? `Same people. ${pod.next}.` : "Pods asks for you, so nobody has to."} />
       <div className="tr-obj tr-repobj">
         <div className="tr-sphere">
@@ -394,18 +407,9 @@ function Repeat() {
             {votes.length ? `${yes} of 4 yes` : "0 of 4"}
           </span>
         </div>
-        {!votes.length ? (
-          <div className="tr-vote-btns">
-            <Button variant="spark" size="lg" onClick={() => vote("yes")}>
-              Run it back
-            </Button>
-            <Button variant="secondary" size="lg" onClick={() => vote("no")}>
-              Not this time
-            </Button>
-          </div>
-        ) : (
-          <button type="button" className="tr-again pressable" onClick={reset} disabled={!all}>
-            Start over
+        {all && (
+          <button type="button" className="tr-again pressable" onClick={reset}>
+            Play it again
           </button>
         )}
       </div>
