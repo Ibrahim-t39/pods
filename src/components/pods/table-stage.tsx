@@ -53,8 +53,11 @@ const LOOP = new Set(["check_in", "ballot", "waiting_reveal", "planning_next", "
 
 /** "Pickup basketball, rotating 5-on-5 games" → "Pickup basketball" (the activity, as a label). */
 function activityWord(event: string) {
+  // the plan card has room for two lines: cut at a word, never mid-word ("a slow loop arou…")
   const w = event.split(/[,:;(—–]/)[0].trim();
-  return w.length > 28 ? `${w.slice(0, 27).trimEnd()}…` : w;
+  if (w.length <= 48) return w;
+  const cut = w.slice(0, 48);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), 20)).trimEnd()}…`;
 }
 
 /** Venue names step down to the place word ("Brahan Spring Rec Center" → "Brahan Spring"), T5. */
@@ -219,8 +222,23 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
 
   let tally: ReactNode;
   let action: ReactNode;
-  if (locked) {
-    tally = <InCount n={count} of={view.size} locked className="text-[16px] whitespace-nowrap text-ink" />;
+  if (locked && !view.imIn && count >= view.size) {
+    // founder r1029: locked and full without you. Say so plainly; the one action is to ask the pod.
+    tally = <span className="text-[15px] font-semibold text-ink">Full with {count}</span>;
+    action = (
+      <Button variant="secondary" size="md" onClick={table?.openTalk} leadingIcon={<Icon name="talk" size={18} />}>
+        Ask the pod
+      </Button>
+    );
+  } else if (locked) {
+    tally = view.imIn ? (
+      <InCount n={count} of={view.size} locked className="text-[16px] whitespace-nowrap text-ink" />
+    ) : (
+      // locked without you, seats left: no "See you there" beside "I'm in"; you can still join
+      <span className="text-[15px] leading-tight text-ink">
+        <span className="font-semibold">Locked with {count}.</span> <span className="text-ink-2">Room for you.</span>
+      </span>
+    );
     action = (
       <Button
         variant={view.imIn ? "secondary" : "spark"}
@@ -268,7 +286,7 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
             <span className="mt-s2 block font-display text-[30px] leading-[1.05] font-semibold tracking-[-0.03em] text-ink tabular lg:text-[34px]">
               {day}, {shortTime(startsAt)}.
             </span>
-            <span className="mt-s2 block text-[17px] leading-[1.35] font-semibold text-ink">{activity}</span>
+            <span className="mt-s2 line-clamp-2 block text-[17px] leading-[1.35] font-semibold text-ink">{activity}</span>
             <span className="block text-[16px] leading-[1.35] text-ink-2">{[longPlace ? place : placeName, cost].filter(Boolean).join(" · ")}</span>
             <span className="mt-s3 flex items-center gap-s2 text-[14px] text-ink-2">
               <Icon name="why" size={16} className="text-select" />
@@ -306,8 +324,8 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
 /** The plan as a flat card: a top that opens the plan and a bottom row with the in-count and the one action. */
 function PlanCard({ top, foot }: { top: ReactNode; foot: ReactNode }) {
   return (
-    <div className="pods-card overflow-hidden">
-      {top}
+    <div className="pods-card flex flex-col overflow-hidden">
+      <div className="flex-1">{top}</div>
       {foot && <div className="flex min-h-[68px] items-center justify-between gap-s3 border-t border-line px-s5 py-s3">{foot}</div>}
     </div>
   );

@@ -146,13 +146,13 @@ export function PodSections({
 
       <Section title="Members" action={<button type="button" onClick={() => onSheet("members")} className={linkCls}>See all {members.length}</button>}>
         <button type="button" onClick={() => onSheet("members")} className="pods-card pressable flex w-full items-center gap-s3 p-s4 text-left outline-offset-2">
-          <DiscStack size={32} max={6} people={members.map((m) => ({ initial: m.name.slice(0, 1).toUpperCase(), tone: m.you ? "you" : hue, seed: m.name }))} />
+          {/* founder r1029: the discs and the names are the same people, in the same order ("You" first) */}
+          <DiscStack size={32} max={4} people={members.map((m) => ({ initial: m.name.slice(0, 1).toUpperCase(), tone: m.you ? "you" : hue, seed: m.name, label: m.you ? "You" : m.name }))} />
           <span className="min-w-0 flex-1 truncate text-[14px] text-ink-2">
             {members
               .slice(0, 4)
               .map((m) => (m.you ? "You" : m.name))
               .join(", ")}
-            {members.length > 4 ? ` and ${members.length - 4} more` : ""}
           </span>
         </button>
       </Section>

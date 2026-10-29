@@ -19,10 +19,11 @@ import { Page } from "@/components/shell/page";
 import { ReportSheet } from "@/components/safety/report-sheet";
 import { usePlanActions } from "@/components/planner/use-plan-actions";
 import { useDb, useHydrated } from "@/lib/db/hooks";
-import { membership } from "@/lib/db/selectors";
+import { membership, podMembers } from "@/lib/db/selectors";
 import { useClock } from "@/lib/time/clock";
 import { LeavePodSheet } from "./leave-pod-sheet";
 import { roomTables } from "./model";
+import { PodOrb } from "./pod-orb";
 import { GiveUpSheet, PlaceSheet, PodMenuSheet, type PodSheet } from "./pod-menu";
 import { MembersSheet, MemoriesSheet } from "./pod-sheets";
 import { PodIdentity, PodSections } from "./pod-overview";
@@ -69,6 +70,15 @@ function PodTableInner({ podId }: { podId: string }) {
   );
 
   const here = tables.find((t) => t.row.pod.id === podId);
+  const outside = useDb(
+    useCallback(
+      (db) => {
+        const p = db.pods[podId];
+        return p ? { name: p.name, hue: p.hue, topic: p.topic ?? null, count: podMembers(db, podId).length } : null;
+      },
+      [podId],
+    ),
+  );
   const walk = useMemo(() => tables.filter((t) => t.open).map((t) => t.row.pod.id), [tables]);
   const at = walk.indexOf(podId);
 
@@ -144,16 +154,38 @@ function PodTableInner({ podId }: { podId: string }) {
   const touch = useRef<{ x: number; y: number; t: number } | null>(null);
 
   if (!mine || !here) {
+    // founder r1029: a pod you are not in gets a real preview (what it is, how many, where to join), not a dead end
     return (
       <>
         <Stage light="paper" />
         <Page
           chrome={<Chrome left="mark" />}
-          head={<Line>Not your table.</Line>}
+          head={
+            outside ? (
+              <div className="flex flex-col items-start gap-s4">
+                <PodOrb hue={outside.hue} people={Math.max(6, Math.min(10, outside.count))} inCount={0} size={88} />
+                <div>
+                  <Line>{outside.name}</Line>
+                  <p className="mt-s2 max-w-[36ch] text-[17px] leading-[1.4] text-ink-2">
+                    {outside.count} {outside.count === 1 ? "person" : "people"} nearby{outside.topic ? `, into ${outside.topic}` : ""}. You&apos;re not in this pod yet.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <Line>This pod isn&apos;t open to you.</Line>
+            )
+          }
           foot={
-            <Link href="/app/pods" className={GO}>
-              Your pods <Icon name="arrow" size={20} />
-            </Link>
+            <div className="flex flex-wrap items-center gap-x-s6 gap-y-s3">
+              {outside && (
+                <Link href="/app/discover" className={GO}>
+                  See it in Discover <Icon name="arrow" size={20} />
+                </Link>
+              )}
+              <Link href="/app/pods" className={outside ? "text-[16px] font-medium text-ink-2 underline-offset-4 hover:underline" : GO}>
+                Your pods {!outside && <Icon name="arrow" size={20} />}
+              </Link>
+            </div>
           }
         />
       </>

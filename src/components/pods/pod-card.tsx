@@ -16,8 +16,11 @@ export type Tone = "spark" | "select" | "grove" | "quiet";
 
 /** "Pickup basketball, rotating 5-on-5" → "Pickup basketball". */
 export function activityWord(event: string) {
+  // cut at a word, never mid-word (founder r1029)
   const w = event.split(/[,:;(—–]/)[0].trim();
-  return w.length > 28 ? `${w.slice(0, 27).trimEnd()}…` : w;
+  if (w.length <= 28) return w;
+  const cut = w.slice(0, 28);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), 12)).trimEnd()}…`;
 }
 
 /** The pod's state in one or two words, and how loud it is. */
@@ -99,7 +102,7 @@ export function PodCard({ t, minute, closed, unread, widened }: { t: RoomTable; 
         <PodOrb hue={t.hue} people={t.row.size} inCount={going} size={52} open={t.open} />
         <div className="min-w-0 flex-1 pt-0.5">
           <div className="flex items-center justify-between gap-s2">
-            <h2 className="truncate text-[18px] leading-[1.2] font-semibold tracking-[-0.01em] text-ink">{t.row.name}</h2>
+            <h2 className="line-clamp-2 text-[18px] leading-[1.2] font-semibold tracking-[-0.01em] text-ink">{t.row.name}</h2>
             {st && <StatusChip {...st} />}
           </div>
           <p className="mt-0.5 text-label text-ink-2">{kindLine(t)}</p>
@@ -117,7 +120,7 @@ export function PodCard({ t, minute, closed, unread, widened }: { t: RoomTable; 
             <Icon name="day" size={20} className="shrink-0 text-select" />
             {plan ? (
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-semibold text-ink">
+                <span className="line-clamp-2 block text-[15px] font-semibold text-ink">
                   {plan.when} · {plan.what}
                 </span>
                 <span className="block truncate text-[14px] text-ink-2">{plan.where}</span>

@@ -1,9 +1,9 @@
-// People (PLATFORM_SPEC §F7), redesign r2: everyone you share a pod with, grouped by pod, each row saying what you
-// have in common. Blocked people are left out.
-//   phone   find field, then a section per pod (name · count), rows link to /app/people/[id]
-//   laptop  master-detail (Quo contacts): the list left (380px), the selected person's card right, sticky
-//   row     person disc · name, age · likes in common (blue) or their likes · "2 pods" when you share more than one
-//   states  loading = row skeletons · no people = a card that points to Discover · no match = "No one called …"
+// People (PLATFORM_SPEC §F7), round 1029: "non-intuitive, overwhelming" -> grouped the way people think, by pod.
+//   group   the pod's glossy sphere · pod name · when you next see that table ("Sat 10am · Brahan Spring Park")
+//   row     person disc · first name · one short line of what you share (never a truncated bio) · "Going" when they
+//           said yes to the pod's next hangout · chevron. 64px rows, one line of meta.
+//   laptop  master-detail: the list left (400px), the selected person right, sticky
+//   states  loading = row skeletons · no people = points to Discover · no match = "No one matches …"
 "use client";
 
 import Link from "next/link";
@@ -12,14 +12,15 @@ import { Disc } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/components/ui/use-media-query";
 import { SearchGlyph } from "@/components/shell/nav-glyphs";
-import { ListPage, SectionLabel } from "@/components/platform/page-head";
+import { ListPage } from "@/components/platform/page-head";
+import { Icon } from "@/components/icons";
 import { PersonCard, usePersonView } from "@/components/platform/person-card";
 import { cn } from "@/lib/cn";
 import { useDb } from "@/lib/db/hooks";
 import { myPeople, podLabel } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
 import { toChicagoISO } from "@/lib/time/tz";
-import { roomTables } from "./model";
+import { roomTables, shortDay, shortTime } from "./model";
 import { PodOrb } from "./pod-orb";
 import type { PodHueKey } from "@/components/brand/disc";
 
@@ -66,7 +67,9 @@ export function People() {
           .sort((a, b) => Number(a.type === "community") - Number(b.type === "community"))
           .map((p) => {
             const t = tables.get(p.id);
-            return { id: p.id, name: podLabel(db, p), hue: (t?.hue ?? "signal") as PodHueKey, size: t?.row.size ?? 0, going: t?.row.plan?.going.length ?? 0 };
+            const plan = t?.row.plan;
+            const next = plan && Date.parse(plan.endsAt) > nowMs ? { at: plan.startsAt, venue: plan.venue?.short_name ?? plan.venue?.name ?? null } : null;
+            return { id: p.id, name: podLabel(db, p), hue: (t?.hue ?? "signal") as PodHueKey, size: t?.row.size ?? 0, going: plan?.going.length ?? 0, goingIds: plan?.going ?? [], next };
           });
         return { rows, pods };
       },
@@ -80,7 +83,7 @@ export function People() {
     const shared = hit.filter((r) => r.pods.length > 1);
     const seen = new Set(shared.map((r) => r.id));
     const out: { id: string; name: string; rows: Row[]; pod?: (typeof data.pods)[number] }[] = [];
-    if (shared.length) out.push({ id: "_shared", name: "In more than one pod with you", rows: shared });
+    if (shared.length) out.push({ id: "_shared", name: "In more than one of your pods", rows: shared });
     for (const p of data.pods) {
       const rows = hit.filter((r) => r.pods[0] === p.id && !seen.has(r.id)).sort((a, b) => b.common.length - a.common.length || a.name.localeCompare(b.name));
       if (rows.length) out.push({ id: p.id, name: p.name, rows, pod: p });
@@ -107,17 +110,17 @@ export function People() {
     );
 
   return (
-    <ListPage title="People" sub={`${data.rows.length} people across ${data.pods.length} pod${data.pods.length === 1 ? "" : "s"}.`}>
-      <div className="grid grid-cols-1 gap-s8 lg:grid-cols-[380px_minmax(0,1fr)] lg:gap-s12">
+    <ListPage title="People" sub={`${data.rows.length} people, grouped by pod.`}>
+      <div className="grid grid-cols-1 gap-s8 lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-s12">
         <div className="min-w-0">
           <label className="flex h-11 items-center gap-s2 rounded-full bg-surface px-s4 shadow-[inset_0_0_0_1px_var(--line-2)] focus-within:shadow-[inset_0_0_0_2px_var(--select)]">
             <SearchGlyph size={18} className="shrink-0 text-ink-3" />
-            <span className="sr-only">Find someone</span>
+            <span className="sr-only">Search people</span>
             <input
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Find someone or a like"
+              placeholder="Search by name or interest"
               autoComplete="off"
               className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-3 [&::-webkit-search-cancel-button]:hidden"
             />
@@ -126,18 +129,33 @@ export function People() {
           {groups.length === 0 && <p className="mt-s6 text-[15px] text-ink-2">No one matches &ldquo;{q.trim()}&rdquo;.</p>}
 
           {groups.map((g) => (
-            <section key={g.id} className="mt-s6">
-              <SectionLabel count={g.rows.length}>
-                <span className="inline-flex items-center gap-s2 align-middle">
-                  {g.pod && <PodOrb hue={g.pod.hue} people={Math.max(1, g.pod.size)} inCount={g.pod.going} size={28} />}
-                  {g.name}
-                </span>
-              </SectionLabel>
+            <section key={g.id} className="mt-s8">
+              {g.pod ? (
+                <Link href={`/app/pods/${g.pod.id}`} className="pressable -mx-s2 flex items-center gap-s3 rounded-2xl px-s2 py-s1 hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)]">
+                  <PodOrb hue={g.pod.hue} people={Math.max(1, g.pod.size)} inCount={g.pod.going} size={44} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[17px] leading-[1.25] font-semibold text-ink">{g.name}</span>
+                    <span className="tabular block truncate text-[14px] leading-[1.35] text-ink-2">
+                      {g.pod.next ? `Next: ${shortDay(g.pod.next.at, nowMs)} ${shortTime(g.pod.next.at)}${g.pod.next.venue ? ` · ${g.pod.next.venue}` : ""}` : "No hangout planned yet"}
+                    </span>
+                  </span>
+                  <span className="tabular shrink-0 text-[14px] text-ink-3">{g.rows.length} {g.rows.length === 1 ? "person" : "people"}</span>
+                </Link>
+              ) : (
+                <h2 className="py-s1 text-[17px] font-semibold text-ink">{g.name}</h2>
+              )}
               <ul className="mt-s2">
                 {g.rows.map((r) => {
                   const on = wide && r.id === selected;
-                  // what you share leads; otherwise their own words, which read like a person, not a template
-                  const likeLine = r.common.length ? `Also into ${r.common.slice(0, 2).join(", ")}` : (r.bio ?? (r.likes.length ? `Into ${r.likes.slice(0, 2).join(", ")}` : "New here"));
+                  const going = (g.pod ? [g.pod] : data.pods).some((p) => p.next && p.goingIds.includes(r.id));
+                  const line =
+                    g.id === "_shared"
+                      ? r.pods.map(podName).join(" and ")
+                      : r.common.length
+                        ? `${cap(r.common.slice(0, 2).join(" and "))} in common`
+                        : r.likes.length
+                          ? `Into ${r.likes.slice(0, 2).join(" and ")}`
+                          : (r.bio?.split(/[.,;]/)[0]?.trim() || "New to the pod");
                   return (
                     <li key={r.id}>
                       <Link
@@ -149,20 +167,17 @@ export function People() {
                         }}
                         aria-current={on ? "true" : undefined}
                         className={cn(
-                          "pressable -mx-s3 flex min-h-[60px] items-center gap-s3 rounded-xl px-s3 py-s2 outline-offset-[-2px]",
+                          "pressable -mx-s3 flex min-h-[64px] items-center gap-s3 rounded-xl px-s3 py-s2 outline-offset-[-2px]",
                           on ? "bg-[color-mix(in_srgb,var(--select)_9%,transparent)]" : "hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)]",
                         )}
                       >
-                        <Disc initial={r.name.slice(0, 1)} seed={r.name} tone="ember" size={40} />
+                        <Disc initial={r.name.slice(0, 1)} seed={r.name} tone="ember" size={44} />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[16px] leading-[1.3] font-semibold text-ink">
-                            {r.name}
-                            <span className="tabular font-normal text-ink-3"> {r.age}</span>
-                          </span>
-                          <span className={cn("block truncate text-[14px] leading-[1.35]", r.common.length ? "text-select" : "text-ink-2")}>
-                            {g.id === "_shared" ? r.pods.map(podName).join(" · ") : likeLine}
-                          </span>
+                          <span className="block truncate text-[16px] leading-[1.3] font-semibold text-ink">{r.name}</span>
+                          <span className={cn("block truncate text-[14px] leading-[1.35]", r.common.length && g.id !== "_shared" ? "text-select" : "text-ink-2")}>{line}</span>
                         </span>
+                        {going && <span className="shrink-0 rounded-full bg-grove-100 px-s2 py-0.5 text-[13px] font-medium text-grove-800">Going</span>}
+                        <Icon name="arrow" size={14} stroke={2} className="shrink-0 text-ink-3 lg:hidden" />
                       </Link>
                     </li>
                   );
@@ -182,4 +197,8 @@ export function People() {
       </div>
     </ListPage>
   );
+}
+
+function cap(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }

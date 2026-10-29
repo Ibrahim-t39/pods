@@ -146,8 +146,8 @@ export function PersonCard({ view, className, wide }: { view: PersonView; classN
       ) : (
         <>
           <div className="mt-s4 flex items-center gap-s2">
-            <Button asChild size="sm" className="flex-1 sm:flex-none">
-              <Link href={`/app/pods/${pod.id}/chat`}>Message in {pod.name}</Link>
+            <Button asChild className="min-w-[160px] flex-1 sm:flex-none">
+              <Link href={`/app/pods/${pod.id}/chat`}>Message</Link>
             </Button>
             <Dropdown>
               <DropdownTrigger asChild>
@@ -164,64 +164,63 @@ export function PersonCard({ view, className, wide }: { view: PersonView; classN
             </Dropdown>
           </div>
 
-          <div className={cn("mt-s6 grid gap-s6", wide && "lg:grid-cols-2 lg:gap-x-s8")}>
-            <section>
-              <h3 className="text-[13px] font-medium text-ink-3">{view.common.length ? `Likes · ${view.common.length} in common` : "Likes"}</h3>
-              {view.common.length || view.other.length ? (
+          {/* round 1029: one calm block of what you share, in the order you'd ask it: when do I see them, where, what about */}
+          <section className="mt-s6 overflow-hidden rounded-2xl bg-surface shadow-[inset_0_0_0_1px_var(--line)]" aria-label="What you share">
+            {view.next ? (
+              <Link href={`/app/plans/${view.next.id}`} className="pressable flex items-center gap-s3 px-s4 py-s4 hover:bg-[color-mix(in_srgb,var(--ink)_3%,transparent)]">
+                <DateBlock iso={view.next.starts_at} size={44} />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-medium text-ink-3">Next time you&apos;ll see {m.display_name}</span>
+                  <span className="block truncate text-[16px] font-semibold text-ink">{view.next.title}</span>
+                  <span className="tabular block truncate text-[14px] text-ink-2">
+                    {when(view.next.starts_at)}
+                    {view.next.venue ? ` · ${view.next.venue}` : ""}
+                  </span>
+                </span>
+                <Icon name="arrow" size={16} stroke={2} className="shrink-0 text-ink-3" />
+              </Link>
+            ) : (
+              <p className="px-s4 py-s4 text-[15px] text-ink-2">No hangout together on the calendar yet.</p>
+            )}
+
+            <div className="border-t border-line px-s4 py-s4">
+              <h3 className="text-[13px] font-medium text-ink-3">{view.pods.length > 1 ? "Pods together" : "Pod together"}</h3>
+              <ul className="mt-s2 flex flex-col gap-s1">
+                {view.pods.map((p) => (
+                  <li key={p.id}>
+                    <Link href={`/app/pods/${p.id}`} className="pressable -mx-s2 flex min-h-[48px] items-center gap-s3 rounded-xl px-s2 hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)]">
+                      <PodOrb hue={p.hue} people={Math.max(1, p.size)} inCount={p.going} size={36} />
+                      <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">{p.name}</span>
+                      <Icon name="arrow" size={14} stroke={2} className="shrink-0 text-ink-3" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {view.common.length > 0 && (
+              <div className="border-t border-line px-s4 py-s4">
+                <h3 className="text-[13px] font-medium text-ink-3">You both like</h3>
                 <div className="mt-s2 flex flex-wrap gap-s2">
                   {view.common.map((l) => (
                     <span key={l} className={cn(chip, "bg-[color-mix(in_srgb,var(--select)_10%,transparent)] font-medium text-select")}>
                       {l}
                     </span>
                   ))}
-                  {view.other.map((l) => (
-                    <span key={l} className={cn(chip, "text-ink-2 shadow-[inset_0_0_0_1px_var(--line)]")}>
-                      {l}
-                    </span>
-                  ))}
                 </div>
-              ) : (
-                <p className="mt-s2 text-[14px] text-ink-2">No likes shared yet.</p>
-              )}
-            </section>
+              </div>
+            )}
+          </section>
 
-            <section>
-              <h3 className="text-[13px] font-medium text-ink-3">Pods together</h3>
-              <ul className="mt-s2 flex flex-wrap gap-s2">
-                {view.pods.map((p) => (
-                  <li key={p.id}>
-                    <Link href={`/app/pods/${p.id}`} className={cn(chip, "pressable gap-s2 pl-0.5 font-medium text-ink shadow-[inset_0_0_0_1px_var(--line-2)] hover:bg-[color-mix(in_srgb,var(--ink)_5%,transparent)]")}>
-                      <PodOrb hue={p.hue} people={Math.max(1, p.size)} inCount={p.going} size={28} />
-                      {p.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </div>
-
-          {view.next && (
-            <section className="mt-s6">
-              <h3 className="text-[13px] font-medium text-ink-3">Next time you&apos;ll see them</h3>
-              <Link href={`/app/plans/${view.next.id}`} className="pressable mt-s2 flex items-center gap-s3 rounded-2xl bg-surface px-s4 py-s3 shadow-[inset_0_0_0_1px_var(--line)]">
-                <DateBlock iso={view.next.starts_at} size={40} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-semibold text-ink">{view.next.title}</span>
-                  <span className="tabular block truncate text-[13px] text-ink-2">
-                    {when(view.next.starts_at)}
-                    {view.next.venue ? ` · ${view.next.venue}` : ""} · {view.next.podName}
-                  </span>
-                </span>
-                <Icon name="arrow" size={16} stroke={2} className="shrink-0 text-ink-2" />
-              </Link>
-            </section>
-          )}
-
-          {(m.bio || m.prompts.length > 0) && (
-            <section className="mt-s6 border-t border-line pt-s6">
+          {(m.bio || m.prompts.length > 0 || view.other.length > 0) && (
+            <section className="mt-s8">
+              <h3 className="mb-s2 text-[13px] font-medium text-ink-3">About {m.display_name}</h3>
               {m.bio && <p className="text-[16px] leading-[1.5] text-ink">{m.bio}</p>}
+              {view.other.length > 0 && (
+                <p className={cn("text-[15px] leading-[1.45] text-ink-2", m.bio && "mt-s3")}>Also into {view.other.slice(0, 4).map((l) => l.toLowerCase()).join(", ")}</p>
+              )}
               {m.prompts.length > 0 && (
-                <dl className={cn("grid gap-s4", m.bio && "mt-s4", wide && "lg:grid-cols-2 lg:gap-x-s8")}>
+                <dl className={cn("grid gap-s4", (m.bio || view.other.length > 0) && "mt-s5", wide && "lg:grid-cols-2 lg:gap-x-s8")}>
                   {m.prompts.map((p) => (
                     <div key={p.key}>
                       <dt className="text-[13px] font-medium text-ink-3">{PROMPT[p.key]}</dt>

@@ -25,7 +25,16 @@ export function WhoIn({
   onMembers?: () => void;
   className?: string;
 }) {
-  const status = locked ? "Locked. See you there." : need === 0 ? "Enough to go" : need === 1 ? "1 more locks it" : `${need} more lock it`;
+  const youIn = !!seats[0]?.in;
+  const left = seats.length - count;
+  // founder r1029: never "See you there" to someone who is not in. Locked without you: say so, and whether a seat is left.
+  const status = locked
+    ? youIn
+      ? "Locked. See you there."
+      : left > 0
+        ? `Locked with ${count}. ${left === 1 ? "1 seat" : `${left} seats`} left`
+        : `Locked with ${count}. Full`
+    : need === 0 ? "Enough to go" : need === 1 ? "1 more locks it" : `${need} more lock it`;
   // you first, then the people who said yes, then the open seats
   const ordered = [...seats.slice(1).filter((s) => s && !s.open), seats[0], ...seats.slice(1).filter((s) => !s || s.open)];
   return (
