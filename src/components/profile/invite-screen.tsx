@@ -8,7 +8,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import { GENTLE, STAGGER } from "@/components/brand/motion";
-import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { notify } from "@/components/ui/toast";
 import { useDb, useHydrated, useRepo } from "@/lib/db/hooks";
@@ -103,9 +102,27 @@ export function InviteScreen() {
         <div className="yo-cols">
           <div>
             <motion.div {...fade(0)}>
-              <Section label="Save them a seat in">
+              <Section label="Your link">
+                <Card className="yo-pad">
+                  <div className="yo-link">
+                    <span className="yo-link-t" data-nc>
+                      {link ? shortLink(link) : failed ? "Couldn’t make a link" : "Making your link…"}
+                    </span>
+                    <button type="button" className="yo-link-b pressable" disabled={!link} onClick={() => void copy()} aria-label={link ? `Copy ${shortLink(link)}` : "Copy"}>
+                      {copied ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                  <Button block size="md" className="mt-s3" disabled={!link} onClick={() => void share()}>
+                    Share link
+                  </Button>
+                </Card>
+              </Section>
+            </motion.div>
+
+            <motion.div {...fade(1)}>
+              <Section label="Save them a seat in" className="mt-s6">
                 <Card>
-                  <div role="radiogroup" aria-label="Pod">
+                  <div role="group" aria-label="Pod">
                     <Row
                       onClick={() => pickPod(null)}
                       lead={<RingMark on={!chosen} size={22} />}
@@ -127,39 +144,9 @@ export function InviteScreen() {
               </Section>
             </motion.div>
 
-            <motion.div {...fade(1)}>
-              <Section label="Your link" className="mt-s6">
-                <Card className="yo-pad">
-                  <div className="yo-link">
-                    <span className="yo-link-t" data-nc>
-                      {link ? shortLink(link) : failed ? "Couldn’t make a link" : "Making your link…"}
-                    </span>
-                    <button type="button" className="yo-link-b pressable" disabled={!link} onClick={() => void copy()} aria-label={link ? `Copy ${shortLink(link)}` : "Copy"}>
-                      {copied ? "Copied" : "Copy"}
-                    </button>
-                  </div>
-                  <Button block size="md" className="mt-s3" disabled={!link} onClick={() => void share()} leadingIcon={<Icon name="send" size={18} />}>
-                    Share link
-                  </Button>
-                </Card>
-              </Section>
-            </motion.div>
-
-            <motion.div {...fade(2)}>
-              <Section label="Joined from your links" className="mt-s6">
-                <Card>
-                  {joined.length ? (
-                    joined.map((j, i) => (
-                      <Row key={i} icon="person" label={<span data-nc>{j.user!.first_name}</span>} hint={j.pod ? <span data-nc>In {podLabel(db, j.pod)}</span> : "Placed in a pod"} />
-                    ))
-                  ) : (
-                    <p className="yo-pad text-[15px] text-ink-2">No one yet. When a friend joins, they show up here.</p>
-                  )}
-                </Card>
-              </Section>
-            </motion.div>
           </div>
 
+          <div>
           <motion.div {...fade(3)}>
             <Section label="What happens next">
               <Card className="yo-pad">
@@ -183,6 +170,20 @@ export function InviteScreen() {
               </Card>
             </Section>
           </motion.div>
+            <motion.div {...fade(4)}>
+              <Section label="Joined from your links" className="mt-s6">
+                <Card>
+                  {joined.length ? (
+                    joined.map((j, i) => (
+                      <Row key={i} icon="person" label={<span data-nc>{j.user!.first_name}</span>} hint={j.pod ? <span data-nc>In {podLabel(db, j.pod)}</span> : "Placed in a pod"} />
+                    ))
+                  ) : (
+                    <p className="yo-pad text-[15px] text-ink-2">No one yet. When a friend joins, they show up here.</p>
+                  )}
+                </Card>
+              </Section>
+            </motion.div>
+          </div>
         </div>
       </div>
     </YouPage>

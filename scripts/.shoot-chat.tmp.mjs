@@ -26,13 +26,13 @@ const browser = await chromium.launch({ executablePath: CHROME });
 for (const [vp, opts] of Object.entries(VIEWPORTS)) {
   const ctx = await browser.newContext(opts);
   const page = await ctx.newPage();
-  page.setDefaultTimeout(240_000);
+  page.setDefaultTimeout(480_000);
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message.slice(0, 160)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text().slice(0, 160)));
 
   // sign in: skip onboarding through the Director panel
-  await page.goto(`${BASE}/app/home?mode=demo&director=1&fast=1`, { waitUntil: "load" });
+  await page.goto(`${BASE}/app/pods?mode=demo&director=1&fast=1`, { waitUntil: "load" });
   await page.waitForTimeout(2500);
   await page.getByText("Director", { exact: true }).first().click().catch(() => {});
   await page.waitForTimeout(400);

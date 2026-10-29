@@ -432,3 +432,49 @@
     box-shadow: 0 0 0 1px var(--line), 0 20px 50px -30px rgb(14 26 34 / 0.25);
   }
 }
+
+/* a pod whose name is hidden: its people as white dots (the logo's dots), no letter */
+.inbx-people {
+  position: relative;
+  width: 56%;
+  height: 56%;
+}
+.inbx-people > i {
+  position: absolute;
+  width: 26%;
+  height: 26%;
+  border-radius: 9999px;
+  background: #fff;
+}
+.inbx-people > i:nth-child(1) { left: 37%; top: 8%; }
+.inbx-people > i:nth-child(2) { left: 8%; top: 62%; }
+.inbx-people > i:nth-child(3) { left: 66%; top: 62%; }
+.inbx-section[data-needs] {
+  color: var(--ink);
+  font-weight: 600;
+}
+.inbx-reply {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  margin-left: -2px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.inbx-reply:hover {
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+}
+@media (max-width: 1023px) {
+  .inbx-filter {
+    padding: 0 12px;
+  }
+  .inbx-acts,
+  .inbx-opts {
+    margin-top: var(--s2);
+  }
+}

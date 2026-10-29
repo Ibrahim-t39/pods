@@ -8,7 +8,7 @@
 
 import "./chat-room.css";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { personColor, YOU_COLOR } from "@/components/brand/disc";
 import { Icon } from "@/components/icons";
@@ -36,6 +36,12 @@ function ChatRoomInner({ podId }: { podId: string }) {
   const tables = useDb(useCallback((db) => roomTables(db, minute), [minute]));
   const mine = useDb((db) => membership(db, podId));
   const here = tables.find((t) => t.row.pod.id === podId);
+  // the table under this page walks between pods on ←/→; in the chat those keys belong to the text, not the walk
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => (e.key === "ArrowLeft" || e.key === "ArrowRight") && e.stopImmediatePropagation();
+    window.addEventListener("keydown", k, true);
+    return () => window.removeEventListener("keydown", k, true);
+  }, []);
   if (!mine || !here) return null;
   const name = here.row.name;
   return (
@@ -231,7 +237,7 @@ function NextPlan({ view, podId, minute }: { view: CardView; podId: string; minu
           {plan.bring.length > 0 && (
             <div>
               <dt className="text-[12px] font-semibold text-ink-2">Bring</dt>
-              <dd className="text-ink">{plan.bring.join(", ")}</dd>
+              <dd className="text-ink">{plan.bring.join(" · ")}</dd>
             </div>
           )}
           {plan.rain_plan && (

@@ -78,6 +78,7 @@
 }
 .yo-cols {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0;
 }
 @media (min-width: 1024px) {
@@ -511,4 +512,24 @@ button.yo-free-cell:hover:not([data-on]) {
   font-weight: 600;
   color: var(--ink);
   background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+/* a short list of plain sentences (guidelines): lighter than rows */
+.yo-list {
+  display: grid;
+  gap: var(--s3);
+  padding: var(--s4);
+}
+.yo-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.yo-list li svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--teal);
 }

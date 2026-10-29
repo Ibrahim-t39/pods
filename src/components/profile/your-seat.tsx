@@ -104,7 +104,7 @@ export function YourSeat() {
   const age = toPublicMember(me, nowISO()).age;
   const name = displayName(me);
   const photo = me.photo_urls[0];
-  const since = new Date(me.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const since = new Date(me.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" });
   const fade = (i: number) => ({ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { ...GENTLE, delay: 0.04 + i * STAGGER } });
 
   const identity = (
@@ -127,7 +127,7 @@ export function YourSeat() {
             {name}, <span className="tabular-nums">{age}</span>
           </p>
           <p className="mt-s1 text-[14px] text-ink-2">
-            {me.verified ? "Verified · " : ""}On Pods since {since}
+            {me.verified ? "Verified · " : ""}Since {since}
           </p>
         </div>
       </div>
@@ -186,8 +186,7 @@ export function YourSeat() {
                         href={`/app/pods/${p.id}`}
                         lead={<PodBead hue={p.hue} members={p.members} />}
                         label={<span data-nc>{p.name}</span>}
-                        hint={p.next ? `${p.next.locked ? "Locked" : "Next"} · ${formatWhen(p.next.starts_at)}` : `${p.members} people · nothing planned yet`}
-                        value={<span className="tabular-nums">{p.members}</span>}
+                        hint={`${p.members} people · ${p.next ? `${p.next.locked ? "locked" : "next"} ${formatWhen(p.next.starts_at)}` : "nothing planned yet"}`}
                         arrow
                       />
                     ))}

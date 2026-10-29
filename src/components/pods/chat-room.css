@@ -1,4 +1,5 @@
-/* The chat page on a laptop (chat-room.tsx): fills the main column beside the rail; the pod's table under it is hidden. */
+/* The chat page on a laptop (chat-room.tsx): fills the main column beside the rail; the pod page under it is hidden
+ * (whatever it renders) and cannot scroll, so the page is the chat alone. */
 .pods-chat-room {
   position: fixed;
   top: 0;
@@ -9,13 +10,24 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
   background: var(--paper);
+  visibility: visible;
 }
 @media (min-width: 1280px) {
   .pods-chat-room {
     grid-template-columns: minmax(0, 1fr) 360px;
   }
 }
-body:has([data-chat-room]) .pods-pg,
-body:has([data-chat-room]) .pods-talk-dock {
+.pods-shell-main:has([data-chat-room]) {
   visibility: hidden;
+  height: 100dvh;
+  overflow: hidden;
+}
+html:has([data-chat-room]),
+body:has([data-chat-room]) {
+  overflow: hidden;
+}
+/* Phone: the full-screen thread is the whole page while it is open (nothing scrolls under it). */
+body:has([data-talk-full][data-state="open"]) .pods-shell-main {
+  height: 100dvh;
+  overflow: hidden;
 }

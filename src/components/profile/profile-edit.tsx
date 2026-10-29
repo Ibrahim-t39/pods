@@ -118,29 +118,29 @@ export function ProfileEdit() {
               </Section>
             </motion.div>
 
-            <motion.div {...fade(2)}>
-              <Section label="Community pods" className="mt-s6">
-                <Card className="yo-pad">
-                  <p className="mb-s2 text-[14px] text-ink-2">Optional. Only members of that pod see it.</p>
-                  <CommunityPicker />
+            <motion.div {...fade(1)} id="into">
+              <Section label="What you’re into" className="mt-s6">
+                <Card className="yo-pad pt-s6">
+                  <LikesPicker />
                 </Card>
               </Section>
             </motion.div>
           </div>
 
           <div>
-            <motion.div {...fade(1)} id="into">
-              <Section label="What you’re into">
-                <Card className="yo-pad pt-s6">
-                  <LikesPicker />
-                </Card>
-              </Section>
-            </motion.div>
             <motion.div {...fade(3)}>
-              <Section label="When you’re free" className="mt-s6">
+              <Section label="When you’re free">
                 <Card className="yo-pad">
                   <FreeGrid slots={me.availability} onToggle={toggle} />
                   <p className="mt-s3 text-[14px] text-ink-2">Tap a time to switch it. The AI plans inside these.</p>
+                </Card>
+              </Section>
+            </motion.div>
+            <motion.div {...fade(2)}>
+              <Section label="Community pods" className="mt-s6">
+                <Card className="yo-pad">
+                  <p className="mb-s2 text-[14px] text-ink-2">Optional. Only members of that pod see it.</p>
+                  <CommunityPicker />
                 </Card>
               </Section>
             </motion.div>

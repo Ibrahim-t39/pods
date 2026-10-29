@@ -32,7 +32,7 @@ import { maskText, podLabel } from "@/lib/notifications/rules";
 import { useDevicePrefs } from "@/lib/notifications/prefs";
 import type { DbState, ID } from "@/lib/types";
 import { cn } from "@/lib/cn";
-import { buildActivity, sectionOf, type Act, type Activity, type Kind, type Section } from "./activity";
+import { buildActivity, needsYou, sectionOf, type Act, type Activity, type Kind, type Section } from "./activity";
 import "./inbox.css";
 
 const SEEN = "pods:inbox-seen";
@@ -94,7 +94,8 @@ export function InboxScreen() {
   }, [items]);
   const shown = items.filter((n) => filter === "all" || n.kind === filter);
   const unread = items.filter((i) => !i.read);
-  const pick = shown.find((n) => n.id === chosen) ?? shown[0] ?? null;
+  const ordered = [...shown.filter(needsYou), ...shown.filter((n) => !needsYou(n))];
+  const pick = shown.find((n) => n.id === chosen) ?? ordered[0] ?? null;
   const ready = hydrated && seen !== null;
 
   async function markRead(list: Activity[], quiet = true) {
@@ -122,12 +123,16 @@ export function InboxScreen() {
     router.push(hrefOf(n));
   }
 
-  const groups = SECTIONS.map((s) => ({ s, rows: shown.filter((n) => sectionOf(n.created_at, now) === s) })).filter((g) => g.rows.length);
+  const pending = shown.filter(needsYou);
+  const groups = [
+    { s: "Needs you" as Section, rows: pending },
+    ...SECTIONS.map((s) => ({ s, rows: shown.filter((n) => !needsYou(n) && sectionOf(n.created_at, now) === s) })),
+  ].filter((g) => g.rows.length);
 
   return (
     <div className="inbx-pg">
       <Stage light="paper" />
-      <Chrome left="mark" right="seat" className="lg:hidden" />
+      <Chrome left="mark" className="lg:hidden" />
       <div className="inbx-wrap">
         <section className="inbx-col" aria-label="Inbox">
           <header className="inbx-head">
@@ -164,7 +169,7 @@ export function InboxScreen() {
           {ready &&
             groups.map((g) => (
               <div key={g.s} className="inbx-group">
-                <h2 className="inbx-section">{g.s}</h2>
+                <h2 className="inbx-section" data-needs={g.s === "Needs you" || undefined}>{g.s}</h2>
                 <ul className="inbx-list">
                   <AnimatePresence initial={false}>
                     {g.rows.map((n) => (
@@ -221,7 +226,13 @@ function PodMark({ db, podId, size = 40, discreet }: { db: DbState; podId: ID; s
   const initial = pod && !(pod.type === "community" && discreet) ? pod.name.slice(0, 1) : "";
   return (
     <span data-nc aria-hidden className="inbx-podmark" style={{ width: size, height: size, backgroundColor: POD_SOLID[hue], color: ON_HUE[hue], fontSize: Math.round(size * 0.44) }}>
-      {initial}
+      {initial || (
+        <span className="inbx-people">
+          <i />
+          <i />
+          <i />
+        </span>
+      )}
     </span>
   );
 }
@@ -425,9 +436,11 @@ function Actions({ n, act, onDone, compact }: { n: Activity; act: Act; db: DbSta
         <Composer podId={act.podId} replyTo={act.messageId} onSent={() => (setReplying(false), onDone())} onCancel={() => setReplying(false)} />
       ) : (
         <div className="inbx-acts">
-          <Button variant="secondary" size="sm" className="inbx-btn" onClick={() => setReplying(true)}>
+          <button type="button" className="inbx-reply pressable" onClick={() => setReplying(true)}>
+            <Icon name="talk" size={16} />
             Reply
-          </Button>
+          </button>
+          {act.count > 1 && <span className="text-[13px] text-ink-3 tabular-nums">{act.count} new</span>}
         </div>
       );
     case "checkin":
@@ -516,7 +529,7 @@ function Composer({ podId, replyTo, onSent, onCancel, autoFocus = true }: { podI
         className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-ink-3"
       />
       <button type="submit" aria-label="Send" disabled={!text.trim() || sending} className="inbx-send pressable">
-        <Icon name="send" size={18} />
+        <Icon name="arrow" size={18} />
       </button>
     </form>
   );

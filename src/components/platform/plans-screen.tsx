@@ -155,21 +155,21 @@ export function PlansScreen() {
       <div className="min-h-[100dvh] pb-[calc(var(--s12)+var(--shell-bottom,0px)+env(safe-area-inset-bottom))]">
         <Chrome left="mark" right="none" className="lg:hidden" />
         <div className="mx-auto w-full max-w-[1280px] px-gutter pt-s4 lg:px-s12 lg:pt-s12">
-          <header className="flex flex-wrap items-end justify-between gap-x-s6 gap-y-s4">
-            <div className="min-w-0">
+          <header>
+            <div className="flex items-center justify-between gap-s4">
               <h1 className="text-[28px] leading-[34px] font-semibold tracking-[-0.025em] text-ink lg:text-[32px] lg:leading-[38px]">Plans</h1>
-              <p className="mt-s1 text-[15px] leading-[20px] text-ink-2">{summary}</p>
+              <Segmented
+                label="Show"
+                size="sm"
+                value={tab}
+                onChange={setTab}
+                options={[
+                  { value: "upcoming", label: "Upcoming", count: upcoming.length },
+                  { value: "past", label: "Past", count: past.length },
+                ]}
+              />
             </div>
-            <Segmented
-              label="Show"
-              size="sm"
-              value={tab}
-              onChange={setTab}
-              options={[
-                { value: "upcoming", label: "Upcoming", count: upcoming.length },
-                { value: "past", label: "Past", count: past.length },
-              ]}
-            />
+            <p className="mt-s1 text-[15px] leading-[20px] text-ink-2">{summary}</p>
           </header>
 
           <div className="mt-s6 grid gap-s8 lg:mt-s8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:gap-s10">
@@ -413,14 +413,14 @@ function Empty({ title, body, href, cta }: { title: string; body: string; href: 
 
 /** The loop in one line, so every status pill reads (Fit + Repeat). */
 function Loop() {
-  const steps = ["AI proposes", "4 in locks it", "Check in", "Vote on the next"];
+  const steps = ["Proposed", "4 in locks it", "Check in", "Vote next"];
   return (
     <ol aria-label="How plans work" className="flex flex-wrap items-center gap-x-s2 gap-y-s1 text-[13px] leading-[18px] text-ink-2">
       {steps.map((s, i) => (
         <li key={s} className="flex items-center gap-s2">
           <span className="tabular grid size-5 place-items-center rounded-full bg-sunken text-[11px] font-semibold text-ink-2">{i + 1}</span>
           {s}
-          {i < steps.length - 1 && <span aria-hidden className="text-line-2">—</span>}
+          {i < steps.length - 1 && <span aria-hidden className="text-ink-3">›</span>}
         </li>
       ))}
     </ol>

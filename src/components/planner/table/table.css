@@ -803,7 +803,7 @@ html[data-light="night"] .pt-over {
 }
 /* the facts: icon · two lines · one action, like a calendar event (Google Calendar, Luma) */
 .pd-facts {
-  margin: var(--s5) 0 0;
+  margin: var(--s6) 0 0;
   padding: 0;
   list-style: none;
   border-radius: 20px;

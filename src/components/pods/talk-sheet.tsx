@@ -35,6 +35,7 @@ import { formatDayDivider } from "@/lib/time/format";
 import { REACTIONS, type Memory, type Message, type ReactionKey } from "@/lib/types";
 import { dayWord, firstName, shortDay, shortTime } from "./model";
 import { useLastRead } from "./use-last-read";
+import "./chat-room.css";
 import { formatInTimeZone } from "date-fns-tz";
 import { TZ } from "@/lib/time/tz";
 
@@ -127,7 +128,7 @@ function nameInk(name: string) {
 
 /** "Chanda, Ama, Malik +5": the laptop dock names the people beside the talk (R11). */
 function memberLine(people: { name: string; you: boolean }[]) {
-  const shown = people.slice(0, 3).map((p) => p.name);
+  const shown = people.slice(0, 3).map((p) => (p.you ? "You" : p.name));
   return people.length > 3 ? `${shown.join(", ")} +${people.length - 3}` : shown.join(", ");
 }
 
@@ -180,7 +181,7 @@ export function TalkSheet(props: TalkProps) {
     <Drawer.Root open={props.open} onOpenChange={props.onOpenChange} repositionInputs={false}>
       <Drawer.Portal>
         <Drawer.Overlay className="pods-scrim fixed inset-0 z-overlay" />
-        <Drawer.Content aria-describedby={undefined} className="fixed inset-x-0 bottom-0 z-sheet flex h-dvh flex-col overflow-clip bg-lit text-ink outline-none">
+        <Drawer.Content data-talk-full aria-describedby={undefined} className="fixed inset-x-0 bottom-0 z-sheet flex h-dvh flex-col overflow-clip bg-lit text-ink outline-none">
           <Drawer.Title className="sr-only">{props.podName} talk</Drawer.Title>
           {body}
         </Drawer.Content>

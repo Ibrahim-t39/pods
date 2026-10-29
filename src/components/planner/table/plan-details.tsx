@@ -176,14 +176,15 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
               <li>
                 <Icon name="clock" size={20} />
                 <span className="pd-fact">
-                  <span className="pd-fact-k tabular">
-                    {dayLong(iso)} · {hm(iso)}
+                  <span className="pd-fact-k">{dayLong(iso)}</span>
+                  <span className="pd-fact-s tabular">
+                    {hm(iso)}
                     {ends ? `–${hm(ends)}` : ""}
+                    {soon ? ` · ${soon}` : ""}
                   </span>
-                  {soon && <span className="pd-fact-s">{soon}</span>}
                 </span>
-                <button type="button" className="pd-act pressable" onClick={calendar}>
-                  Add to calendar
+                <button type="button" className="pd-act pressable" onClick={calendar} aria-label="Add to calendar">
+                  Calendar
                 </button>
               </li>
             )}
@@ -225,7 +226,7 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
               Who&apos;s in
             </h2>
             <div className="pd-who-row">
-              <SeatRow dots={seatDots(m)} lockAt={v.threshold} locked={locked} size={28} />
+              <SeatRow dots={seatDots(m)} lockAt={v.threshold} locked={locked} size={24} />
               <p className="pd-who-names">
                 {goingNames.length ? goingNames.join(", ") : "No one yet"}
                 <span className="pd-fact-s">{locked ? `${going} going · locked at ${v.threshold}` : toLock > 0 ? `${toLock} more and it locks` : `${going} of ${of}`}</span>
@@ -321,7 +322,7 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
         <footer className="pd-foot glass">
           <span className="pd-count">
             <InCount n={going} of={of} locked={locked} />
-            <span className="pd-fact-s">{locked ? (v.imIn ? "You're going" : "Still room for you") : v.imIn ? "You're in. It locks at " + v.threshold : soon}</span>
+            <span className="pd-fact-s">{locked ? (v.imIn ? "You're going" : "Still room for you") : toLock > 0 ? `${toLock} more and it locks` : soon}</span>
           </span>
           {locked ? (
             v.imIn ? (

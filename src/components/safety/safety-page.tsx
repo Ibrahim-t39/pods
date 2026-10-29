@@ -46,7 +46,7 @@ export function SafetyPage() {
 
   // the next locked hangout I'm going to (share it); a hangout today or just ended that I haven't checked in to
   const next = useMemo(() => plans.upcoming.find((p) => p.locked && p.me === "going") ?? null, [plans]);
-  const soon = useMemo(() => next ?? plans.upcoming.find((p) => p.me === "going") ?? null, [plans, next]);
+  const soon = useMemo(() => next ?? plans.upcoming.find((p) => p.me === "going") ?? plans.upcoming[0] ?? null, [plans, next]);
   const checkIn = useMemo(() => {
     const all = [...plans.upcoming, ...plans.past];
     return (
@@ -121,7 +121,12 @@ export function SafetyPage() {
                               Share my plan
                             </Button>
                           ) : (
-                            <p className="text-[14px] text-ink-2">You can share it once it locks.</p>
+                            <>
+                              <Button asChild size="sm" variant="secondary">
+                                <a href="/app/plans">Open plans</a>
+                              </Button>
+                              <p className="w-full text-[14px] text-ink-2">You can share it once it locks.</p>
+                            </>
                           )}
                           {checkIn && (
                             <Button asChild size="sm" variant="secondary" leadingIcon={<Icon name="here" size={16} />}>
@@ -174,9 +179,14 @@ export function SafetyPage() {
             <motion.div {...fade(4)}>
               <Section label="How Pods stays safe" className="mt-s6">
                 <Card>
-                  {GUIDES.map((g) => (
-                    <Row key={g.text} icon={g.icon} tone="safe" label={<span className="whitespace-normal">{g.text}</span>} />
-                  ))}
+                  <ul className="yo-list">
+                    {GUIDES.map((g) => (
+                      <li key={g.text}>
+                        <Icon name={g.icon} size={18} />
+                        {g.text}
+                      </li>
+                    ))}
+                  </ul>
                   <Row icon="why" label="Read the guidelines" href="/safety" arrow />
                   <Row icon="talk" label="Write to us" href={WRITE_TO_US} external arrow />
                 </Card>

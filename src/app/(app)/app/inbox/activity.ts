@@ -13,7 +13,7 @@ export type Act =
   | { type: "rsvp"; targetId: ID; going: number; size: number; imIn: boolean; imOut: boolean }
   | { type: "poll"; pollId: ID; options: { id: ID; label: string; count: number }[]; mine: ID | null; total: number }
   | { type: "vote"; voteId: ID; options: { id: ID; label: string; count: number }[]; mine: ID | null; total: number }
-  | { type: "reply"; podId: ID; messageId: ID | null }
+  | { type: "reply"; podId: ID; messageId: ID | null; count: number }
   | { type: "checkin"; hangoutId: ID; done: boolean }
   | { type: "ballot"; hangoutId: ID; mine: string | null }
   | { type: "join"; matchId: ID; status: "new" | "joined" | "skipped" };
@@ -27,7 +27,18 @@ export interface Activity extends InboxItem {
   act: Act | null;
 }
 
-export type Section = "Today" | "Yesterday" | "This week" | "Earlier";
+/** Plan-level things only you can settle: they sit on top in "Needs you" until answered. */
+export function needsYou(n: Activity): boolean {
+  const a = n.act;
+  if (!a) return false;
+  if (a.type === "rsvp") return !a.imIn && !a.imOut;
+  if (a.type === "vote" || a.type === "ballot") return !a.mine;
+  if (a.type === "checkin") return !a.done;
+  if (a.type === "join") return a.status === "new";
+  return false;
+}
+
+export type Section = "Needs you" | "Today" | "Yesterday" | "This week" | "Earlier";
 
 export function sectionOf(iso: string, now: Date): Section {
   const d = chicagoDaysBetween(iso, now);
@@ -113,10 +124,10 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
     const more = recent.length - 1;
     out.push({
       id, kind: "messages", trigger: "chat_batch", stored: false, podId, podName: podLabel(pod, discreet), who: { id: last.user_id, name: first(last.user_id) },
-      title: `${first(last.user_id)} in ${podLabel(pod, discreet)}${more > 0 ? ` +${more} more` : ""}`,
+      title: `${first(last.user_id)} in ${podLabel(pod, discreet)}`,
       body: maskText(last.text, pod, discreet),
       href: `/app/pods/${podId}/chat`, created_at: last.created_at, read: seen.has(id),
-      act: { type: "reply", podId, messageId: last.id },
+      act: { type: "reply", podId, messageId: last.id, count: more + 1 },
     });
   }
 
@@ -156,7 +167,7 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
       continue;
     }
     if (n.trigger === "reply" || n.trigger === "chat_batch") {
-      out.push({ ...base, kind: "messages", title: n.trigger === "reply" ? `Someone answered you in ${base.podName ?? "your pod"}` : n.title, act: n.podId ? { type: "reply", podId: n.podId, messageId: null } : null });
+      out.push({ ...base, kind: "messages", title: n.trigger === "reply" ? `Someone answered you in ${base.podName ?? "your pod"}` : n.title, act: n.podId ? { type: "reply", podId: n.podId, messageId: null, count: 0 } : null });
       continue;
     }
     const kind: Kind = n.trigger === "poll_opened" ? "messages" : ["placed", "pod_request", "report_update"].includes(n.trigger) ? "pods" : "plans";
