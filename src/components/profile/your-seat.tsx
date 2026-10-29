@@ -185,7 +185,8 @@ export function YourSeat() {
           label="Sign out"
           onClick={() => {
             signOut();
-            router.replace("/");
+            // a full load to the landing, so the signed-out redirect to sign-up can't win the race
+            window.location.assign("/");
           }}
         />
         <Row icon="trash" tone="danger" label="Delete my account" hint="Removes your profile and pods for good" href="/app/settings?sheet=delete" />

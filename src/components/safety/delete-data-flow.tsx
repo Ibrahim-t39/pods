@@ -6,6 +6,7 @@
 // (filed with integration); they hold no personal data beyond the inviter id.
 "use client";
 
+import { wipeLocalPersonal } from "@/lib/safety/sign-out";
 import { useEffect, useState } from "react";
 import { Button, ResponsiveSheet, notify } from "@/components/ui";
 import { useRepo } from "@/lib/db/hooks";
@@ -40,6 +41,7 @@ export function DeleteAccountFlow({ open, onOpenChange, onDeleted, onBefore }: {
       notify.error("Not deleted. Try again.", { retry: go });
       return;
     }
+    wipeLocalPersonal();
     onOpenChange(false);
     onDeleted();
   }
