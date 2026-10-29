@@ -21,11 +21,13 @@
   padding: 0 0.12em 0.02em 0.02em;
 }
 .pods-ob-mirror {
+  overflow: hidden;
   visibility: hidden;
   white-space: pre;
   min-width: 1.2ch;
 }
 .pods-ob-field input {
+  min-height: 44px;
   width: 100%;
   min-width: 0;
   border: 0;
@@ -511,6 +513,11 @@
 .pods-ob-week-row[data-days] {
   flex-wrap: nowrap;
 }
+.pods-ob-week-row[data-days] .pods-ob-like {
+  flex: 1 0 44px;
+  min-width: 44px;
+  padding: 0 8px;
+}
 .pods-ob-week-row .pods-ob-like {
   padding: 0 14px;
 }
@@ -527,7 +534,7 @@
   box-shadow: var(--shadow-primary);
 }
 .pods-ob-joined button {
-  min-width: 42px;
+  min-width: 44px;
   min-height: 44px;
   padding: 0 6px;
   font-size: 15px;

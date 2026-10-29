@@ -39,12 +39,6 @@ const DOTS = [
 ] as const;
 const DOT_R = 24 * K;
 
-function Window({ x, y, soft }: { x: MotionValue<number>; y: MotionValue<number>; soft: string }) {
-  const cx = useTransform(x, (v) => v - 0.5 * R);
-  const cy = useTransform(y, (v) => v - 0.5 * R);
-  return <motion.ellipse cx={cx} cy={cy} rx={0.24 * R} ry={0.11 * R} fill="white" opacity={0.55} filter={soft} style={{ rotate: -45 }} />;
-}
-
 function Person({ x, y, dx, dy }: { x: MotionValue<number>; y: MotionValue<number>; dx: number; dy: number }) {
   const cx = useTransform(x, (v) => v + dx);
   const cy = useTransform(y, (v) => v + dy);
@@ -84,13 +78,9 @@ export function VennStory({ progress, reduced = false, className }: { progress: 
       <defs>
         {CIRCLES.map((k) => (
           <radialGradient key={k.key} id={`${uid}-${k.key}`} cx="50%" cy="50%" r="50%">
-            {/* a glass orb (COLOR_LIFE §15): clear body, denser rim (Fresnel), a lit edge. Overlaps blend normal, so
-                where worlds meet it is brighter, never muddy. */}
-            <stop offset="0%" style={{ stopColor: k.hue, stopOpacity: 0.26 }} />
-            <stop offset="55%" style={{ stopColor: k.hue, stopOpacity: 0.36 }} />
-            <stop offset="88%" style={{ stopColor: k.hue, stopOpacity: 0.7 }} />
-            <stop offset="97.5%" style={{ stopColor: `color-mix(in oklch, ${k.hue} 24%, white)`, stopOpacity: 1 }} />
-            <stop offset="100%" style={{ stopColor: k.hue, stopOpacity: 0.2 }} />
+            {/* flat and solid, like the landing (founder: fewer bubbles; bubbles were "too transparent") */}
+            <stop offset="0%" style={{ stopColor: k.hue, stopOpacity: 0.9 }} />
+            <stop offset="100%" style={{ stopColor: k.hue, stopOpacity: 0.9 }} />
           </radialGradient>
         ))}
         <filter id={`${uid}-soft`} x="-20%" y="-20%" width="140%" height="140%">
@@ -132,13 +122,10 @@ export function VennStory({ progress, reduced = false, className }: { progress: 
         style={{ pathLength: ring1, opacity: ring1Opacity, rotate: 90, transformOrigin: "300px 300px" }}
       />
 
-      {/* the three worlds as glass orbs, each with its person (the logo's white dot, same placement as mark.svg) */}
+      {/* the three worlds as flat, solid circles, each with its person (the logo's white dot, same placement as mark.svg) */}
       <g style={{ isolation: "isolate" }}>
         {CIRCLES.map((k, i) => (
           <motion.circle key={k.key} r={R} cx={pos[i].x} cy={pos[i].y} fill={`url(#${uid}-${k.key})`} style={{ opacity: fillOpacity }} />
-        ))}
-        {CIRCLES.map((k, i) => (
-          <Window key={k.key} x={pos[i].x} y={pos[i].y} soft={`url(#${uid}-soft)`} />
         ))}
         {CIRCLES.map((k, i) => (
           <Person key={k.key} x={pos[i].x} y={pos[i].y} dx={DOTS[i].dx} dy={DOTS[i].dy} />

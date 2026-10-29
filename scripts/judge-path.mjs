@@ -75,6 +75,8 @@ async function run(vpName, vp, mode) {
   const vis = page.locator(":visible");
   const btn = (name, opts = {}) => page.getByRole("button", { name, exact: false, ...opts }).and(vis).first();
   const link = (name) => page.getByRole("link", { name }).and(vis).first();
+  // the count is a role=status whose accessible name is "3 of 8 in" (digits roll separately from the words)
+  const inCount = (n) => page.getByRole("status", { name: new RegExp(`^${n} of 8 in`) }).and(vis).first();
   const text = (t) => page.getByText(t).and(vis).first();
   const dump = async () =>
     page.evaluate(() =>
@@ -282,8 +284,9 @@ async function run(vpName, vp, mode) {
     // beat 4: Hoopers opens with its first hangout planned, the card on top
     await step("hoopers", async () => {
       await page.goto(`${base}/app/pods/pod_hoopers`, { waitUntil: "load" });
-      await text(/Brahan Spring/).waitFor({ timeout: 120_000 });
-      await text(/3 of 8/).waitFor();
+      await text(/Brahan Spring Park/).waitFor({ timeout: 120_000 });
+      await text(/Free/).waitFor();
+      await inCount(3).waitFor();
       await wait(2500);
     });
     // beat 5: the details: the plan, what to bring, the rain backup
@@ -302,9 +305,9 @@ async function run(vpName, vp, mode) {
       await page.keyboard.press("Escape");
       await wait(600);
       if (!/\/app\/pods\/pod_hoopers$/.test(page.url())) await page.goto(`${base}/app/pods/pod_hoopers`, { waitUntil: "load" });
-      await text(/3 of 8/).waitFor();
+      await inCount(3).waitFor();
       await btn(/^I'm in$/).click();
-      await text(/4 of 8/).waitFor();
+      await inCount(4).waitFor();
       await wait(600);
     });
     await step("locked", async () => {

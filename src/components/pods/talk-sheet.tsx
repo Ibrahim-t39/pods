@@ -152,7 +152,7 @@ export function TalkSheet(props: TalkProps) {
               e.preventDefault();
               ta.focus();
             }}
-            className="fixed top-4 right-4 bottom-4 z-sheet flex w-[min(460px,calc(100vw-32px))] flex-col overflow-hidden rounded-[24px] bg-lit text-ink shadow-[0_0_0_1px_var(--line),var(--shadow-float)] outline-none"
+            className="fixed top-4 right-4 bottom-4 z-sheet flex w-[min(460px,calc(100vw-32px))] flex-col overflow-clip rounded-[24px] bg-lit text-ink shadow-[0_0_0_1px_var(--line),var(--shadow-float)] outline-none"
           >
             <Dialog.Title className="sr-only">{props.podName} talk</Dialog.Title>
             {body}
@@ -164,9 +164,8 @@ export function TalkSheet(props: TalkProps) {
     <Drawer.Root open={props.open} onOpenChange={props.onOpenChange} repositionInputs={false}>
       <Drawer.Portal>
         <Drawer.Overlay className="pods-scrim fixed inset-0 z-overlay" />
-        <Drawer.Content aria-describedby={undefined} className="fixed inset-x-0 bottom-0 z-sheet flex h-[94dvh] flex-col overflow-hidden rounded-t-[24px] bg-lit text-ink outline-none">
+        <Drawer.Content aria-describedby={undefined} className="fixed inset-x-0 bottom-0 z-sheet flex h-dvh flex-col overflow-clip bg-lit text-ink outline-none">
           <Drawer.Title className="sr-only">{props.podName} talk</Drawer.Title>
-          <div aria-hidden className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-line-2" />
           {body}
         </Drawer.Content>
       </Drawer.Portal>
@@ -177,7 +176,7 @@ export function TalkSheet(props: TalkProps) {
 /** ≥1280: Talk docked beside the table as the context panel (R11), always open, no scrim. */
 export function TalkPanel({ podId, podName, hue, focusKey, onMembers }: { podId: string; podName: string; hue: PodHueKey; focusKey: number; onMembers?: () => void }) {
   return (
-    <aside aria-label={`${podName} talk`} className="pods-talk-dock overflow-hidden bg-lit shadow-[0_0_0_1px_var(--line),var(--shadow-float)]">
+    <aside aria-label={`${podName} talk`} className="pods-talk-dock overflow-clip bg-lit shadow-[0_0_0_1px_var(--line),var(--shadow-float)]">
       <TalkBody open onOpenChange={() => undefined} podId={podId} podName={podName} hue={hue} focusKey={focusKey} onMembers={onMembers} where="dock" />
     </aside>
   );
@@ -384,6 +383,11 @@ function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers
   // ── header (R10) ──
   const header = (
     <header className={cn("flex shrink-0 items-center gap-s3 border-b border-line", where === "dock" ? "h-[72px] px-s6" : "h-14 pr-s2 pl-s4 md:h-16 md:pl-s6")}>
+      {where === "sheet" && (
+        <button type="button" aria-label="Back" onClick={() => onOpenChange(false)} className="pressable -ml-s2 grid size-11 shrink-0 place-items-center rounded-full text-ink hover:bg-sunken md:hidden">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 5l-7 7 7 7" /></svg>
+        </button>
+      )}
       <button type="button" onClick={onMembers} disabled={!onMembers} className="pressable -ml-s1 flex min-h-11 min-w-0 flex-1 items-center gap-s3 rounded-[14px] px-s1 text-left disabled:cursor-default">
         <span className="flex shrink-0 items-center" style={{ paddingLeft: 8 }}>
           {people.slice(0, 3).map((p, i) => (
@@ -400,7 +404,7 @@ function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers
         </span>
       </button>
       {where === "sheet" && (
-        <button type="button" aria-label="Close" onClick={() => onOpenChange(false)} className="pressable grid size-11 shrink-0 place-items-center rounded-full text-ink hover:bg-sunken">
+        <button type="button" aria-label="Close" onClick={() => onOpenChange(false)} className="pressable hidden size-11 shrink-0 place-items-center md:grid rounded-full text-ink hover:bg-sunken">
           <Icon name="close" size={22} />
         </button>
       )}
@@ -700,7 +704,7 @@ function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers
   );
 
   return (
-    <div ref={root} className="relative flex min-h-0 flex-1 flex-col" onClick={() => tray && setTray(false)}>
+    <div ref={root} className="relative flex min-h-0 flex-1 flex-col overflow-clip" onClick={() => tray && setTray(false)}>
       {header}
       {pinned}
       {thread}

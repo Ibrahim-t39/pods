@@ -76,7 +76,7 @@ function Likes({ openCommunity }: { openCommunity: boolean }) {
       label="Likes"
       head={
         <>
-          <Line size={long ? "md" : "lg"} className="max-w-[12ch]">
+          <Line size={long ? "md" : "lg"} className={long ? "max-w-[18ch]" : "max-w-[12ch]"}>
             Into{" "}
             {words.length ? (
               words.map((w, i) => (
@@ -219,7 +219,7 @@ function CommunitySheet({ open, onOpenChange }: { open: boolean; onOpenChange: (
         <>
           {(h || f) && (
             <GoLink
-              className="mr-auto"
+              className="mr-auto min-w-11 justify-center"
               onClick={() => {
                 setH(null);
                 setF(null);

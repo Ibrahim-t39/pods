@@ -29,7 +29,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { TZ } from "@/lib/time/tz";
 
 function stateWord(p: PlanItem): string {
-  if (p.locked) return p.me === "going" ? "Locked · in" : "Locked";
+  if (p.locked) return p.me === "going" ? "Locked · you're in" : "Locked";
   if (p.me === "going") return "In";
   if (p.me === "not_going") return "Can't";
   return "Planned";
@@ -173,7 +173,7 @@ function Lead({ p, now, hue, size }: { p: PlanItem; now: number; hue: PodHueKey;
               {p.going} of {Math.max(size, p.going)} in
             </span>
           </Link>
-          <div className="mt-s6 flex flex-wrap items-center gap-s2">
+          <div className="mt-s6 mb-s2 flex flex-wrap items-center gap-s2">
             {p.me === "going" ? (
               <Button variant="secondary" size="sm" onClick={() => void rsvp(p, "not_going")}>
                 Can&apos;t make it
@@ -190,7 +190,7 @@ function Lead({ p, now, hue, size }: { p: PlanItem; now: number; hue: PodHueKey;
                 </a>
               </Button>
             )}
-            <Button variant="secondary" size="sm" onClick={() => calendar(p)} aria-label="Add to calendar" leadingIcon={<Icon name="add" size={18} />}>
+            <Button variant="secondary" size="sm" onClick={() => calendar(p)} aria-label="Add to calendar">
               Calendar
             </Button>
           </div>

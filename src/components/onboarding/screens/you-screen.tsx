@@ -62,11 +62,12 @@ function You() {
           <p className="pods-ob-intro">A minute, then your pods.</p>
           <Line size="lg" className="[text-wrap:wrap]">
             I&apos;m{" "}
-            <span className="whitespace-nowrap">
+            <span className="inline-block max-w-full whitespace-nowrap">
             <InlineField
               ref={nameRef}
               aria-label="First name"
               placeholder="name"
+              className="max-w-[calc(100%-0.5em)]"
               value={name}
               maxLength={20}
               autoComplete="given-name"
