@@ -194,15 +194,25 @@ export function InboxScreen() {
                 {pending.length === 0 ? (
                   <AllSet />
                 ) : (
-                  <ul className="inbx-cards">
-                    <AnimatePresence initial={false}>
-                      {pending.map((n) => (
-                        <motion.li key={n.id} layout="position" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={GENTLE}>
-                          <NeedCard n={n} db={db} now={now} wide={wide} discreet={discreet} selected={wide && pick?.id === n.id} onOpen={() => open(n)} onChoose={() => choose(n)} onDone={() => void markRead([n])} />
-                        </motion.li>
-                      ))}
-                    </AnimatePresence>
-                  </ul>
+                  ([
+                    ["Say if you're in", pending.filter((n) => n.act?.type !== "poll" && n.act?.type !== "vote")],
+                    ["Votes", pending.filter((n) => n.act?.type === "poll" || n.act?.type === "vote")],
+                  ] as const).map(([label, list]) =>
+                    list.length === 0 ? null : (
+                      <div key={label} className="inbx-subgroup">
+                        <h3 className="inbx-subhead">{label}</h3>
+                        <ul className="inbx-cards">
+                          <AnimatePresence initial={false}>
+                            {list.map((n) => (
+                              <motion.li key={n.id} layout="position" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={GENTLE}>
+                                <NeedCard n={n} db={db} now={now} wide={wide} discreet={discreet} selected={wide && pick?.id === n.id} onOpen={() => open(n)} onChoose={() => choose(n)} onDone={() => void markRead([n])} />
+                              </motion.li>
+                            ))}
+                          </AnimatePresence>
+                        </ul>
+                      </div>
+                    ),
+                  )
                 )}
               </div>
 
@@ -682,7 +692,7 @@ function Detail({ n, db, now, discreet, onRead }: { n: Activity; db: DbState; no
       <div className="min-w-0">
         <p className="truncate text-[15px] font-medium text-ink">{n.podName ?? (n.kind === "pods" ? "Your pods" : "Pods")}</p>
         <p data-nc className="text-[13px] text-ink-3">
-          {formatInTimeZone(n.created_at, TZ, "EEE MMM d · h:mmaaa")}
+          {stamp(n.created_at, now)}
         </p>
       </div>
       <Link href={hrefOf(n)} onClick={onRead} className="inbx-quiet pressable ml-auto">

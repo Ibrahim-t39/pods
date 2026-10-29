@@ -12,7 +12,8 @@ import { InCount } from "@/components/brand/in-count";
 import { PlanHalo } from "@/components/brand/plan-halo";
 import { SNAPPY, useCalmMotion } from "@/components/brand/motion";
 import { TOPICS, VENUE_BY_ID } from "@/data/plans";
-import { Converge, Huddle } from "./converge";
+import { PodSphere } from "@/components/brand/pod-sphere";
+import { PERSON_COLORS } from "@/components/brand/disc";
 
 type Key = "basketball" | "guitar" | "running" | "hiking" | "books" | "soccer";
 
@@ -218,7 +219,16 @@ function Pod() {
     <div id="pod" className="tr-beat">
       <Head k="Pod" line={<>Your pod: <span className="tr-pod">{pod.pod}</span>.</>} sub={others.length ? `And ${others.join(", ")}.` : "Placed by what you like and when you're free."} />
       <div className="tr-obj tr-podobj" ref={ref}>
-        <Converge key={key} from={0} to={played ? 1 : 0} duration={2} delay={0.15} className="tr-cv" center={<span className="tr-cv-l">{pod.pod}</span>} />
+        <motion.div
+          key={key}
+          className="tr-sphere"
+          initial={calm ? false : { opacity: 0, scale: 0.7 }}
+          animate={played ? { opacity: 1, scale: 1 } : { opacity: 0.4, scale: 0.85 }}
+          transition={calm ? { duration: 0 } : { ...SNAPPY, delay: 0.15 }}
+        >
+          <PodSphere hue="ember" people={8} inCount={played ? 8 : 1} size={200} float />
+          <span className="tr-sphere-l">{pod.pod}</span>
+        </motion.div>
         <div className="tr-facewrap">
           <ul className="tr-faces" aria-label={`${pod.pod}, 8 people`}>
             <li className="tr-face" data-you="" aria-label="You">
@@ -228,10 +238,11 @@ function Pod() {
               <motion.li
                 key={`${m}-${key}`}
                 className="tr-face"
+                style={{ background: PERSON_COLORS[i % 3].bg, color: PERSON_COLORS[i % 3].fg }}
                 aria-label={m}
                 initial={{ opacity: 0, scale: 0.6 }}
                 animate={played ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
-                transition={calm ? { duration: 0 } : { ...SNAPPY, delay: 1.5 + i * 0.07 }}
+                transition={calm ? { duration: 0 } : { ...SNAPPY, delay: 0.6 + i * 0.07 }}
               >
                 {m[0]}
               </motion.li>
@@ -337,7 +348,10 @@ function ImIn() {
     <div id="in" className="tr-beat">
       <Head k="I'm in" line={locked ? "Locked. It's on." : "It locks when four are in."} sub={locked ? `${pod.what}, ${pod.when}.` : "Three already said yes."} />
       <div className="tr-obj tr-inobj">
-        <Huddle n={n} close={locked ? 1 : 0} names={["Jordan", "Amara", "Theo", "You"]} className="tr-hd" />
+        <div className="tr-sphere" data-locked={locked ? "" : undefined}>
+          <PodSphere hue="ember" people={8} inCount={n} size={220} float={locked} />
+        </div>
+        <Faces names={["You", "Jordan", "Amara", "Theo"]} lit={n} />
         <div className="tr-in-row">
           <InCount n={n} of={8} locked={locked} className="tr-count" />
           {!locked && (
@@ -360,7 +374,9 @@ function Repeat() {
     <div id="repeat" className="tr-beat">
       <Head k="Repeat" line={all ? "Hangout #2 is on." : "Afterwards: run it back?"} sub={all ? `Same people. ${pod.next}.` : "Pods asks for you, so nobody has to."} />
       <div className="tr-obj tr-repobj">
-        <Huddle n={4} close={all ? 1.2 : 1} names={["Jordan", "Amara", "Theo", "You"]} className="tr-hd tr-hd-sm" />
+        <div className="tr-sphere">
+          <PodSphere hue="ember" people={8} inCount={all ? 8 : 4} size={180} float={all} />
+        </div>
         <div className="tr-vote">
           <span className="tr-votes" aria-hidden>
             {[0, 1, 2, 3].map((i) => (
@@ -387,5 +403,24 @@ function Repeat() {
         )}
       </div>
     </div>
+  );
+}
+
+/* the four who said yes: one distinct colour and initial each (you first) */
+function Faces({ names, lit }: { names: string[]; lit: number }) {
+  return (
+    <ul className="tr-faces" aria-label={`${lit} in`}>
+      {names.map((m, i) => (
+        <li
+          key={m}
+          className="tr-face"
+          data-you={m === "You" ? "" : undefined}
+          aria-label={m}
+          style={m === "You" ? { opacity: i < lit ? 1 : 0.3 } : { background: PERSON_COLORS[(i - 1) % 3].bg, color: PERSON_COLORS[(i - 1) % 3].fg, opacity: i < lit ? 1 : 0.3 }}
+        >
+          {m === "You" ? "You" : m[0]}
+        </li>
+      ))}
+    </ul>
   );
 }

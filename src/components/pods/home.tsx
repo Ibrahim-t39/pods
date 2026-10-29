@@ -107,19 +107,12 @@ export function Home() {
         <div className="pods-home-grid">
           <div className="pods-home-main">
             <NewPodsOnHome />
-            {lead ? (
+            {lead || needs.length > 0 || unread > 0 ? (
               <section aria-labelledby="h-next">
                 <SectionHead id="h-next">Up next</SectionHead>
-                <Lead table={lead} minute={minute} moment={moment.moment} />
-              </section>
-            ) : (
-              tables.length === 0 && <EmptyPods />
-            )}
-
-            {(needs.length > 0 || unread > 0) && (
-              <section aria-labelledby="h-needs">
-                <SectionHead id="h-needs">Needs you</SectionHead>
-                <ul className="pods-card divide-y divide-line overflow-hidden">
+                {lead && <Lead table={lead} minute={minute} moment={moment.moment} />}
+                {(needs.length > 0 || unread > 0) && (
+                <ul aria-label="Also needs you" className={cn("pods-card divide-y divide-line overflow-hidden", lead && "mt-s3")}>
                   {needs.map((t) => (
                     <li key={t.row.pod.id}>
                       <NeedRow table={t} minute={minute} />
@@ -140,7 +133,10 @@ export function Home() {
                     </li>
                   )}
                 </ul>
+                )}
               </section>
+            ) : (
+              tables.length === 0 && <EmptyPods />
             )}
 
             {tables.length > 0 && (
@@ -164,7 +160,7 @@ export function Home() {
           <aside className="pods-home-side" aria-labelledby="h-week">
             <section aria-labelledby="h-week">
               <SectionHead id="h-week" action={<Link href="/app/calendar" className="pressable text-label font-semibold text-select outline-offset-2">Calendar</Link>}>
-                This week
+                Next 7 days
               </SectionHead>
               <WeekGlance />
             </section>
@@ -215,7 +211,7 @@ function PodTile({ t, minute, closed, unread, widened }: { t: RoomTable; minute:
   const inner = (
     <>
       <span className="flex items-start justify-between gap-s2">
-        <PodOrb hue={t.hue} people={t.row.size} inCount={going} size={60} open={t.open} needs={needsYou(t)} />
+        <PodOrb hue={t.hue} people={t.row.size} inCount={going} size={60} open={t.open} />
         {unread > 0 && (
           <span className="tabular grid h-6 min-w-6 place-items-center rounded-full bg-select px-1.5 text-[12px] font-semibold text-on-select" aria-label={`${unread} new`}>
             {unread}
@@ -372,7 +368,7 @@ function NeedRow({ table, minute }: { table: RoomTable; minute: number }) {
         <PodOrb hue={table.hue} people={table.row.size} inCount={p?.going.length ?? 0} size={40} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[16px] font-semibold text-ink">{table.row.name}</span>
-          <span className="block truncate text-[14px] text-ink-2">{line}</span>
+          <span className="block line-clamp-2 text-[14px] leading-[1.35] text-ink-2">{line}</span>
         </span>
       </Link>
       {s === "needs_rsvp" && p ? (

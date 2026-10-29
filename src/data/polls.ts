@@ -8,7 +8,7 @@ export function buildSeedPolls(): { polls: Poll[]; flagged: { pod_id: ID; messag
   const defs = [
     {
       id: "poll_hoopers_tacos", pod: "pod_hoopers", by: "Tobi", when: at("2026-11-03", "20:20"),
-      q: "Tacos after Saturday's run?",
+      q: "Tacos after Saturday's game?",
       opts: [["opt_tacos_yes", "I'm in"], ["opt_tacos_maybe", "Depends on the time"], ["opt_tacos_no", "Can't stay"]],
       votes: { Tobi: "opt_tacos_yes", Ama: "opt_tacos_yes", Kayla: "opt_tacos_maybe" },
     },

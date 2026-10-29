@@ -215,7 +215,7 @@
 }
 .inbx-opts {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   min-width: 0;
   gap: var(--s2);
   margin-top: var(--s3);
@@ -699,3 +699,7 @@ button.inbx-bar[data-on] {
 .inbx-card .inbx-opts {
   flex-wrap: wrap;
 }
+
+/* Needs you, split by kind of answer (final fixes 10/29) */
+.inbx-subgroup + .inbx-subgroup { margin-top: var(--s5, 20px); }
+.inbx-subhead { margin: 0 0 var(--s2); font-size: 13px; font-weight: 500; color: var(--ink-2); }

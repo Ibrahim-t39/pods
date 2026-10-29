@@ -94,7 +94,7 @@ function Likes({ openCommunity }: { openCommunity: boolean }) {
           </Line>
           <Sub live className="min-h-6">
             <span key={full} className={cn(full > 0 && "inline-block animate-[pods-shake_420ms_ease]")}>
-              {full > 0 && picks.length >= max ? `Up to ${max} for now. Add more anytime.` : picks.length ? "Add more anytime." : ""}
+              {full > 0 && picks.length >= max ? `Up to ${max} for now. Add more anytime.` : picks.length ? "Add more anytime." : "Pick a few you'd do with others."}
             </span>
           </Sub>
         </>
@@ -103,6 +103,7 @@ function Likes({ openCommunity }: { openCommunity: boolean }) {
         <RingTable
           size={size}
           on={picks.length > 0}
+          filled={picks.length}
           label="Likes"
           items={shown.map((id) => ({
             key: id,

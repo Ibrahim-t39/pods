@@ -718,3 +718,13 @@
 .pods-ob-stepname { font-size: 15px; font-weight: 500; color: var(--ink); }
 .pods-ob-stepname::before { content: "\00B7"; margin-right: var(--s2); color: var(--ink-2); }
 @media (min-width: 1024px) { .pods-ob-stepname { font-size: 17px; } }
+
+/* final fixes 10/29: the one primary in the foot stays a filled brand pill; disabled = the same pill, dimmed (not a ghost outline) */
+.pods-ob-foot-left ~ button:disabled,
+.pods-ob-foot-left ~ button[aria-disabled="true"] {
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: none;
+  opacity: 0.38;
+}
+.pods-ob-stepname { color: var(--ink-2); }

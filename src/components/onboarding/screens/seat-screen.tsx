@@ -33,7 +33,7 @@ const fmt = (d: string) => {
 function Seat({ signin, me }: { signin: boolean; me: User | null }) {
   const router = useRouter();
   const repo = useRepo();
-  const { size } = useTableSize();
+  const { size, wide } = useTableSize();
   const draft = useDraft();
   const metro = useDb((db) => db.config.placement.metro);
   const [stage, setStage] = useState<"number" | "code">("number");
@@ -118,7 +118,7 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
   };
 
   const initial = (draft.firstName || me?.first_name || "").slice(0, 1).toUpperCase();
-  const object = <SeatTable size={size} initial={signin ? undefined : initial} />;
+  const object = <SeatTable size={wide ? size : Math.round(size * 0.6)} initial={signin ? undefined : initial} />;
 
   if (stage === "code") {
     const bad = wrong > 0;
@@ -236,7 +236,7 @@ function Seat({ signin, me }: { signin: boolean; me: User | null }) {
       }
       object={object}
       dot={signin ? undefined : DOT.seat}
-      status={!signin ? <GoLink href="/app/onboarding/city">Other city</GoLink> : <GoLink href={STEP_ROUTE.you}>New here</GoLink>}
+      status={signin ? <GoLink href={STEP_ROUTE.you}>New here</GoLink> : undefined}
       action={
         <Button size="xl" disabled={digits.length !== 10} loading={busy} onClick={send}>
           Send code

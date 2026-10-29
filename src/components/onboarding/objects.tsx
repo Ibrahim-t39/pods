@@ -11,6 +11,7 @@
 import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { TableRing, tableBox, type Seat } from "@/components/brand/table-ring";
+import { PodSphere } from "@/components/brand/pod-sphere";
 import { Disc, HUE_VAR, POD_SOLID, POD_WASH, YOU_COLOR, type PodHueKey } from "@/components/brand/disc";
 import { ARRIVE, DUR, GENTLE, POP, SNAPPY, STAGGER } from "@/components/brand/motion";
 import { Shared, sharedName } from "@/components/brand/shared";
@@ -42,6 +43,7 @@ export function RingTable({
   center,
   below,
   label,
+  filled,
 }: {
   size: number;
   items: RingItem[];
@@ -51,6 +53,8 @@ export function RingTable({
   center?: ReactNode;
   below?: ReactNode;
   label?: string;
+  /** how many picks fill the sphere (one bead each) */
+  filled?: number;
 }) {
   const W = tableBox(size);
   const c = W / 2;
@@ -59,30 +63,12 @@ export function RingTable({
   return (
     <div className="flex flex-col items-center gap-s6" role="group" aria-label={label}>
       <div className="pods-ob-ring" style={{ width: W, height: W }}>
-        <span
-          className="pods-ob-top orb-solid"
-          data-on={on ? "" : undefined}
-          style={{
-            left: c - R,
-            top: c - R,
-            width: size,
-            height: size,
-            ["--orb" as string]: on ? HUE_VAR[hue] : "var(--ink-3)",
-            ["--orb-wash" as string]: on ? POD_WASH[hue] : "linear-gradient(transparent, transparent)",
-          }}
-          aria-hidden
-        />
+        {/* the pod you are shaping: the glossy sphere (clear glass until you pick, then solid with one bead per pick) */}
+        <span className="absolute grid place-items-center" style={{ left: c - R, top: c - R, width: size, height: size }} aria-hidden>
+          <PodSphere hue={hue} people={Math.max(1, filled ?? 1)} inCount={filled ?? 0} size={Math.round(size * 0.74)} open={!!on} you={false} />
+        </span>
         <svg width={W} height={W} className="absolute inset-0 overflow-visible" aria-hidden>
-          <circle
-            cx={c}
-            cy={c}
-            r={R}
-            fill="none"
-            stroke={on ? HUE_VAR[hue] : "var(--ink-3)"}
-            strokeWidth={on ? 2.5 : 1.5}
-            strokeDasharray={on ? undefined : "3 6"}
-            style={{ transition: "stroke 300ms ease" }}
-          />
+          <circle cx={c} cy={c} r={R} fill="none" stroke={on ? HUE_VAR[hue] : "var(--line-2)"} strokeWidth={on ? 2 : 1.5} style={{ transition: "stroke 300ms ease" }} />
         </svg>
         {center && (
           <div className="pods-ob-at grid place-items-center" style={{ left: c, top: c, width: size * 0.7 }}>

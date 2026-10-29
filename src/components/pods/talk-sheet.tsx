@@ -17,6 +17,7 @@ import { Drawer } from "vaul";
 import { Dialog } from "radix-ui";
 import { SNAPPY, type PodHueKey } from "@/components/brand";
 import { PERSON_COLORS, POD_SOLID, personColor, YOU_COLOR } from "@/components/brand/disc";
+import { PodSphere } from "@/components/brand/pod-sphere";
 import { Icon } from "@/components/icons";
 import { notify } from "@/components/ui/toast";
 import { useIsDesktop, useMediaQuery } from "@/components/ui/use-media-query";
@@ -472,13 +473,7 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
         </button>
       )}
       <button type="button" onClick={onMembers} disabled={!onMembers} className="pressable -ml-s1 flex min-h-11 min-w-0 flex-1 items-center gap-s3 rounded-[14px] px-s1 text-left disabled:cursor-default">
-        <span className="flex shrink-0 items-center" style={{ paddingLeft: 8 }}>
-          {people.slice(0, 3).map((p, i) => (
-            <span key={p.id} className="rounded-full ring-2 ring-lit" style={{ marginLeft: -8, zIndex: 3 - i }}>
-              <Face name={p.name} you={p.you} size={28} />
-            </span>
-          ))}
-        </span>
+        <PodSphere hue={hue} people={people.length} size={36} className="shrink-0" />
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-[17px] leading-[1.2] font-semibold tracking-[-0.01em] text-ink">{podName}</span>
           <span className="truncate text-[13px] leading-[1.3] text-ink-2" aria-live="polite">

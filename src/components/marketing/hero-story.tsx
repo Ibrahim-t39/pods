@@ -22,13 +22,13 @@ const TIME = formatInTimeZone(DEMO.hoopers.starts_at, "America/Chicago", "haaa")
 
 const STEPS = [
   { k: "Fit", line: "Three people, new in town." },
-  { k: "Fit", line: "Pods puts you in a small group that fits." },
+  { k: "Pod", line: "Pods puts you in a small group that fits." },
   { k: "Plan", line: "AI plans the first hangout." },
   { k: "I'm in", line: "You tap I'm in." },
   { k: "I'm in", line: "Four are in. It's locked." },
   { k: "Repeat", line: "Two weeks later, the pod picks the next one." },
 ] as const;
-const RAIL = ["Fit", "Plan", "I'm in", "Repeat"] as const;
+const RAIL = ["Fit", "Pod", "Plan", "I'm in", "Repeat"] as const;
 // where each step starts on the scene's scroll progress (0..1)
 const AT = [0, 0.16, 0.34, 0.5, 0.64, 0.8];
 

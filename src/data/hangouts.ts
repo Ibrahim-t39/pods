@@ -165,8 +165,9 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
         pushMsg(botId("Marcus"), "@AI what if it rains?", at("2026-11-02", "08:16"));
         pushMsg(null, aiRain(built.plan.rain_plan), at("2026-11-02", "08:16"), "host", { quick_replies: ["What to bring?", "Who's in?"] });
         pushMsg(botId("Ama"), "I'll bring a ball and a pump, mine's a little flat", at("2026-11-02", "19:30"));
-        pushMsg(botId("Tobi"), "Legend. I've got water for everyone", at("2026-11-02", "19:36"), "text", { reply_to: msgs[msgs.length - 1].id, reactions: { heart: [botId("Ama")] } });
+        pushMsg(botId("Tobi"), "Thanks. I'll bring water for everyone", at("2026-11-02", "19:36"), "text", { reply_to: msgs[msgs.length - 1].id, reactions: { heart: [botId("Ama")] } });
         pushMsg(botId("Kayla"), "Cool, I'll be the one in the pink socks", at("2026-11-03", "20:05"), "text", { reactions: { laugh: [botId("Tobi"), botId("Malik")] } });
+        pushMsg(null, "Quick update: 3 of 8 are in for Saturday at Brahan Spring Park. One more and it locks.", at("2026-11-03", "20:30"), "host", { quick_replies: ["What to bring?", "Who's in?"] });
       } else if (onDeckPod) {
         pushMsg(a1.id, pickLine(lines.misc, "m1"), at("2026-11-02", "11:25"));
         pushMsg(a2.id, pickLine(lines.misc, "m2"), at("2026-11-03", "18:40"));

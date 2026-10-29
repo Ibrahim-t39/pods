@@ -11,7 +11,8 @@ import type { User } from "@/lib/types";
 import { FlowStep } from "../flow";
 import { useDraft } from "../draft";
 import { Guarded } from "../guard";
-import { STEP_ROUTE, commitDraft } from "../steps";
+import { DOT, STEP_ROUTE, commitDraft } from "../steps";
+import { Button } from "@/components/ui/button";
 
 export function CityScreen() {
   return <Guarded need="none">{(me) => <City me={me} />}</Guarded>;
@@ -38,13 +39,21 @@ function City({ me }: { me: User | null }) {
       screen="city"
       back={STEP_ROUTE.seat}
       label="City"
+      dot={DOT.seat}
+      stepName="Your city"
+      action={
+        <Button size="xl" onClick={() => void pick(city)}>
+          Continue
+        </Button>
+      }
       head={
         <>
           <Line size="lg">Where are you?</Line>
+          <p className="mt-s3 text-body-lg text-ink-2">Pods is open in these cities so far.</p>
           <ul className="mt-s8 max-w-[400px]" data-allow-city role="radiogroup" aria-label="City">
             {metro.map((c) => (
               <li key={c}>
-                <button type="button" role="radio" aria-checked={city === c} onClick={() => pick(c)} className={row}>
+                <button type="button" role="radio" aria-checked={city === c} onClick={() => useDraft.getState().set({ city: c })} className={row}>
                   <span
                     aria-hidden
                     className="size-[22px] flex-none rounded-full"

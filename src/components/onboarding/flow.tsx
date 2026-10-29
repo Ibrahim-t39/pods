@@ -41,6 +41,8 @@ export interface FlowStepProps {
   hint?: ReactNode;
   action?: ReactNode;
   label?: string;
+  /** name beside the dots when a sub-step shares a dot (City shares "Your number") */
+  stepName?: string;
 }
 
 /** The back control: a plain arrow in a 44px target on the gutter (the ring-and-dot glyph read as a spinner). */
@@ -55,7 +57,7 @@ function BackArrow({ href }: { href: string }) {
   );
 }
 
-export function FlowStep({ screen, light = "dawn", back, head, object, dot, status, hint, action, label }: FlowStepProps) {
+export function FlowStep({ screen, light = "dawn", back, head, object, dot, status, hint, action, label, stepName }: FlowStepProps) {
   const reduce = useReducedMotion();
   return (
     <>
@@ -93,7 +95,7 @@ export function FlowStep({ screen, light = "dawn", back, head, object, dot, stat
                 {dot ? (
                   <span className="pods-ob-progress">
                     <ProgressDots step={dot} total={TOTAL_STEPS} className="pods-ob-dots-progress" />
-                    <span className="pods-ob-stepname">{STEP_NAME[dot - 1]}</span>
+                    <span className="pods-ob-stepname">{stepName ?? STEP_NAME[dot - 1]}</span>
                   </span>
                 ) : null}
                 {status}

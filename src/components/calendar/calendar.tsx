@@ -91,7 +91,7 @@ export function CalendarPage() {
 
   const weekEnd = addDays(weekStart(today), 6);
   const thisWeek = items.filter((i) => i.day >= today && i.day <= weekEnd);
-  const needs = items.filter((i) => i.needsYou && i.day >= today).length;
+  const needs = thisWeek.filter((i) => i.needsYou).length;
   const meta = `${thisWeek.length ? `${thisWeek.length} this week` : "Nothing else this week"}${needs ? ` · ${needs} ${needs === 1 ? "needs" : "need"} you` : ""}`;
 
   const step = (dir: -1 | 1) => {
@@ -114,8 +114,8 @@ export function CalendarPage() {
         title="Calendar"
         meta={meta}
         actions={
-          <Button size="sm" variant="secondary" onClick={() => setShare(true)}>
-            <Icon name="add" size={18} /> <span className="max-sm:hidden">Add to your calendar</span><span className="sm:hidden">Add to calendar</span>
+          <Button size="sm" variant="secondary" className="bg-lit" onClick={() => setShare(true)}>
+            <Icon name="add" size={18} /> Add to calendar
           </Button>
         }
       />
@@ -160,7 +160,7 @@ export function CalendarPage() {
           {view === "week" && <WeekList start={weekStart(base)} today={today} byDay={byDay} hues={hues} onPick={setPicked} sel={sel} />}
         </section>
         <aside className="pods-cal-day" aria-live="polite">
-          <DayPanel day={sel} today={today} items={byDay[sel] ?? []} hues={hues} />
+          <DayPanel day={sel} today={today} items={byDay[sel] ?? []} hues={hues} listClass={view === "week" ? "lg:hidden" : undefined} />
         </aside>
       </div>
       <SubscribeSheet open={share} onOpenChange={setShare} items={items} />
@@ -290,7 +290,7 @@ export function ItemList({ items, hues, compact }: { items: CalItem[]; hues: Rec
             <span className="pods-cal-bar" aria-hidden />
             <span className="tabular w-[52px] shrink-0 text-[14px] text-ink-2">{shortTime(i.starts_at)}</span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[16px] font-semibold text-ink">{i.title}</span>
+              <span className="block line-clamp-2 text-[16px] leading-[1.3] font-semibold text-ink">{i.title}</span>
               <span className="block truncate text-[14px] text-ink-2">
                 {i.podName} · <span className={cn(i.needsYou && "font-medium text-ember-text")}>{i.line}</span>
               </span>
@@ -307,12 +307,12 @@ export function ItemList({ items, hues, compact }: { items: CalItem[]; hues: Rec
   );
 }
 
-export function DayPanel({ day, today, items, hues, compact }: { day: string; today: string; items: CalItem[]; hues: Record<string, PodHueKey>; compact?: boolean }) {
+export function DayPanel({ day, today, items, hues, compact, listClass }: { day: string; today: string; items: CalItem[]; hues: Record<string, PodHueKey>; compact?: boolean; listClass?: string }) {
   const title = day === today ? "Today" : day === addDays(today, 1) ? "Tomorrow" : fmt(day, { weekday: "long", month: "short", day: "numeric" });
   return (
     <div className="flex flex-col gap-s4">
       {!compact && <h2 className="text-[18px] font-semibold tracking-[-0.01em] text-ink">{title}</h2>}
-      {items.length ? <ItemList items={items} hues={hues} compact={compact} /> : !compact && <p className="text-[15px] text-ink-2">Nothing planned.</p>}
+      <div className={listClass}>{items.length ? <ItemList items={items} hues={hues} compact={compact} /> : !compact && <p className="text-[15px] text-ink-2">Nothing planned.</p>}</div>
       {day >= today && <YourTime day={day} today={today} />}
     </div>
   );
@@ -347,7 +347,7 @@ export function YourTime({ day, today }: { day: string; today: string }) {
           );
         })}
       </div>
-      <p className="mt-s2 text-[13px] leading-[1.4] text-ink-2">The AI plans around this when it picks the next hangout.</p>
+      <p className="mt-s2 text-[13px] leading-[1.4] text-ink-2">Tap to change this day only. The AI plans around it.</p>
     </div>
   );
 }
@@ -397,13 +397,22 @@ function SubscribeSheet({ open, onOpenChange, items }: { open: boolean; onOpenCh
 
 /** Home's glance at the week: the next seven days, the picked day's items and your time that day. */
 export function WeekGlance() {
-  const { hues, today, byDay } = useCalendar();
-  const [picked, setPicked] = useState<string | null>(null);
-  const sel = picked ?? firstBusy(byDay, today, addDays(today, 6));
+  const { items, today } = useCalendar();
+  const end = addDays(today, 6);
+  const week = items.filter((i) => i.day >= today && i.day <= end);
+  const next = week[0];
+  const sel = next?.day ?? today;
+  const line = week.length
+    ? `${week.length} ${week.length === 1 ? "plan" : "plans"} · next ${sel === today ? "today" : fmt(sel, { weekday: "long" })}`
+    : "Nothing planned yet";
   return (
     <div className="flex flex-col gap-s4">
-      <WeekRow start={today} today={today} sel={sel} byDay={byDay} hues={hues} onPick={setPicked} />
-      <DayPanel day={sel} today={today} items={byDay[sel] ?? []} hues={hues} compact />
+      <Link href="/app/calendar" className="pods-card pressable flex min-h-14 items-center gap-s3 px-s4 outline-offset-2">
+        <CalendarGlyph size={20} />
+        <span className="min-w-0 flex-1 truncate text-[15px] text-ink">{line}</span>
+        <Icon name="arrow" size={16} className="text-ink-2" />
+      </Link>
+      {sel >= today && <YourTime day={sel} today={today} />}
     </div>
   );
 }

@@ -142,10 +142,11 @@
 }
 .pods-talk-dock {
   position: fixed;
-  top: 24px;
+  top: 32px;
   right: 24px;
-  bottom: 24px;
-  width: 420px;
+  /* capped: a chat preview beside the page, not a full-height third column */
+  height: min(640px, calc(100dvh - 64px));
+  width: 400px;
   z-index: var(--z-sticky);
   display: flex;
   flex-direction: column;
@@ -190,7 +191,7 @@
 }
 @media (min-width: 1280px) {
   [data-docked].pods-pod {
-    padding-right: 444px;
+    padding-right: 448px;
   }
   [data-docked] .pods-pod-body {
     padding: var(--s8) var(--s8) 0 var(--s12);

@@ -82,9 +82,12 @@
 .pods-cal-mcell.is-past {
   color: var(--ink-3);
 }
+/* today: a small underline; selected: the filled tile (one strong highlight, not two) */
 .pods-cal-cell.is-today .pods-cal-num,
 .pods-cal-mcell.is-today .pods-cal-num {
-  color: var(--select);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
 }
 .pods-cal-cell.is-sel,
 .pods-cal-mcell.is-sel {
@@ -217,4 +220,8 @@
   .pods-cal-part {
     transition: none;
   }
+}
+
+@media (max-width: 639px) {
+  .pods-cal-cell { min-height: 64px; padding: 8px 2px 6px; }
 }

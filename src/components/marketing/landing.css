@@ -28,7 +28,7 @@
     background-repeat: no-repeat;
   }
 }
-html:has(.lp) { scroll-padding-top: 128px; }
+html:has(.lp) { scroll-padding-top: 140px; }
 
 /* ── header ─────────────────────────────────────────────────────────────────────────────────────────────── */
 .lp-nav {
@@ -36,7 +36,7 @@ html:has(.lp) { scroll-padding-top: 128px; }
   inset: 0 0 auto;
   z-index: 40;
   height: 64px;
-  background: color-mix(in oklch, var(--paper) 96%, transparent);
+  background: var(--paper);
   box-shadow: 0 1px 0 var(--line);
   backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
@@ -302,10 +302,10 @@ html:has(.lp) { scroll-padding-top: 128px; }
   gap: 32px;
   align-content: center;
   padding-block: 64px;
-  scroll-margin-top: 120px;
+  scroll-margin-top: 140px;
 }
 @media (min-width: 1024px) {
-  .tr-beat { grid-template-columns: 5fr 7fr; gap: 64px; align-items: center; min-height: 66svh; padding-block: 48px; }
+  .tr-beat { grid-template-columns: 5fr 7fr; gap: 64px; align-items: center; padding-block: 40px; }
 }
 .tr-head { display: grid; gap: 12px; align-content: start; }
 .tr-line { font-size: clamp(2rem, 1.6rem + 1.8vw, 3.25rem); line-height: 1.06; max-width: 14ch; }
@@ -329,7 +329,7 @@ html:has(.lp) { scroll-padding-top: 128px; }
     color-mix(in oklch, var(--lit) 70%, var(--paper));
   box-shadow: inset 0 0 0 1px var(--line);
 }
-@media (min-width: 1024px) { .tr-obj { min-height: 560px; padding: 48px; border-radius: 40px; } }
+@media (min-width: 1024px) { .tr-obj { min-height: 480px; padding: 48px; border-radius: 40px; } }
 .tr-note { margin: 0; font-size: 14px; color: var(--ink-3); }
 
 /* fit */
@@ -459,7 +459,7 @@ html:has(.lp) { scroll-padding-top: 128px; }
 @keyframes lp-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    .lp-in, .tr-head {
+    .lp-in, .tr-head, .tr-obj {
       animation: lp-rise linear both;
       animation-timeline: view();
       animation-range: entry 0% cover 22%;
@@ -471,3 +471,7 @@ html:has(.lp) { scroll-padding-top: 128px; }
 .tr-podobj { gap: 8px; }
 .tr-podobj .tr-cv { margin-block: -28px -8px; }
 @media (min-width: 1024px) { .tr-podobj .tr-cv { width: 420px; margin-block: -48px -16px; } }
+
+/* the pod itself: the glossy sphere (gloss is for pods), name under it */
+.tr-sphere { display: grid; justify-items: center; gap: 12px; }
+.tr-sphere-l { font-size: 17px; font-weight: 600; color: var(--ink); }
