@@ -1,12 +1,12 @@
-// The landing (/): a real product site. See components/marketing/landing.tsx.
+// The landing (/): a film in eight chapters, played by scroll. See components/marketing/film.tsx.
 import type { Metadata } from "next";
-import { Landing } from "@/components/marketing/landing";
+import { Film } from "@/components/marketing/film";
 
 export const metadata: Metadata = {
   title: { absolute: "Pods" },
-  description: "Small friend groups that meet again.",
+  description: "Find your people. Then keep them. Small local friend groups that meet again and again.",
 };
 
 export default function LandingPage() {
-  return <Landing />;
+  return <Film />;
 }

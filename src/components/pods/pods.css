@@ -50,7 +50,8 @@
 }
 @media (min-width: 640px) {
   .pods-home-tiles {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* 2 x 2: four pods never leave one tile alone on a second row */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 .pods-home-tile {
