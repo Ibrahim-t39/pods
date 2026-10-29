@@ -1,154 +1,43 @@
-// A person (wireframe S06): a sheet over the table you share. Name and age, what they're into (shared likes first),
-// the other pods you share, then Report and Block as quiet links (G #4: who, age, shared likes; no bio wall, no seal).
-// PRIVACY: reads only toPublicMember() and interest labels. Community pod names are never printed here.
+// A person (redesign r2): a real profile page, not a sheet over a decoration. What you share first (likes in common,
+// pods together, next hangout), then their words, with Message in the shared pod as the one primary and Report / Block
+// in the menu. Only people you share a pod with can be seen.
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
-import { motion } from "motion/react";
-import { Disc } from "@/components/brand/disc";
-import { Line } from "@/components/brand/line";
-import { Stage } from "@/components/brand/stage";
-import { TableRing, GENTLE, type Seat } from "@/components/brand/table-ring";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { Stage } from "@/components/brand";
 import { Chrome } from "@/components/shell/chrome";
-import { ResponsiveSheet, notify } from "@/components/ui";
-import { useMediaQuery } from "@/components/ui/use-media-query";
-import { BlockSheet, ReportSheet } from "@/components/safety";
-import { GoLink, PageName, SheetFoot, SheetLine } from "@/components/profile/kit";
-import { podHue } from "@/components/profile/hue";
-import { shortLike } from "@/components/profile/words";
-import { useDb, useHydrated, useRepo } from "@/lib/db/hooks";
-import { isBlockedByMe } from "@/lib/safety/selectors";
-import { mutualPodIds } from "@/lib/platform/selectors";
-import { nowISO } from "@/lib/time/clock";
-import { displayName, toPublicMember } from "@/lib/utils";
-import "@/components/profile/seat.css";
+import { Button } from "@/components/ui/button";
+import { useHydrated } from "@/lib/db/hooks";
+import { PersonCard, usePersonView } from "@/components/platform/person-card";
+import { ListSkeleton } from "@/components/platform/page-head";
 
 export function PersonScreen() {
   const { userId } = useParams<{ userId: string }>();
-  const router = useRouter();
-  const repo = useRepo();
   const hydrated = useHydrated();
-  const wide = useMediaQuery("(min-width: 1024px)");
-  const [sheet, setSheet] = useState<"person" | "report" | "block">("person");
-
-  // Only people you share a pod with can be seen (members stay inside their pods).
-  const view = useDb((db) => {
-    const u = db.users[userId];
-    if (!db.me || !u || u.status === "deleted" || u.status === "banned" || userId === db.me) return null;
-    const mine = db.memberships.filter((m) => m.user_id === db.me && !m.left_at);
-    const theirs = db.memberships.filter((m) => m.user_id === userId && !m.left_at);
-    const shared = mine.filter((m) => theirs.some((t) => t.pod_id === m.pod_id)).map((m) => db.pods[m.pod_id]).filter(Boolean);
-    if (!shared.length) return null;
-    const pod = shared.find((p) => p.type === "interest") ?? shared[0];
-    const myLikes = new Set(db.userInterests.filter((x) => x.user_id === db.me).map((x) => x.interest_id));
-    const likes = db.userInterests
-      .filter((x) => x.user_id === userId)
-      .map((x) => db.interests[x.interest_id])
-      .filter(Boolean)
-      .sort((a, b) => Number(myLikes.has(b.id)) - Number(myLikes.has(a.id)))
-      .map((i) => shortLike(i.id, i.label));
-    // the other pods you share (PLATFORM_SPEC §F7, mutualPodIds); community pod names are never printed here (D10)
-    const also = mutualPodIds(db, userId)
-      .map((id) => db.pods[id])
-      .filter((p) => p && p.id !== pod.id && p.type === "interest")
-      .map((p) => p.name);
-    const at = db.memberships
-      .filter((m) => m.pod_id === pod.id && !m.left_at)
-      .sort((a, b) => Number(b.user_id === db.me) - Number(a.user_id === db.me))
-      .slice(0, 6)
-      .map((m) => db.users[m.user_id])
-      .filter(Boolean);
-    return {
-      member: toPublicMember(u, nowISO()),
-      pod: { id: pod.id, name: pod.type === "community" ? "Your pod" : pod.name },
-      hue: podHue(db, pod.id),
-      likes,
-      also,
-      seats: at.map((p): Seat => ({ in: true, ink: p.id === db.me, initial: displayName(p).slice(0, 1), name: p.id === db.me ? "you" : displayName(p) })),
-      blocked: isBlockedByMe(db, userId),
-      // hangouts this table has held: the shared wash deepens with each one (COLOR_LIFE §6.3, what they share grows)
-      held: Object.values(db.hangouts).filter((h) => h.pod_id === pod.id && h.status !== "cancelled" && h.ends_at <= nowISO()).length,
-    };
-  });
-
-  if (!hydrated) return null;
-  if (!view)
-    return (
-      <div className="seat-pg">
-        <Stage light="paper" />
-        <Chrome left="back" backHref="/app/pods" backLabel="Your pods" />
-        <div className="seat-body">
-          <Line size="lg">Not at your tables.</Line>
-          <GoLink href="/app/pods" className="mt-s6">
-            Your pods
-          </GoLink>
-        </div>
-      </div>
-    );
-
-  const name = view.member.display_name;
-  const back = () => router.push(`/app/pods/${view.pod.id}`);
-  const into = view.likes.length ? `Into ${view.likes.slice(0, 2).join(", ")}.` : null;
+  const view = usePersonView(userId);
 
   return (
-    <div className="seat-pg">
+    <div className="min-h-[100dvh] pb-[calc(var(--s12)+var(--shell-bottom,0px)+env(safe-area-inset-bottom))]">
       <Stage light="paper" />
-      <Chrome left="back" backHref={`/app/pods/${view.pod.id}`} backLabel={view.pod.name} />
-      <div className="seat-body person-body">
-        <div className="seat-col">
-          <p className="text-overline text-ink-2">At the table</p>
-          <Line size="lg" className="mt-s2">
-            {view.pod.name}.
-          </Line>
-        </div>
-        <motion.div className="person-obj" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={GENTLE}>
-          {/* the same table you left: the pod's circle travels in from the pod page (MOTION_SYSTEM §4) */}
-          <TableRing size={wide ? 360 : 232} seats={view.seats} hue={view.hue} worn={Math.min(3, view.held + 1)} youWaiting={false} fill />
-        </motion.div>
-      </div>
-
-      <ResponsiveSheet
-        open={sheet === "person"}
-        onOpenChange={(o) => !o && back()}
-        title={<span data-nc className="tabular-nums">{`${name}, ${view.member.age}`}</span>}
-        footer={
-          view.blocked ? (
-            <SheetFoot
-              left={
-                <GoLink
-                  onClick={async () => {
-                    const r = await repo.unblock(view.member.id);
-                    if (r.ok) notify(`${name} unblocked`, { undo: () => void repo.block(view.member.id) });
-                  }}
-                >
-                  Unblock
-                </GoLink>
-              }
-            />
-          ) : (
-            <SheetFoot left={<GoLink onClick={() => setSheet("report")}>Report</GoLink>} right={<GoLink onClick={() => setSheet("block")}>Block</GoLink>} />
-          )
-        }
-      >
-        <PageName>{name}</PageName>
-        <div className="flex items-center gap-s4">
-          <Disc initial={name.slice(0, 1)} tone={view.hue} seed={name} size={64} />
-          <div className="min-w-0">
-            {view.blocked ? (
-              <p className="text-[16px] text-ink">Blocked.</p>
-            ) : (
-              <>
-                {into && <p className="text-[16px] text-ink">{into}</p>}
-                {view.also.length > 0 && <SheetLine>Also in {view.also.join(", ")}.</SheetLine>}
-              </>
-            )}
+      <Chrome left="back" backHref="/app/people" backLabel="People" />
+      <div className="mx-auto w-full max-w-[880px] px-gutter pt-s4 lg:px-s12 lg:pt-s6">
+        {!hydrated ? (
+          <ListSkeleton rows={3} />
+        ) : view ? (
+          <div className="lg:rounded-3xl lg:bg-surface lg:p-s8 lg:shadow-[inset_0_0_0_1px_var(--line)]">
+            <PersonCard view={view} wide />
           </div>
-        </div>
-      </ResponsiveSheet>
-
-      <ReportSheet open={sheet === "report"} onOpenChange={(o) => !o && setSheet("person")} target={{ kind: "member", userId: view.member.id, userName: name, podId: view.pod.id }} />
-      <BlockSheet open={sheet === "block"} onOpenChange={(o) => !o && setSheet("person")} userId={view.member.id} userName={name} podId={view.pod.id} />
+        ) : (
+          <div className="mt-s8 rounded-2xl px-s4 py-s8 text-center shadow-[inset_0_0_0_1px_var(--line)]">
+            <p className="text-[17px] font-semibold text-ink">Not in your pods</p>
+            <p className="mt-1 text-[14px] text-ink-2">You can see people once you share a pod with them.</p>
+            <Button asChild variant="secondary" size="sm" className="mt-s4">
+              <Link href="/app/people">Your people</Link>
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

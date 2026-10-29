@@ -12,9 +12,8 @@ import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Line, Stage } from "@/components/brand";
-import { POD_SOLID } from "@/components/brand/disc";
 import { Icon } from "@/components/icons";
-import { Chrome } from "@/components/shell";
+import { Chrome, GlyphButton } from "@/components/shell";
 import { isTypingTarget } from "@/components/shell/shortcuts";
 import { Page } from "@/components/shell/page";
 import { ReportSheet } from "@/components/safety/report-sheet";
@@ -26,6 +25,7 @@ import { LeavePodSheet } from "./leave-pod-sheet";
 import { roomTables } from "./model";
 import { GiveUpSheet, PlaceSheet, PodMenuSheet, type PodSheet } from "./pod-menu";
 import { MembersSheet, MemoriesSheet } from "./pod-sheets";
+import { PodIdentity, PodSections } from "./pod-overview";
 import { notify } from "@/components/ui/toast";
 import { useRepo } from "@/lib/db/hooks";
 import { GO } from "./room";
@@ -160,22 +160,17 @@ function PodTableInner({ podId }: { podId: string }) {
     );
   }
 
-  const dots =
-    walk.length > 1 ? (
-      <span role="img" aria-label={`${at + 1} of ${walk.length}`} className="flex items-center gap-s2">
-        {walk.map((id) => (
-          <span key={id} aria-hidden className="rounded-full transition-all duration-300" style={id === podId ? { width: 18, height: 6, background: POD_SOLID[hue] } : { width: 6, height: 6, background: "var(--line-2)" }} />
-        ))}
-      </span>
-    ) : null;
-
   const canGiveUp = !!view && !!view.targetId && view.imIn && ["proposed", "in", "locked", "starting_soon"].includes(view.phase);
+  // the ring sits beside the plan while there is a plan (or a call to plan one); the repeat loop's cards take the row
+  const ringMode = !!stage.foot;
+  const menuBtn = <GlyphButton icon="more" label={`${name} menu`} onClick={() => setSheet("menu")} className="max-lg:hidden" />;
 
   return (
     <PodTableContext.Provider value={api}>
       <Stage light={stage.light} />
       <div
-        className="contents"
+        className="pods-pod"
+        aria-label={`${name} table`}
         data-sheet-open={sheet ? "" : undefined}
         data-docked={docked ? "" : undefined}
         onTouchStart={(e) => {
@@ -192,13 +187,41 @@ function PodTableInner({ podId }: { podId: string }) {
           if (Math.abs(dx) > 64 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - s.t < 600) go(dx < 0 ? 1 : -1);
         }}
       >
-        <Page
-          label={`${name} table`}
-          chrome={<Chrome left="mark" center={dots} right="menu" onMenu={() => setSheet("menu")} menuLabel={`${name} menu`} />}
-          head={stage.head}
-          object={stage.object}
-          foot={stage.foot}
-        />
+        <Chrome left="mark" right="menu" onMenu={() => setSheet("menu")} menuLabel={`${name} menu`} className="lg:hidden" />
+        <div className="pods-pod-body">
+          <div className="pods-pod-id">
+            <PodIdentity
+              podId={podId}
+              name={name}
+              hue={hue}
+              kind={here.row.pod.type === "community" ? "Community pod" : "Interest pod"}
+              going={view?.going.length ?? 0}
+              held={here.held}
+              actions={menuBtn}
+            />
+          </div>
+          <div className={ringMode ? "pods-pod-plan" : "pods-pod-plan pods-pod-plan-wide"}>
+            {stage.head}
+            {stage.foot && <div className="pods-pod-foot">{stage.foot}</div>}
+            {!ringMode && stage.object}
+          </div>
+          {ringMode && (
+            <div className="pods-pod-ring">
+              <div className="pods-pod-ring-fit">{stage.object}</div>
+            </div>
+          )}
+          <PodSections
+            podId={podId}
+            hue={hue}
+            name={name}
+            docked={docked}
+            unread={unread}
+            muted={muted}
+            onMute={() => void toggleMute()}
+            onSheet={(s) => setSheet(s)}
+            onTalk={api.openTalk}
+          />
+        </div>
       </div>
       {stage.overlay}
 

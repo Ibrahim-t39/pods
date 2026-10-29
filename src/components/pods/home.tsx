@@ -1,53 +1,45 @@
-// Home: the adaptive front (PLATFORM_SPEC §F1; MOTION_SYSTEM §6, §12 "Now"). It leads with the one thing that matters
-// now (lib/journey/moment.ts), then your pods as glass orbs, then at most two quiet rows.
-//   head    overline (the moment) + one bold line: "Hoopers, Saturday 10am."
-//   lead    deciding / locked / now: the plan card in its halo (beat 4: the AI's first plan for the pod)
-//           after: "Run it back?" · vote: "Pick a time" · quiet: the next fit · filling: "Your pod is filling."
-//   pods    two columns of orbs, Interests and Community (beat 2), the widened line on its pod (beat 3)
-//   needs   a pod that waits on you wears a small spark on its orb; new in Inbox is one quiet row
-// Phone: one column under the chrome, clears the capsule. Laptop: head + lead on the left, your pods on the right.
+// Home (redesign): what is next, what needs you, your pods at a glance, and what your pods are saying.
+//   head      compact: "Good morning, Chanda" + the date and one status line (PageHeader, used app-wide)
+//   next      the lead plan as a card you can act on: day, time, activity, place, who's in, I'm in / Details
+//             (the repeat loop and votes: one clear card with its one action)
+//   needs     other pods waiting on you, each with its action in the row (I'm in, Vote, Check in)
+//   pods      every pod as a compact row: orb (a dot per person), name, next plan, unread, status
+//   activity  the last lines across your pods; tap to open that pod's Talk
+// Phone: one column. Laptop: next + needs + pods on the left, activity on the right.
 "use client";
 
 import Link from "next/link";
 import { useCallback } from "react";
-import { motion, useReducedMotion } from "motion/react";
-import { CirclesLoader, DiscStack, GENTLE, InCount, Line, PlanHalo, SNAPPY, STAGGER, Shared, Stage, WidenGlyph, sharedName } from "@/components/brand";
-import { POD_SOLID, POD_WASH } from "@/components/brand/disc";
+import { formatInTimeZone } from "date-fns-tz";
+import { CirclesLoader, Disc, DiscStack, InCount, PlanHalo, Shared, Stage, WidenGlyph, sharedName } from "@/components/brand";
 import { Icon } from "@/components/icons";
-import { Chrome } from "@/components/shell";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { PageHeader } from "@/components/shell";
+import { daypartOf } from "@/components/shell/daypart";
 import { SearchGlyph } from "@/components/shell/nav-glyphs";
+import { usePlanActions } from "@/components/planner/use-plan-actions";
 import { useDb, useHydrated, useMe } from "@/lib/db/hooks";
 import { useMoment } from "@/lib/journey/use-moment";
 import { cardView } from "@/lib/planner/card-state";
 import { unreadCount } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
-import { dayWord, firstName, nextLine, opensAfter, roomTables, shortTime, tableState, type RoomTable } from "./model";
+import { formatRelative } from "@/lib/time/format";
+import { TZ } from "@/lib/time/tz";
+import { cn } from "@/lib/cn";
+import { dayWord, firstName, opensAfter, roomTables, shortTime, type RoomTable } from "./model";
+import { PodOrb } from "./pod-orb";
+import { PodRow, StatusChip, activityWord, needsYou, statusOf } from "./pod-card";
 import { sourceLine } from "./table-stage";
+import { useLastRead } from "./use-last-read";
 import { NewPodsOnHome } from "@/components/placement/new-pod";
 import "./pods.css";
-
-const OVERLINE: Record<string, string> = {
-  deciding: "Next",
-  locked: "Locked",
-  now: "Today",
-  after: "Last time",
-  vote: "Round two",
-  planning: "Planning",
-  filling: "Almost",
-  quiet: "Your pods",
-  first_run: "Your pods",
-};
-
-/** "Pickup basketball, rotating 5-on-5" → "Pickup basketball". */
-function activityWord(event: string) {
-  const w = event.split(/[,:;(—–]/)[0].trim();
-  return w.length > 28 ? `${w.slice(0, 27).trimEnd()}…` : w;
-}
 
 function widenLine(body: string | undefined, from: string): string {
   const m = body?.match(/Only (\d+) (\S+)/);
   return m ? `Only ${m[1]} ${m[2]} nearby` : `Not many ${from}s nearby`;
 }
+
+const GREET = { morning: "Good morning", day: "Good afternoon", evening: "Good evening", night: "Good evening" } as const;
 
 export function Home() {
   const hydrated = useHydrated();
@@ -55,7 +47,22 @@ export function Home() {
   const minute = Math.floor(now.getTime() / 60_000) * 60_000;
   const tables = useDb(useCallback((db) => roomTables(db, minute), [minute]));
   const moment = useMoment();
+  const me = useMe();
   const unread = useDb(unreadCount);
+  const { lastRead } = useLastRead();
+  const unreadBy = useDb(
+    useCallback(
+      (db) => {
+        const out: Record<string, number> = {};
+        for (const id of Object.keys(db.messages)) {
+          const seen = lastRead[id];
+          out[id] = seen ? (db.messages[id] ?? []).filter((m) => m.kind === "text" && m.user_id !== db.me && m.created_at > seen).length : 0;
+        }
+        return out;
+      },
+      [lastRead],
+    ),
+  );
   const widened = useDb(
     useCallback((db) => {
       const pod = Object.values(db.pods).find((p) => p.widened_from?.kind === "group" && db.memberships.some((m) => m.pod_id === p.id && m.user_id === db.me && !m.left_at));
@@ -76,45 +83,94 @@ export function Home() {
 
   const open = tables.filter((t) => t.open);
   const lead = open.find((t) => t.row.pod.id === moment.leadPodId) ?? open[0];
-  const line = nextLine(lead, minute);
-  // pods other than the lead that wait on you wear a small spark on their orb (no extra rows: the orb is the row)
-  const needs = new Set(open.filter((t) => t !== lead && ["needs_rsvp", "vote_open", "checkin_due", "run_it_back"].includes(t.row.status)).map((t) => t.row.pod.id));
-
-  const head = (
-    <>
-      <p className="text-overline text-ink-2">{OVERLINE[moment.moment] ?? "Next"}</p>
-      <Line className="mt-s2 max-w-[13ch]">{line ?? (tables.length ? "Your pods." : "Your pod is filling.")}</Line>
-    </>
-  );
+  const needs = open.filter((t) => t !== lead && needsYou(t));
+  const closed = opensAfter(tables, minute);
+  const greet = `${GREET[daypartOf(Number(formatInTimeZone(now, TZ, "H")))]}${me?.first_name ? `, ${me.first_name}` : ""}`;
+  const date = formatInTimeZone(now, TZ, "EEEE, MMM d");
+  const waiting = needs.length + (lead && needsYou(lead) ? 1 : 0);
+  const meta = `${date} · ${waiting ? `${waiting} ${waiting === 1 ? "thing needs" : "things need"} you` : "You're all set"}`;
 
   return (
     <>
       <Stage light={moment.light} />
       <div className="pods-home">
-        <Chrome
-          left="mark"
-          right={
-            <Link href="/app/search" aria-label="Search" className="pressable inline-flex size-11 items-center justify-center rounded-full outline-offset-2 lg:hidden">
+        <PageHeader
+          title={greet}
+          meta={meta}
+          chromeRight={
+            <Link href="/app/search" aria-label="Search" className="pressable inline-flex size-11 items-center justify-center rounded-full outline-offset-2">
               <SearchGlyph />
             </Link>
           }
         />
-        <div className="pods-home-body">
-          <section className="pods-home-lead" aria-label="Next">
-            {head}
-            {lead && <Lead table={lead} minute={minute} moment={moment.moment} />}
-          </section>
-          <NewPodsOnHome className="pods-home-new" />
-          {tables.length > 0 && <PodOrbs tables={tables} minute={minute} widened={widened} needs={needs} />}
-          {unread > 0 && (
-            <Link href="/app/inbox" className="pods-home-inbox pressable flex min-h-14 items-center gap-s3 border-y border-line outline-offset-[-2px]">
-              <span aria-hidden className="tabular grid size-8 shrink-0 place-items-center rounded-full bg-spark text-[13px] font-semibold text-on-spark" style={{ backgroundImage: "var(--bead)" }}>
-                {unread}
-              </span>
-              <span className="flex-1 text-[17px] font-semibold text-ink">Inbox</span>
-              <span className="text-label text-ink-2">new</span>
-              <Icon name="arrow" size={20} className="text-ink-2" />
-            </Link>
+        <div className="pods-home-grid">
+          <div className="pods-home-main">
+            <NewPodsOnHome />
+            {lead ? (
+              <section aria-labelledby="h-next">
+                <SectionHead id="h-next">Up next</SectionHead>
+                <Lead table={lead} minute={minute} moment={moment.moment} />
+              </section>
+            ) : (
+              tables.length === 0 && <EmptyPods />
+            )}
+
+            {(needs.length > 0 || unread > 0) && (
+              <section aria-labelledby="h-needs">
+                <SectionHead id="h-needs">Needs you</SectionHead>
+                <ul className="pods-card divide-y divide-line overflow-hidden">
+                  {needs.map((t) => (
+                    <li key={t.row.pod.id}>
+                      <NeedRow table={t} minute={minute} />
+                    </li>
+                  ))}
+                  {unread > 0 && (
+                    <li>
+                      <Link href="/app/inbox" className="pressable flex min-h-16 items-center gap-s3 px-s4 py-s2 outline-offset-[-2px] hover:bg-[color-mix(in_srgb,var(--ink)_3%,transparent)]">
+                        <span aria-hidden className="tabular grid size-10 shrink-0 place-items-center rounded-full bg-sunken text-[15px] font-semibold text-ink">
+                          {unread}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[16px] font-semibold text-ink">Inbox</span>
+                          <span className="block truncate text-[14px] text-ink-2">{unread === 1 ? "1 new update" : `${unread} new updates`}</span>
+                        </span>
+                        <Icon name="arrow" size={18} className="text-ink-3" />
+                      </Link>
+                    </li>
+                  )}
+                </ul>
+              </section>
+            )}
+
+            {tables.length > 0 && (
+              <section aria-labelledby="h-pods">
+                <SectionHead id="h-pods" action={<Link href="/app/pods" className="pressable text-label font-semibold text-select outline-offset-2">See all</Link>}>
+                  Your pods
+                </SectionHead>
+                <ul className="pods-card divide-y divide-line overflow-hidden">
+                  {tables.map((t) => (
+                    <li key={t.row.pod.id}>
+                      <PodRow t={t} minute={minute} closed={closed} unread={unreadBy[t.row.pod.id] ?? 0} />
+                      {widened?.podId === t.row.pod.id && (
+                        <p data-widened-note className="-mt-1 flex items-start gap-s2 pr-s4 pb-s3 pl-[68px] text-[13px] leading-[1.35] text-ink-2">
+                          <WidenGlyph size={14} className="mt-0.5 shrink-0 text-grove-text" />
+                          <span>{widened.line}</span>
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/app/discover" className="pressable mt-s2 inline-flex min-h-11 items-center gap-s2 text-label font-semibold text-ink outline-offset-2">
+                  <Icon name="add" size={18} /> Find more pods
+                </Link>
+              </section>
+            )}
+          </div>
+          {open.length > 0 && (
+            <aside className="pods-home-side" aria-labelledby="h-activity">
+              <SectionHead id="h-activity">Pod activity</SectionHead>
+              <Activity tables={open} />
+            </aside>
           )}
         </div>
       </div>
@@ -122,7 +178,31 @@ export function Home() {
   );
 }
 
-// ── the lead object ─────────────────────────────────────────────────────
+function SectionHead({ id, children, action }: { id: string; children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="mb-s3 flex min-h-6 items-center justify-between gap-s4">
+      <h2 id={id} className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
+        {children}
+      </h2>
+      {action}
+    </div>
+  );
+}
+
+function EmptyPods() {
+  return (
+    <section className="pods-card flex flex-col items-start gap-s3 p-s6">
+      <PodOrb hue="ember" people={8} size={48} open={false} />
+      <h2 className="text-[20px] font-semibold tracking-[-0.015em] text-ink">Your pod is filling</h2>
+      <p className="text-[15px] text-ink-2">We place you with 6 to 10 people near you. The AI plans the first hangout once it fills.</p>
+      <Link href="/app/discover" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+        Browse pods
+      </Link>
+    </section>
+  );
+}
+
+// ── the lead plan ───────────────────────────────────────────────────────
 
 function Lead({ table, minute, moment }: { table: RoomTable; minute: number; moment: string }) {
   const podId = table.row.pod.id;
@@ -130,17 +210,36 @@ function Lead({ table, minute, moment }: { table: RoomTable; minute: number; mom
   const people = useDb(
     useCallback((db) => (view?.going ?? []).map((id) => ({ id, you: id === db.me, name: id === db.me ? (db.users[id]?.first_name ?? "") : firstName(db, id) })), [view?.going]),
   );
+  const actions = usePlanActions(podId);
   const href = `/app/pods/${podId}`;
   const name = table.row.name;
+  const st = statusOf(table, "");
 
-  // the repeat loop and votes: one big go, the pod's table does the rest
+  // the repeat loop and votes: one card, its one action
   if (moment === "after" || moment === "vote" || !view?.suggestion) {
-    const label = table.row.status === "checkin_due" ? `Check in to ${name}` : moment === "filling" ? "Your pod" : `Open ${name}`;
+    const s = table.row.status;
+    const [line, cta] =
+      s === "checkin_due"
+        ? ["How did it go? Check in and say if you'd run it back.", "Check in"]
+        : s === "vote_open"
+          ? ["The pod is picking the next hangout. Add your vote.", "Vote"]
+          : s === "run_it_back"
+            ? ["Waiting on the pod's answers.", "Open"]
+            : s === "forming"
+              ? ["Your pod is filling. The AI plans the first hangout once it does.", "Open"]
+              : ["The AI is planning the next hangout.", "Open"];
     return (
-      <Link href={href} className="pressable pods-home-go mt-s8 flex min-h-[72px] items-center gap-s4 outline-offset-4">
-        <span aria-hidden className="orb size-14 shrink-0" style={{ ["--orb" as string]: POD_SOLID[table.hue], ["--orb-wash" as string]: POD_WASH[table.hue] }} />
-        <span className="flex-1 text-[20px] font-semibold tracking-[-0.02em] text-ink">{label}</span>
-        <Icon name="arrow" size={24} />
+      <Link href={href} className="pods-card pressable flex items-center gap-s4 p-s4 outline-offset-2 lg:p-s6">
+        <PodOrb hue={table.hue} people={table.row.size} size={52} needs={needsYou(table)} />
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-s2">
+            <span className="text-[18px] font-semibold text-ink">{name}</span>
+            {st && <StatusChip {...st} />}
+          </span>
+          <span className="mt-0.5 block text-[15px] text-ink-2">{line}</span>
+        </span>
+        <span className={cn(buttonVariants({ variant: needsYou(table) ? "spark" : "secondary", size: "sm" }), "max-sm:hidden")}>{cta}</span>
+        <Icon name="arrow" size={20} className="text-ink-3 sm:hidden" />
       </Link>
     );
   }
@@ -151,139 +250,146 @@ function Lead({ table, minute, moment }: { table: RoomTable; minute: number; mom
   const cost = (s.plan_json.cost ?? "").trim();
   const activity = activityWord(s.plan_json.event || s.summary);
   const day = dayWord(startsAt, minute);
+  const canJoin = !view.imIn && !!view.targetId;
+  const planHref = `/app/pods/${podId}/plan/${s.id}`;
 
   return (
     <Shared name={sharedName.plan(s.id)}>
-      <PlanHalo state={view.locked ? "locked" : "waiting"} radius={28} className="mt-s8 w-full max-w-[440px]">
-        <Link
-          href={href}
-          aria-label={`${name}: ${activity}, ${day} ${shortTime(startsAt)}${placeName ? `, ${placeName}` : ""}. ${view.going.length} of ${view.size} in. Open ${name}.`}
-          className="pressable glass block rounded-[28px] px-s6 pt-s6 pb-s4 outline-offset-4"
-        >
-          <span className="block text-[17px] leading-[1.3] font-semibold text-ink">{activity}</span>
-          <span className="block text-[17px] leading-[1.3] text-ink-2">{[placeName, cost].filter(Boolean).join(" · ")}</span>
-          <span className="mt-s6 flex min-h-[30px] items-center gap-s3">
-            {people.length > 0 ? (
-              <>
-                <DiscStack size={30} max={4} people={people.map((p) => ({ initial: p.name.slice(0, 1).toUpperCase(), tone: p.you ? "you" : table.hue, seed: p.name }))} />
-                <InCount n={view.going.length} of={view.size} locked={view.locked} className="text-[15px] text-ink" />
-              </>
-            ) : (
-              <span className="text-[15px] font-semibold text-ink">Be the first in</span>
-            )}
-          </span>
-          <span className="mt-s4 flex items-center gap-s2 border-t border-line pt-s3 text-label text-ink-2">
-            <Icon name="why" size={18} className="text-select" />
-            <span className="flex-1">{sourceLine(s.source)}</span>
-            <Icon name="arrow" size={20} className="text-ink" />
-          </span>
-        </Link>
+      <PlanHalo state={view.locked ? "locked" : "waiting"} radius={22} className="w-full">
+        <div className="glass rounded-[22px] p-s4 lg:p-s6">
+          <Link href={href} className="pressable flex items-center gap-s2 rounded-full outline-offset-2">
+            <PodOrb hue={table.hue} people={view.size} inCount={view.going.length} size={24} />
+            <span className="text-[15px] font-semibold text-ink">{name}</span>
+            <span className="text-[14px] text-ink-2">· {sourceLine(s.source)}</span>
+          </Link>
+          <Link
+            href={planHref}
+            aria-label={`${activity}, ${day} ${shortTime(startsAt)}${placeName ? `, ${placeName}` : ""}. Plan details.`}
+            className="pressable mt-s3 block rounded-[14px] outline-offset-2"
+          >
+            <span className="tabular block font-display text-[28px] leading-[1.1] font-semibold tracking-[-0.025em] text-ink lg:text-[32px]">
+              {day}, {shortTime(startsAt)}
+            </span>
+            <span className="mt-1 block text-[16px] leading-[1.35] text-ink">
+              {activity}
+              <span className="text-ink-2">{[placeName, cost].filter(Boolean).length ? ` · ${[placeName, cost].filter(Boolean).join(" · ")}` : ""}</span>
+            </span>
+          </Link>
+          <div className="mt-s4 flex flex-wrap items-center gap-x-s3 gap-y-s3 border-t border-line pt-s4">
+            <span className="flex min-w-0 flex-1 items-center gap-s2">
+              {people.length > 0 && <DiscStack size={28} max={4} people={people.map((p) => ({ initial: p.name.slice(0, 1).toUpperCase(), tone: p.you ? "you" : table.hue, seed: p.name }))} />}
+              {people.length > 0 ? (
+                <InCount n={view.going.length} of={view.size} locked={view.locked} className="text-[15px] whitespace-nowrap text-ink" />
+              ) : (
+                <span className="text-[15px] font-semibold text-ink">Be the first in</span>
+              )}
+            </span>
+            <span className="flex items-center gap-s2">
+              <Link href={planHref} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                Details
+              </Link>
+              {canJoin ? (
+                <Button size="sm" variant="spark" loading={actions.busy} onClick={() => view.targetId && void actions.rsvp(view.targetId, "going", { when: startsAt })}>
+                  I&apos;m in
+                </Button>
+              ) : (
+                <Link href={href} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                  <Icon name="talk" size={18} /> Talk
+                </Link>
+              )}
+            </span>
+          </div>
+        </div>
       </PlanHalo>
     </Shared>
   );
 }
 
-// ── your pods as orbs ───────────────────────────────────────────────────
+// ── needs you: one row per pod, its action in the row ────────────────────
 
-function PodOrbs({ tables, minute, widened, needs }: { tables: RoomTable[]; minute: number; widened: { podId: string; line: string } | null; needs: Set<string> }) {
-  const reduce = useReducedMotion();
-  const me = useMe();
-  const groups = [
-    { key: "interest", label: "Interests", list: tables.filter((t) => t.row.pod.type !== "community") },
-    { key: "community", label: "Community", list: tables.filter((t) => t.row.pod.type === "community") },
-  ].filter((g) => g.list.length);
-  let i = 0;
-  const closed = opensAfter(tables, minute);
+function NeedRow({ table, minute }: { table: RoomTable; minute: number }) {
+  const podId = table.row.pod.id;
+  const actions = usePlanActions(podId);
+  const p = table.row.plan;
+  const s = table.row.status;
+  const href = `/app/pods/${podId}`;
+  const line =
+    s === "needs_rsvp" && p
+      ? `${dayWord(p.startsAt, minute)} ${shortTime(p.startsAt)} · ${activityWord(p.s.plan_json.event || p.s.summary)} · ${p.going.length} of ${p.size} in`
+      : s === "vote_open"
+        ? "Pick a time for the next hangout"
+        : s === "checkin_due"
+          ? "Did you make it? Check in"
+          : "Would you run it back?";
   return (
-    <section className="pods-home-pods" aria-label="Your pods">
-      {groups.map((g) => (
-        <div key={g.key} className="min-w-0">
-          <h2 className="text-overline text-ink-2">{g.label}</h2>
-          <ul className="mt-s4 grid grid-cols-2 gap-s4 lg:gap-s6">
-            {g.list.map((t) => {
-              const k = i++;
-              const H = POD_SOLID[t.hue];
-              const dots = Math.min(10, t.people.length + 1);
-              const body = (
-                <>
-                  <Shared name={sharedName.pod(t.row.pod.id)}>
-                    <motion.span
-                      aria-hidden
-                      data-depth={Math.min(3, Math.max(1, t.held + 1))}
-                      className="pods-home-orb orb relative block shrink-0"
-                      style={{ ["--orb" as string]: H, ["--orb-wash" as string]: POD_WASH[t.hue]}}
-                      initial={reduce ? false : { scale: 0.6, opacity: 0 }}
-                      animate={{ scale: 1, opacity: t.open ? 1 : 0.5 }}
-                      transition={{ ...SNAPPY, delay: 0.1 + k * STAGGER * 2 }}
-                    >
-                      {/* the people: white dots inside the bubble, you in ember (the dot is the person, BRAND §1) */}
-                      {Array.from({ length: dots }, (_, d) => {
-                        const a = -Math.PI / 2 + (d / dots) * Math.PI * 2;
-                        const you = d === 0;
-                        return (
-                          <span
-                            key={d}
-                            data-nc
-                            className="absolute rounded-full"
-                            style={{
-                              width: you ? "15%" : "9%",
-                              height: you ? "15%" : "9%",
-                              left: `${50 + Math.cos(a) * 30}%`,
-                              top: `${50 + Math.sin(a) * 30}%`,
-                              transform: "translate(-50%,-50%)",
-                              color: you ? "var(--on-you)" : undefined,
-                              backgroundColor: you ? "var(--you)" : t.people[d - 1]?.in ? "var(--lit)" : "color-mix(in srgb, var(--lit) 55%, transparent)",
-                              backgroundImage: "var(--bead)",
-                              boxShadow: you ? "var(--shadow-bead)" : "0 1px 2px rgb(0 0 0 / .12)",
-                            }}
-                          >
-                            {you && me ? <span className="sr-only">You</span> : null}
-                          </span>
-                        );
-                      })}
-                      {needs.has(t.row.pod.id) && (
-                        <span className="absolute top-[4%] right-[4%] size-[18%] rounded-full bg-spark shadow-[0_0_0_2px_var(--lit)]" style={{ backgroundImage: "var(--bead)" }}>
-                          <span className="sr-only">Needs you</span>
-                        </span>
-                      )}
-                    </motion.span>
-                  </Shared>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[17px] leading-[1.2] font-semibold tracking-[-0.01em] text-ink [text-wrap:balance]">{t.row.name}</span>
-                    <span className="mt-1 block text-label text-ink-2">{tableState(t, minute, closed)}</span>
-                  </span>
-                </>
-              );
-              return (
-                <li key={t.row.pod.id}>
-                  {t.open ? (
-                    <Link href={`/app/pods/${t.row.pod.id}`} className="pressable flex flex-col items-start gap-s3 rounded-[28px] outline-offset-4 lg:flex-row lg:items-center lg:gap-s4">
-                      {body}
-                    </Link>
-                  ) : (
-                    <div className="flex flex-col items-start gap-s3 opacity-80 lg:flex-row lg:items-center lg:gap-s4">{body}</div>
-                  )}
-                  {widened?.podId === t.row.pod.id && (
-                      <motion.span
-                        className="glass mt-s2 flex items-start gap-s1 rounded-[14px] px-s3 py-s2 text-[13px] leading-[1.3] text-ink"
-                        data-widened-note
-                        initial={reduce ? false : { opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ ...GENTLE, delay: 0.8 }}
-                      >
-                        <WidenGlyph size={16} className="mt-px shrink-0 text-grove-text" />
-                        <span>{widened.line}</span>
-                      </motion.span>
-                    )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
-      <Link href="/app/discover" className="pods-home-more pressable flex min-h-11 items-center gap-s2 text-label font-semibold text-ink outline-offset-4">
-        <Icon name="add" size={20} /> More pods
+    <div className="flex min-h-16 items-center gap-s3 px-s4 py-s2">
+      <Link href={href} className="pressable flex min-w-0 flex-1 items-center gap-s3 outline-offset-2">
+        <PodOrb hue={table.hue} people={table.row.size} inCount={p?.going.length ?? 0} size={40} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[16px] font-semibold text-ink">{table.row.name}</span>
+          <span className="block truncate text-[14px] text-ink-2">{line}</span>
+        </span>
       </Link>
-    </section>
+      {s === "needs_rsvp" && p ? (
+        <Button size="sm" variant="spark" className="shrink-0" loading={actions.busy} onClick={() => void actions.rsvp(p.targetId, "going", { when: p.startsAt })}>
+          I&apos;m in
+        </Button>
+      ) : (
+        <Link href={href} className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "shrink-0")}>
+          {s === "vote_open" ? "Vote" : s === "checkin_due" ? "Check in" : "Open"}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+// ── pod activity ────────────────────────────────────────────────────────
+
+function Activity({ tables }: { tables: RoomTable[] }) {
+  const now = useClock(60_000);
+  const ids = tables.map((t) => t.row.pod.id).join(",");
+  const items = useDb(
+    useCallback(
+      (db) => {
+        const pods = ids.split(",").filter(Boolean);
+        return pods
+          .flatMap((pid) =>
+            (db.messages[pid] ?? [])
+              .filter((m) => m.kind === "text" && m.user_id && m.user_id !== db.me)
+              .slice(-4)
+              .map((m) => ({ id: m.id, podId: pid, who: firstName(db, m.user_id), text: m.text, at: m.created_at })),
+          )
+          .sort((a, b) => b.at.localeCompare(a.at))
+          .slice(0, 6);
+      },
+      [ids],
+    ),
+  );
+  const byId = Object.fromEntries(tables.map((t) => [t.row.pod.id, t]));
+  if (!items.length) {
+    return <p className="pods-card p-s4 text-[15px] text-ink-2">Nothing new in your pods yet. Say hi in Talk.</p>;
+  }
+  return (
+    <ul className="pods-card divide-y divide-line overflow-hidden">
+      {items.map((m) => {
+        const t = byId[m.podId];
+        return (
+          <li key={m.id}>
+            <Link href={`/app/pods/${m.podId}/chat`} className="pressable flex items-start gap-s3 px-s4 py-s3 outline-offset-[-2px] hover:bg-[color-mix(in_srgb,var(--ink)_3%,transparent)]">
+              <Disc initial={m.who.slice(0, 1).toUpperCase()} tone={t?.hue ?? "ember"} seed={m.who} size={32} />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-baseline justify-between gap-s2">
+                  <span className="truncate text-[14px] text-ink-2">
+                    <span className="font-semibold text-ink">{m.who}</span> in {t?.row.name}
+                  </span>
+                  <span className="shrink-0 text-[12px] text-ink-3">{formatRelative(m.at, now)}</span>
+                </span>
+                <span className="mt-0.5 line-clamp-2 block text-[15px] leading-[1.35] text-ink">{m.text}</span>
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

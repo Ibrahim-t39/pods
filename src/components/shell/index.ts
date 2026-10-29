@@ -10,3 +10,4 @@ export { chromeFor, transitionKey, shellTransitionKey, NESTED_LAYOUT_SECTIONS, t
 export { isTypingTarget } from "./shortcuts";
 export { CondensingHead, type CondensingHeadProps } from "./condensing-head";
 export { Daypart, daypartOf } from "./daypart";
+export { PageHeader, type PageHeaderProps } from "./page-header";

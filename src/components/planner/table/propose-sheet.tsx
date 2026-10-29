@@ -32,7 +32,7 @@ function nextDays(fromMs: number) {
   });
 }
 
-export function ProposeSheet({ m, open, onOpenChange }: { m: TableModel; open: boolean; onOpenChange: (o: boolean) => void }) {
+export function ProposeSheet({ m, open, onOpenChange, onAskAI }: { m: TableModel; open: boolean; onOpenChange: (o: boolean) => void; onAskAI?: () => void }) {
   const repo = useRepo();
   const venues = useStore((s) => s.db.venues);
   const budget = useStore((s) => s.db.config.planner.budgetMax);
@@ -85,8 +85,8 @@ export function ProposeSheet({ m, open, onOpenChange }: { m: TableModel; open: b
       title="Propose a hangout"
       footer={
         <div className="flex items-center justify-between gap-s4">
-          <span className="text-label text-ink-2" role={error ? "alert" : undefined}>
-            {error ?? ""}
+          <span className={`min-w-0 truncate text-label ${error ? "text-[var(--color-danger-text)]" : "text-ink-2"}`} role={error ? "alert" : undefined}>
+            {error ?? ([days.find((d) => d.date === day)?.label, TIMES.find((x) => x.h === time)?.label, places.find((v) => v.id === place) && placeWord(places.find((v) => v.id === place))].filter(Boolean).join(" · ") || "Pick a day, time and place")}
           </span>
           <Button size="lg" onClick={() => void send()} disabled={!ready} loading={busy}>
             Propose
@@ -95,6 +95,12 @@ export function ProposeSheet({ m, open, onOpenChange }: { m: TableModel; open: b
       }
     >
       <div className="pp">
+        {onAskAI && (
+          <button type="button" className="pp-ai pressable" onClick={onAskAI}>
+            <span className="pp-ai-k">Let AI plan it</span>
+            <span className="pp-ai-s">Around when the pod is free, at a public place</span>
+          </button>
+        )}
         <Input label="What" value={what} onChange={(e) => setWhat(e.target.value)} maxLength={80} placeholder={m.pod.topic_key === "basketball" ? "Pickup run" : "Something to do"} />
         <fieldset className="pp-group">
           <legend className="pp-k">Day</legend>

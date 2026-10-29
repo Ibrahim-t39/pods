@@ -241,11 +241,11 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
           aria-label={`${activity}, ${day} ${shortTime(startsAt)}${placeName ? `, ${placeName}` : ""}${cost ? `, ${cost}` : ""}. Open the plan.`}
           className="pressable glass block rounded-[24px] px-s6 pt-s4 pb-s4 outline-offset-4"
         >
-          <span className="block text-overline text-ink-2">{live ? `${title} · now` : title}</span>
-          <span className="mt-s2 block font-display text-[clamp(34px,10vw,44px)] leading-[1] font-semibold tracking-[-0.03em] text-ink tabular">
+          <span className="block text-overline text-ink-2">{live ? `Hangout #${round} · now` : `Hangout #${round}`}</span>
+          <span className="mt-s2 block font-display text-[clamp(28px,8vw,34px)] leading-[1.05] font-semibold tracking-[-0.03em] text-ink tabular">
             {day}, {shortTime(startsAt)}.
           </span>
-          <span className="mt-s3 block text-[17px] leading-[1.35] font-semibold text-ink">{activity}</span>
+          <span className="mt-s2 block text-[17px] leading-[1.35] font-semibold text-ink">{activity}</span>
           <span className="block text-[17px] leading-[1.35] text-ink-2">
             {[longPlace ? place : placeName, cost].filter(Boolean).join(" · ")}
           </span>

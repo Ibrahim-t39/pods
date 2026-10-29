@@ -10,15 +10,16 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Drawer } from "vaul";
 import { Dialog } from "radix-ui";
 import { SNAPPY, type PodHueKey } from "@/components/brand";
-import { POD_SOLID, personColor, YOU_COLOR } from "@/components/brand/disc";
+import { PERSON_COLORS, POD_SOLID, personColor, YOU_COLOR } from "@/components/brand/disc";
 import { Icon } from "@/components/icons";
 import { notify } from "@/components/ui/toast";
-import { useIsDesktop } from "@/components/ui/use-media-query";
+import { useIsDesktop, useMediaQuery } from "@/components/ui/use-media-query";
 import { ReportSheet } from "@/components/safety/report-sheet";
 import { usePlanActions } from "@/components/planner/use-plan-actions";
 import { cn } from "@/lib/cn";
@@ -118,6 +119,12 @@ function Face({ name, you, size = 28 }: { name: string; you?: boolean; size?: nu
   );
 }
 
+/** A person's name in a text-safe shade of their disc colour, so runs in a busy group read at a glance. */
+const NAME_INK = ["var(--color-signal-text)", "var(--color-ember-text)", "var(--color-grove-text)"];
+function nameInk(name: string) {
+  return NAME_INK[PERSON_COLORS.indexOf(personColor(name))] ?? "var(--ink-2)";
+}
+
 /** "Chanda, Ama, Malik +5": the laptop dock names the people beside the talk (R11). */
 function memberLine(people: { name: string; you: boolean }[]) {
   const shown = people.slice(0, 3).map((p) => p.name);
@@ -136,6 +143,15 @@ type TalkProps = { open: boolean; onOpenChange: (o: boolean) => void; podId: str
 /** Phone: a full-height sheet (drag down to close). 768-1279: a right-hand sheet. Solid, never glass (R1). */
 export function TalkSheet(props: TalkProps) {
   const desktop = useIsDesktop();
+  const page = useChatPage();
+  const { open, onOpenChange } = props;
+  // leaving /chat on a laptop: the page closes, so the sheet it stood in for must not pop open over the table
+  const was = useRef(page);
+  useEffect(() => {
+    if (was.current && !page && open) onOpenChange(false);
+    was.current = page;
+  }, [page, open, onOpenChange]);
+  if (page) return null;
   const body = <TalkBody {...props} where="sheet" />;
   if (desktop)
     return (
@@ -175,10 +191,27 @@ export function TalkSheet(props: TalkProps) {
 
 /** ≥1280: Talk docked beside the table as the context panel (R11), always open, no scrim. */
 export function TalkPanel({ podId, podName, hue, focusKey, onMembers }: { podId: string; podName: string; hue: PodHueKey; focusKey: number; onMembers?: () => void }) {
+  if (useChatPage()) return null;
   return (
     <aside aria-label={`${podName} talk`} className="pods-talk-dock overflow-clip bg-lit shadow-[0_0_0_1px_var(--line),var(--shadow-float)]">
       <TalkBody open onOpenChange={() => undefined} podId={podId} podName={podName} hue={hue} focusKey={focusKey} onMembers={onMembers} where="dock" />
     </aside>
+  );
+}
+
+/** True on /app/pods/[id]/chat at laptop width (≥1024), where the chat is its own page (chat-room.tsx), not a sheet. */
+export function useChatPage() {
+  const path = usePathname() ?? "";
+  const wide = useMediaQuery("(min-width: 1024px)");
+  return wide && /^\/app\/pods\/[^/]+\/chat\/?$/.test(path);
+}
+
+/** Two arrows out to the corners: open the chat as its own page. */
+function ExpandGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M14 5h5v5M10 19H5v-5M19 5l-6 6M5 19l6-6" />
+    </svg>
   );
 }
 
@@ -190,7 +223,7 @@ type Row =
 
 type MenuState = { id: string; top: number; bottom: number; left: number; right: number; mine: boolean; text: string; who: string; userId: string | null } | null;
 
-function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers, where }: TalkProps & { focusKey?: number; where: "sheet" | "dock" }) {
+export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers, where }: TalkProps & { focusKey?: number; where: "sheet" | "dock" | "page" }) {
   const repo = useRepo();
   const router = useRouter();
   const reduce = useReducedMotion();
@@ -376,13 +409,19 @@ function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers
     }
   };
 
+  const spoke = rows.some((r) => r.who === meId);
   const typingName = typing && typing.userId !== meId ? (names[typing.userId] ?? null) : null;
   const generating = actions.genKind !== null;
   const genStep = actions.genSteps[actions.genSteps.length - 1]?.label;
 
   // ── header (R10) ──
   const header = (
-    <header className={cn("flex shrink-0 items-center gap-s3 border-b border-line", where === "dock" ? "h-[72px] px-s6" : "h-14 pr-s2 pl-s4 md:h-16 md:pl-s6")}>
+    <header className={cn("flex shrink-0 items-center gap-s3 border-b border-line bg-lit", where === "dock" ? "h-[72px] pr-s4 pl-s6" : where === "page" ? "h-16 px-s4" : "h-14 pr-s2 pl-s4 md:h-16 md:pl-s6")}>
+      {where === "page" && (
+        <Link href={`/app/pods/${podId}`} aria-label={`Back to ${podName}`} className="pressable grid size-10 shrink-0 place-items-center rounded-full text-ink hover:bg-sunken">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 5l-7 7 7 7" /></svg>
+        </Link>
+      )}
       {where === "sheet" && (
         <button type="button" aria-label="Back" onClick={() => onOpenChange(false)} className="pressable -ml-s2 grid size-11 shrink-0 place-items-center rounded-full text-ink hover:bg-sunken md:hidden">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 5l-7 7 7 7" /></svg>
@@ -399,10 +438,20 @@ function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-[17px] leading-[1.2] font-semibold tracking-[-0.01em] text-ink">{podName}</span>
           <span className="truncate text-[13px] leading-[1.3] text-ink-2" aria-live="polite">
-            {typingName ? `${typingName} is typing…` : where === "dock" ? memberLine(people) : `${people.length} members`}
+            {typingName ? `${typingName} is typing…` : where === "sheet" ? `${people.length} members` : memberLine(people)}
           </span>
         </span>
       </button>
+      {where !== "page" && (
+        <Link
+          href={`/app/pods/${podId}/chat`}
+          aria-label="Open chat full page"
+          title="Open full page"
+          className={cn("pressable size-10 shrink-0 place-items-center rounded-full text-ink-2 hover:bg-sunken hover:text-ink", where === "dock" ? "grid" : "hidden lg:grid")}
+        >
+          <ExpandGlyph />
+        </Link>
+      )}
       {where === "sheet" && (
         <button type="button" aria-label="Close" onClick={() => onOpenChange(false)} className="pressable hidden size-11 shrink-0 place-items-center md:grid rounded-full text-ink hover:bg-sunken">
           <Icon name="close" size={22} />
@@ -450,7 +499,7 @@ function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers
         if (bottom !== atBottom) setAtBottom(bottom);
         if (bottom && fresh) setFresh(0);
       }}
-      className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain bg-paper", where === "dock" ? "px-s6" : "px-s4 md:px-s6")}
+      className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain bg-paper", where === "dock" ? "px-s6" : where === "page" ? "px-[max(var(--s6),calc((100%-760px)/2))]" : "px-s4 md:px-s6")}
     >
       <div role="log" aria-live="polite" aria-label={`${podName} messages`} className="flex min-h-full flex-col justify-end pt-s6 pb-s4">
         {!rows.length && !generating && (
@@ -462,11 +511,21 @@ function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers
                 </span>
               ))}
             </span>
-            <p className="text-[22px] leading-[1.2] font-semibold tracking-[-0.02em] text-ink">Say hi to {podName}.</p>
+            <span className="flex flex-col gap-s1">
+              <p className="text-[20px] leading-[1.2] font-semibold tracking-[-0.02em] text-ink">Say hi to {podName}.</p>
+              <p className="text-[14px] leading-[1.4] text-ink-2">{people.length} people, one chat. The first hello is the hardest.</p>
+            </span>
             {podOpen && !paused && (
-              <button type="button" onClick={() => void send("Hey everyone 👋")} className="pressable h-11 rounded-full bg-lit px-s6 text-[15px] font-semibold text-ink shadow-[inset_0_0_0_1px_var(--line-2)]">
-                Wave 👋
-              </button>
+              <span className="flex flex-wrap justify-center gap-s2">
+                <button type="button" onClick={() => void send("Hey everyone 👋")} className="pressable h-11 rounded-full bg-select px-s6 text-[15px] font-semibold text-on-select">
+                  Wave 👋
+                </button>
+                {ai && (
+                  <button type="button" disabled={generating} onClick={ai.run} className="pressable h-11 rounded-full bg-lit px-s6 text-[15px] font-semibold text-ink shadow-[inset_0_0_0_1px_var(--line-2)] disabled:opacity-40">
+                    {ai.label}
+                  </button>
+                )}
+              </span>
             )}
           </div>
         )}
@@ -484,7 +543,11 @@ function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers
           const animate = !!snap && !snap.keys.has(r.key) && !reduce;
           return (
             <div key={r.key} className={cn(first ? (i === 0 || newDay ? "" : "mt-s3") : "mt-0.5")}>
-              {newDay && <p className={cn("pb-s3 text-center text-[12px] font-medium tracking-[0.02em] text-ink-3", i > 0 && "pt-s6")}>{day}</p>}
+              {newDay && (
+                <p className={cn("flex justify-center pb-s3", i > 0 && "pt-s6")}>
+                  <span className="rounded-full bg-lit px-s3 py-1 text-[12px] leading-none font-semibold text-ink-2 shadow-[inset_0_0_0_1px_var(--line)]">{day}</span>
+                </p>
+              )}
               {r.key === unreadFrom && (
                 <div className="flex items-center gap-s3 pt-s2 pb-s3" aria-label="New messages">
                   <span className="h-px flex-1 bg-select/40" />
@@ -521,7 +584,12 @@ function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers
                 ) : r.m.kind === "checkin_prompt" ? (
                   <CheckInLine hangoutId={r.m.ref_id} />
                 ) : (
-                  <EventLine text={r.m.text} kind={r.m.kind} />
+                  <EventLine
+                    text={r.m.text}
+                    kind={r.m.kind}
+                    replies={r.m.kind === "host" && !spoke && podOpen && !paused ? r.m.quick_replies : undefined}
+                    onReply={(t) => void send(t)}
+                  />
                 )}
               </motion.div>
             </div>
@@ -555,7 +623,7 @@ function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers
   // ── composer (R9) ──
   const locked = paused || !podOpen;
   const composer = polling ? (
-    <div className={cn("shrink-0 border-t border-line bg-lit pt-s3", where === "dock" ? "px-s6 pb-s6" : "px-s4 pb-[calc(12px+env(safe-area-inset-bottom))] md:px-s6 md:pb-s6")}>
+    <div className={cn("shrink-0 border-t border-line bg-lit pt-s3", where === "page" ? "px-[max(var(--s6),calc((100%-760px)/2))] pb-s6" : where === "dock" ? "px-s6 pb-s6" : "px-s4 pb-[calc(12px+env(safe-area-inset-bottom))] md:px-s6 md:pb-s6")}>
       <PollComposer
         onCancel={() => setPolling(false)}
         onPost={async (q, opts) => {
@@ -566,7 +634,7 @@ function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, onMembers
       />
     </div>
   ) : (
-    <div className={cn("relative shrink-0 border-t border-line bg-lit pt-s2", where === "dock" ? "px-s4 pb-s4" : "px-s3 pb-[calc(8px+env(safe-area-inset-bottom))] md:px-s4 md:pb-s4")}>
+    <div className={cn("relative shrink-0 border-t border-line bg-lit pt-s2", where === "page" ? "px-[max(var(--s4),calc((100%-776px)/2))] pt-s3 pb-s4" : where === "dock" ? "px-s4 pb-s4" : "px-s3 pb-[calc(8px+env(safe-area-inset-bottom))] md:px-s4 md:pb-s4")}>
       <AnimatePresence initial={false}>
         {replyTo && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.16 }} className="overflow-hidden">
@@ -941,7 +1009,7 @@ function TextLine({
       <div className={cn("flex max-w-[78%] min-w-0 flex-col md:max-w-[72%]", mine ? "items-end" : "items-start")}>
         {!mine && first && (
           <p className="mb-1 flex items-baseline gap-s2 px-s3 text-[13px] leading-none">
-            <span className="font-semibold text-ink-2">{who}</span>
+            <span className="font-semibold" style={{ color: nameInk(who) }}>{who}</span>
             <span className="tabular text-ink-3">{shortTime(m.created_at)}</span>
           </p>
         )}
@@ -996,6 +1064,14 @@ function TextLine({
                 </motion.button>
               );
             })}
+            <button
+              type="button"
+              aria-label="Add a reaction"
+              onClick={() => bubble.current && onMenu(bubble.current)}
+              className="relative grid h-6 w-7 place-items-center rounded-full bg-lit text-ink-3 shadow-[0_0_0_2px_var(--paper),inset_0_0_0_1px_var(--line)] after:absolute after:-inset-2.5 after:content-[''] hover:text-ink max-md:hidden"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
+            </button>
           </span>
         )}
         {m.delivery === "failed" ? (
@@ -1099,7 +1175,7 @@ function PhotoLine({ mem, mine, first, last, who, time }: { mem: Memory; mine: b
       <figure className={cn("flex max-w-[68%] flex-col", mine ? "items-end" : "items-start")}>
         {!mine && first && (
           <figcaption className="mb-1 flex items-baseline gap-s2 px-s3 text-[13px] leading-none">
-            <span className="font-semibold text-ink-2">{who}</span>
+            <span className="font-semibold" style={{ color: nameInk(who) }}>{who}</span>
             <span className="tabular text-ink-3">{time}</span>
           </figcaption>
         )}
@@ -1113,7 +1189,7 @@ function PhotoLine({ mem, mine, first, last, who, time }: { mem: Memory; mine: b
 
 // ── events and cards inline (R8) ────────────────────────────────────────────────────────────────────────
 
-function EventLine({ text, kind }: { text: string; kind: Message["kind"] }) {
+function EventLine({ text, kind, replies, onReply }: { text: string; kind: Message["kind"]; replies?: string[]; onReply?: (t: string) => void }) {
   const again = kind === "run_it_back";
   if (kind === "system" && /locked/i.test(text))
     return (
@@ -1125,9 +1201,20 @@ function EventLine({ text, kind }: { text: string; kind: Message["kind"] }) {
       </p>
     );
   return (
-    <p className="mx-auto my-s1 max-w-[40ch] text-center text-[13px] leading-[1.45] text-ink-2">
-      {again ? <span className="inline-flex items-center gap-s1 rounded-full bg-lit px-s3 py-1 font-semibold text-ink shadow-[inset_0_0_0_1px_var(--line)]"><Icon name="again" size={16} />{text}</span> : text}
-    </p>
+    <div className="my-s1 flex flex-col items-center gap-s3">
+      <p className="mx-auto max-w-[44ch] text-center text-[13px] leading-[1.45] text-ink-2">
+        {again ? <span className="inline-flex items-center gap-s1 rounded-full bg-lit px-s3 py-1 font-semibold text-ink shadow-[inset_0_0_0_1px_var(--line)]"><Icon name="again" size={16} />{text}</span> : text}
+      </p>
+      {replies && replies.length > 0 && onReply && (
+        <span className="flex flex-wrap justify-center gap-s2">
+          {replies.map((t) => (
+            <button key={t} type="button" onClick={() => onReply(t)} className="pressable h-9 rounded-full bg-lit px-s4 text-[14px] font-semibold text-select shadow-[inset_0_0_0_1px_var(--line-2)] hover:bg-sunken">
+              {t}
+            </button>
+          ))}
+        </span>
+      )}
+    </div>
   );
 }
 

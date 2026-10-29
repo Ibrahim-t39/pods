@@ -1,38 +1,113 @@
-// /app/plans: your week, then the next hangout as the lead object, then what's later and what's past (PLATFORM_SPEC §F4).
-// QA core r1: same title scale and gutter as Pods, Inbox and Discover (the Frame); "what you need to do" first; every row
-// carries its state (Locked · In · Planned · Went) and its one quick action; a laptop uses the width (lead + week on the
-// left, the list on the right) instead of a narrow list in a void.
-//   week    seven day circles from today; a day with a plan fills with its pod's colour, a locked one wears a ring
-//   lead    pod · title · when and where · "3 of 8 in" · I'm in (or Can't make it) · Directions · Add to calendar
-//   later   one row each: the pod's bead, title, when, state, and I'm in when it still needs you
-//   past    quiet rows with the outcome
+// /app/plans: your hangouts as an agenda (PLATFORM_SPEC §F4). Redesign r2 (founder: "wasted space, needs a relook"):
+//   head     compact "Plans" + one status line, Upcoming / Past switch on the right (no poster headline)
+//   agenda   grouped "This week" / "Later": a date block, the pod, title, time and place, a status pill
+//            (Needs you · 1 more to lock · You're in · Locked · Vote open), the seat count, and the action right on the row
+//            (I'm in, Directions, Calendar). The row opens the plan's details (/app/pods/<pod>/plan/<id>).
+//   aside    laptop: the next hangout in full (who's in, what to bring, rain backup, why) beside the agenda
+//   past     Went / Missed, with Check in or Vote on the next one while those are open
+//   how      one quiet line of the loop (proposed → 4 in locks it → check in → vote) so the statuses read
 "use client";
 
 import Link from "next/link";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { GENTLE, PlanHalo, SNAPPY, STAGGER } from "@/components/brand";
-import { POD_SOLID, POD_WASH, type PodHueKey } from "@/components/brand/disc";
+import { SNAPPY, STAGGER, Stage } from "@/components/brand";
+import { POD_SOLID, type PodHueKey } from "@/components/brand/disc";
 import { Icon } from "@/components/icons";
-import { Frame } from "@/components/pods/frame";
-import { roomTables, shortDay, shortTime } from "@/components/pods/model";
+import { roomTables } from "@/components/pods/model";
+import { Chrome } from "@/components/shell";
+import { PageSkeleton } from "@/components/shell/store-gate";
 import { Button } from "@/components/ui/button";
+import { Segmented } from "@/components/ui/segmented";
 import { notify } from "@/components/ui/toast";
-import { useDb, useRepo } from "@/lib/db/hooks";
+import { useDb, useHydrated, useRepo } from "@/lib/db/hooks";
 import { useStore } from "@/lib/db/store";
 import { directionsUrl } from "@/lib/platform/directions";
 import { downloadIcs, icsFilename, icsForPlan } from "@/lib/platform/ics";
 import { myPlans, type PlanItem } from "@/lib/platform/selectors";
 import { nowISO, useClock } from "@/lib/time/clock";
-import { toChicagoISO } from "@/lib/time/tz";
+import { TZ, toChicagoISO } from "@/lib/time/tz";
+import type { DbState } from "@/lib/types";
 import { formatInTimeZone } from "date-fns-tz";
-import { TZ } from "@/lib/time/tz";
 
-function stateWord(p: PlanItem): string {
-  if (p.locked) return p.me === "going" ? "Locked · you're in" : "Locked";
-  if (p.me === "going") return "In";
-  if (p.me === "not_going") return "Can't";
-  return "Planned";
+type Tab = "upcoming" | "past";
+type Status = { key: "needs" | "lock" | "in" | "locked" | "vote" | "went" | "missed" | "checkin" | "out"; label: string };
+
+interface Extra {
+  size: number;
+  threshold: number;
+  names: string[];
+  bring: string[];
+  reason: string;
+  cost: string;
+  rain: string | null;
+  vote: boolean;
+  checkinOpen: boolean;
+}
+
+const time = (iso: string) => formatInTimeZone(iso, TZ, "h:mmaaa").replace(":00", "");
+const span = (p: PlanItem) => `${time(p.starts_at)}–${time(p.ends_at)}`;
+const place = (p: PlanItem) => (p.venue ? (p.venue.short_name ?? p.venue.name) : "A public place");
+const titleOf = (p: PlanItem) => (p.venue ? p.title.replace(/\s+at\s+.*$/i, "") : p.title);
+const planHref = (p: PlanItem) => `/app/pods/${p.podId}/plan/${p.id}`;
+
+function extrasFor(db: DbState, items: PlanItem[], nowMs: number): Record<string, Extra> {
+  const threshold = db.config.planner.lockThreshold;
+  const out: Record<string, Extra> = {};
+  for (const p of items) {
+    const s = db.hangouts[p.id] ? db.suggestions[db.hangouts[p.id].suggestion_id] : db.suggestions[p.id];
+    const members = db.memberships.filter((m) => m.pod_id === p.podId && !m.left_at);
+    const names = db.rsvps
+      .filter((r) => r.hangout_id === p.id && r.status === "going")
+      .map((r) => (r.user_id === db.me ? "You" : db.users[r.user_id]?.nickname?.trim() || db.users[r.user_id]?.first_name || ""))
+      .filter(Boolean);
+    const open = Object.values(db.votes).some((v) => v.pod_id === p.podId && v.status === "open");
+    const roundSize = !p.locked && s ? Object.values(db.suggestions).filter((x) => x.pod_id === p.podId && x.round === s.round && x.status !== "replaced").length : 0;
+    const ended = Date.parse(p.ends_at);
+    out[p.id] = {
+      size: Math.max(members.length, p.going),
+      threshold,
+      names,
+      bring: s?.plan_json.bring ?? [],
+      reason: (s?.plan_json.reason ?? "").replace(/\.$/, ""),
+      cost: /^free\b/i.test(s?.plan_json.cost ?? "") ? "Free" : (s?.plan_json.cost ?? "").replace(/\.$/, ""),
+      rain: p.venue?.indoor ? "Indoors already" : p.rainVenue ? `Moves to ${p.rainVenue.short_name ?? p.rainVenue.name}` : null,
+      vote: open && (roundSize > 1 || p.kind === "hangout"),
+      checkinOpen: p.kind === "hangout" && p.me === "going" && !p.checkedIn && nowMs >= ended - 30 * 60_000 && nowMs - ended < 24 * 3_600_000,
+    };
+  }
+  return out;
+}
+
+function statusOf(p: PlanItem, x: Extra | undefined, past: boolean): Status {
+  if (past) return x?.checkinOpen ? { key: "checkin", label: "Check in" } : p.checkedIn ? { key: "went", label: "Went" } : { key: "missed", label: p.me === "going" ? "Not checked in" : "Missed" };
+  if (x?.vote && !p.locked) return { key: "vote", label: "Vote open" };
+  if (p.locked) return { key: "locked", label: p.me === "going" ? "Locked · you're in" : "Locked" };
+  if (p.me === "going") return { key: "in", label: "You're in" };
+  if (p.me === "not_going") return { key: "out", label: "Can't make it" };
+  const left = x ? Math.max(0, x.threshold - p.going) : 0;
+  return left > 0 ? { key: "lock", label: `${left} more to lock` } : { key: "needs", label: "Needs you" };
+}
+
+const PILL: Record<Status["key"], string> = {
+  needs: "bg-[var(--color-warning-soft)] text-[var(--color-warning-text)] shadow-[inset_0_0_0_1px_var(--color-warning-border)]",
+  lock: "bg-[var(--color-warning-soft)] text-[var(--color-warning-text)] shadow-[inset_0_0_0_1px_var(--color-warning-border)]",
+  vote: "bg-[var(--color-info-soft)] text-[var(--color-info-text)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-info-text)_25%,transparent)]",
+  in: "bg-[var(--color-success-soft)] text-[var(--color-success-text)] shadow-[inset_0_0_0_1px_var(--color-success-border)]",
+  locked: "bg-select text-on-select",
+  went: "bg-[var(--color-success-soft)] text-[var(--color-success-text)]",
+  checkin: "bg-select text-on-select",
+  missed: "bg-sunken text-ink-2",
+  out: "bg-sunken text-ink-2",
+};
+
+function Pill({ s }: { s: Status }) {
+  return (
+    <span className={`inline-flex h-6 shrink-0 items-center gap-1 rounded-full px-s2 text-[12px] leading-none font-semibold whitespace-nowrap ${PILL[s.key]}`}>
+      {s.key === "locked" && <Icon name="locked" size={12} />}
+      {s.label}
+    </span>
+  );
 }
 
 function useActions() {
@@ -40,6 +115,7 @@ function useActions() {
   const rsvp = async (p: PlanItem, s: "going" | "not_going") => {
     const r = await repo.rsvp(p.id, s);
     if (!r.ok) return notify.error("Not sent.");
+    if (s === "going" && r.data.locked) return notify.success(`Locked. ${p.podName} is on.`);
     notify(s === "going" ? `You're in. ${p.podName}.` : "Seat given back.", { undo: () => void repo.rsvp(p.id, s === "going" ? "not_going" : "going") });
   };
   const calendar = (p: PlanItem) => {
@@ -54,182 +130,299 @@ function useActions() {
 }
 
 export function PlansScreen() {
+  const hydrated = useHydrated();
   const now = useClock(60_000);
   const t = now.getTime();
   const { upcoming, past } = useDb(useCallback((db) => myPlans(db, t), [t]));
   const hues = useDb(useCallback((db) => Object.fromEntries(roomTables(db, t).map((r) => [r.row.pod.id, r.hue])) as Record<string, PodHueKey>, [t]));
-  const sizes = useDb(useCallback((db) => Object.fromEntries(upcoming.map((p) => [p.podId, db.memberships.filter((m) => m.pod_id === p.podId && !m.left_at).length])), [upcoming]));
-  const lead = upcoming[0] ?? null;
-  const later = upcoming.slice(1);
+  const extra = useDb(useCallback((db) => extrasFor(db, [...upcoming, ...past], t), [upcoming, past, t]));
+  const [tab, setTab] = useState<Tab>("upcoming");
+  if (!hydrated) return <PageSkeleton />;
+
   const hueOf = (id: string): PodHueKey => hues[id] ?? "ember";
+  const weekEnd = t + 7 * 86_400_000;
+  const thisWeek = upcoming.filter((p) => Date.parse(p.starts_at) < weekEnd);
+  const later = upcoming.filter((p) => Date.parse(p.starts_at) >= weekEnd);
+  const lead = upcoming[0] ?? null;
+  const needs = upcoming.filter((p) => !p.locked && p.me !== "going" && p.me !== "not_going").length;
+  const summary = !upcoming.length
+    ? "Nothing planned right now"
+    : [`${upcoming.length} coming up`, needs ? `${needs} need${needs === 1 ? "s" : ""} your answer` : "all answered"].join(" · ");
 
   return (
-    <Frame over="Plans" line={lead ? "Your week." : "Nothing planned yet."} wide>
-      <div className="grid gap-s12 lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)] lg:gap-x-s16">
-        <div className="flex min-w-0 flex-col gap-s8">
-          <Week upcoming={upcoming} now={t} hueOf={hueOf} />
-          {lead ? (
-            <Lead p={lead} now={t} hue={hueOf(lead.podId)} size={sizes[lead.podId] ?? 0} />
-          ) : (
-            <Link href="/app/pods" className="pressable flex min-h-16 items-center gap-s3 border-y border-line text-[17px] font-semibold text-ink outline-offset-[-2px]">
-              <span className="flex-1">Your pods plan the first one</span>
-              <Icon name="arrow" size={20} />
-            </Link>
-          )}
-        </div>
-        <div className="flex min-w-0 flex-col gap-s8">
-          {later.length > 0 && (
-            <section aria-label="Later">
-              <h2 className="text-overline text-ink-2">Later</h2>
-              <ul className="mt-s3 border-t border-line">
-                {later.map((p, i) => (
-                  <PlanRow key={p.id} p={p} now={t} hue={hueOf(p.podId)} i={i} />
-                ))}
-              </ul>
-            </section>
-          )}
-          <section aria-label="Past">
-            <h2 className="text-overline text-ink-2">Past</h2>
-            {past.length ? (
-              <ul className="mt-s3 border-t border-line">
-                {past.map((p, i) => (
-                  <PlanRow key={p.id} p={p} now={t} hue={hueOf(p.podId)} i={i} past />
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-s3 border-t border-line pt-s4 text-label text-ink-2">Your hangouts land here after they happen.</p>
-            )}
-          </section>
-        </div>
-      </div>
-    </Frame>
-  );
-}
+    <>
+      <Stage light="paper" />
+      <div className="min-h-[100dvh] pb-[calc(var(--s12)+var(--shell-bottom,0px)+env(safe-area-inset-bottom))]">
+        <Chrome left="mark" right="none" className="lg:hidden" />
+        <div className="mx-auto w-full max-w-[1280px] px-gutter pt-s4 lg:px-s12 lg:pt-s12">
+          <header className="flex flex-wrap items-end justify-between gap-x-s6 gap-y-s4">
+            <div className="min-w-0">
+              <h1 className="text-[28px] leading-[34px] font-semibold tracking-[-0.025em] text-ink lg:text-[32px] lg:leading-[38px]">Plans</h1>
+              <p className="mt-s1 text-[15px] leading-[20px] text-ink-2">{summary}</p>
+            </div>
+            <Segmented
+              label="Show"
+              size="sm"
+              value={tab}
+              onChange={setTab}
+              options={[
+                { value: "upcoming", label: "Upcoming", count: upcoming.length },
+                { value: "past", label: "Past", count: past.length },
+              ]}
+            />
+          </header>
 
-/** Seven day circles from today. A day with a plan fills with its pod's colour; a locked day wears a ring. */
-function Week({ upcoming, now, hueOf }: { upcoming: PlanItem[]; now: number; hueOf: (id: string) => PodHueKey }) {
-  const reduce = useReducedMotion();
-  const today = toChicagoISO(now).slice(0, 10);
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const iso = toChicagoISO(now + i * 86_400_000);
-    const date = iso.slice(0, 10);
-    const plan = upcoming.find((p) => toChicagoISO(Date.parse(p.starts_at)).slice(0, 10) === date) ?? null;
-    return { date, iso, plan };
-  });
-  return (
-    <ol className="grid grid-cols-7 gap-s1" aria-label="This week">
-      {days.map((d, i) => {
-        const H = d.plan ? POD_SOLID[hueOf(d.plan.podId)] : null;
-        const label = `${formatInTimeZone(d.iso, TZ, "EEEE")}${d.plan ? `: ${d.plan.podName} ${shortTime(d.plan.starts_at)}${d.plan.locked ? ", locked" : ""}` : ""}`;
-        return (
-          <motion.li
-            key={d.date}
-            aria-label={label}
-            className="flex flex-col items-center gap-s1"
-            initial={reduce ? false : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...SNAPPY, delay: i * STAGGER * 0.6 }}
-          >
-            <span aria-hidden className={`text-[12px] font-semibold ${d.date === today ? "text-ink" : "text-ink-2"}`}>
-              {formatInTimeZone(d.iso, TZ, "EEEEE")}
-            </span>
-            <span
-              aria-hidden
-              className={`tabular grid aspect-square w-full max-w-11 place-items-center rounded-full text-[15px] font-semibold ${d.plan ? "orb text-ink" : "text-ink-2"}`}
-              style={
-                d.plan && H
-                  ? { ["--orb" as string]: H, ["--orb-wash" as string]: POD_WASH[hueOf(d.plan.podId)], boxShadow: d.plan.locked ? `0 0 0 2px var(--stage), 0 0 0 3.5px ${H}` : undefined }
-                  : { boxShadow: d.date === today ? "inset 0 0 0 1.5px var(--ink)" : "inset 0 0 0 1px var(--line)" }
-              }
-            >
-              {formatInTimeZone(d.iso, TZ, "d")}
-            </span>
-          </motion.li>
-        );
-      })}
-    </ol>
-  );
-}
-
-/** The next hangout: everything you need to act on it, in one object. */
-function Lead({ p, now, hue, size }: { p: PlanItem; now: number; hue: PodHueKey; size: number }) {
-  const { rsvp, calendar } = useActions();
-  const place = p.venue ? (p.venue.short_name ?? p.venue.name) : null;
-  return (
-    <motion.section aria-label="Next" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={GENTLE}>
-      <PlanHalo state={p.locked ? "locked" : "waiting"} radius={28} className="w-full">
-        <div className="glass rounded-[28px] px-s6 pt-s6 pb-s5">
-          <Link href={`/app/pods/${p.podId}`} className="pressable block rounded-[16px] outline-offset-4">
-            <span className="flex items-center gap-s2 text-label text-ink-2">
-              <span aria-hidden className="orb size-4 shrink-0" style={{ ["--orb" as string]: POD_SOLID[hue], ["--orb-wash" as string]: POD_WASH[hue] }} />
-              {p.podName} · {stateWord(p)}
-            </span>
-            <span className="mt-s2 block text-[24px] leading-[1.15] font-semibold tracking-[-0.02em] text-ink [text-wrap:balance]">{place ? p.title.replace(/\s+at\s+.*$/i, "") : p.title}</span>
-            <span className="tabular mt-s2 block text-[17px] text-ink-2">
-              {shortDay(p.starts_at, now)} {shortTime(p.starts_at)}
-              {place ? ` · ${place}` : ""}
-            </span>
-            <span className="tabular mt-s4 block text-[15px] font-semibold text-ink">
-              {p.going} of {Math.max(size, p.going)} in
-            </span>
-          </Link>
-          <div className="mt-s6 mb-s2 flex flex-wrap items-center gap-s2">
-            {p.me === "going" ? (
-              <Button variant="secondary" size="sm" onClick={() => void rsvp(p, "not_going")}>
-                Can&apos;t make it
-              </Button>
-            ) : (
-              <Button size="sm" onClick={() => void rsvp(p, "going")}>
-                I&apos;m in
-              </Button>
+          <div className="mt-s6 grid gap-s8 lg:mt-s8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:gap-s10">
+            <div className="flex min-w-0 flex-col gap-s8">
+              {tab === "upcoming" ? (
+                upcoming.length ? (
+                  <>
+                    {thisWeek.length > 0 && <Group label="This week" items={thisWeek} extra={extra} hueOf={hueOf} now={t} />}
+                    {later.length > 0 && <Group label="Later" items={later} extra={extra} hueOf={hueOf} now={t} offset={thisWeek.length} />}
+                  </>
+                ) : (
+                  <Empty
+                    title="Nothing planned yet"
+                    body="Once you're in a pod, the AI plans the first hangout around when everyone's free."
+                    href="/app/pods"
+                    cta="Go to your pods"
+                  />
+                )
+              ) : past.length ? (
+                <Group label="Past" items={past} extra={extra} hueOf={hueOf} now={t} past />
+              ) : (
+                <Empty
+                  title="No past hangouts yet"
+                  body={lead ? `Your first one is ${formatInTimeZone(lead.starts_at, TZ, "EEEE")}. Afterwards you check in here and vote on the next one.` : "After each hangout you check in here and vote on the next one."}
+                  href={lead ? planHref(lead) : "/app/pods"}
+                  cta={lead ? "See the next plan" : "Go to your pods"}
+                />
+              )}
+              <Loop />
+            </div>
+            {lead && tab === "upcoming" && (
+              <aside className="hidden lg:block" aria-label="Next up">
+                <div className="sticky top-s8">
+                  <NextUp p={lead} x={extra[lead.id]} hue={hueOf(lead.podId)} now={t} />
+                </div>
+              </aside>
             )}
-            {p.venue && (
-              <Button asChild variant="secondary" size="sm">
-                <a href={directionsUrl(p.venue)} target="_blank" rel="noreferrer">
-                  Directions
-                </a>
-              </Button>
-            )}
-            <Button variant="secondary" size="sm" onClick={() => calendar(p)} aria-label="Add to calendar">
-              Calendar
-            </Button>
+            {tab === "past" && <div className="hidden lg:block" />}
           </div>
         </div>
-      </PlanHalo>
-    </motion.section>
+      </div>
+    </>
   );
 }
 
-function PlanRow({ p, now, hue, i, past }: { p: PlanItem; now: number; hue: PodHueKey; i: number; past?: boolean }) {
+function Group({ label, items, extra, hueOf, now, past, offset = 0 }: { label: string; items: PlanItem[]; extra: Record<string, Extra>; hueOf: (id: string) => PodHueKey; now: number; past?: boolean; offset?: number }) {
+  return (
+    <section aria-label={label}>
+      <h2 className="text-[13px] leading-[18px] font-semibold tracking-[0.02em] text-ink-2 uppercase">{label}</h2>
+      <ul className="mt-s3 flex flex-col gap-s3">
+        {items.map((p, i) => (
+          <AgendaRow key={p.id} p={p} x={extra[p.id]} hue={hueOf(p.podId)} now={now} i={i + offset} past={past} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function DateBlock({ iso, now, muted }: { iso: string; now: number; muted?: boolean }) {
+  const today = toChicagoISO(now).slice(0, 10) === toChicagoISO(Date.parse(iso)).slice(0, 10);
+  return (
+    <span
+      aria-hidden
+      className={`tabular flex w-14 shrink-0 flex-col items-center justify-center self-start rounded-[14px] py-s2 ${muted ? "bg-sunken text-ink-2" : "bg-lit text-ink shadow-[inset_0_0_0_1px_var(--line)]"}`}
+    >
+      <span className={`text-[11px] leading-[14px] font-semibold uppercase ${today && !muted ? "text-[var(--color-link)]" : "text-ink-2"}`}>{today ? "Today" : formatInTimeZone(iso, TZ, "EEE")}</span>
+      <span className="text-[24px] leading-[28px] font-semibold tracking-[-0.02em]">{formatInTimeZone(iso, TZ, "d")}</span>
+      <span className="text-[11px] leading-[14px] font-medium text-ink-2 uppercase">{formatInTimeZone(iso, TZ, "MMM")}</span>
+    </span>
+  );
+}
+
+function Count({ p, x, locked }: { p: PlanItem; x?: Extra; locked: boolean }) {
+  const of = x?.size ?? p.going;
+  const at = x?.threshold ?? 4;
+  return (
+    <span className="flex min-w-0 items-center gap-s2">
+      <span aria-hidden className="relative h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-sunken">
+        <span className={`absolute inset-y-0 left-0 rounded-full ${locked ? "bg-select" : "bg-[var(--color-success)]"}`} style={{ width: `${Math.min(100, (p.going / Math.max(1, of)) * 100)}%` }} />
+        <span className="absolute inset-y-0 w-px bg-ink/40" style={{ left: `${(at / Math.max(1, of)) * 100}%` }} />
+      </span>
+      <span className="tabular truncate text-[13px] leading-[18px] font-semibold text-ink-2">
+        {p.going} of {of} in
+      </span>
+    </span>
+  );
+}
+
+function AgendaRow({ p, x, hue, now, i, past }: { p: PlanItem; x?: Extra; hue: PodHueKey; now: number; i: number; past?: boolean }) {
   const reduce = useReducedMotion();
-  const { rsvp } = useActions();
-  const outcome = p.checkedIn ? "Went" : p.me === "going" ? "Held" : "Missed";
-  const needsYou = !past && !p.locked && p.me !== "going" && p.me !== "not_going";
+  const { rsvp, calendar } = useActions();
+  const s = statusOf(p, x, !!past);
+  const answer = !past && p.me !== "going" && p.me !== "not_going" && s.key !== "vote";
   return (
     <motion.li
-      className="border-b border-line"
+      className="relative rounded-[20px] bg-lit/90 p-s3 shadow-[inset_0_0_0_1px_var(--line),var(--shadow-xs)] sm:p-s4"
       initial={reduce ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...SNAPPY, delay: Math.min(i, 8) * STAGGER }}
     >
-      <div className="flex min-h-[72px] items-center gap-s4 py-s2">
-        <Link href={`/app/pods/${p.podId}`} className="pressable flex min-w-0 flex-1 items-center gap-s4 outline-offset-[-2px]">
-          <span aria-hidden className="orb size-10 shrink-0" style={{ ["--orb" as string]: POD_SOLID[hue], ["--orb-wash" as string]: POD_WASH[hue], opacity: past ? 0.6 : 1 }} />
-          <span className="min-w-0 flex-1">
-            <span className={`block text-[17px] leading-[1.25] font-semibold [text-wrap:balance] ${past ? "text-ink-2" : "text-ink"}`}>{p.title}</span>
-            <span className="tabular block text-label text-ink-2">
-              {past ? formatInTimeZone(p.starts_at, TZ, "MMM d") : `${shortDay(p.starts_at, now)} ${shortTime(p.starts_at)}`} · {p.podName}
+      <div className="flex gap-s3 sm:gap-s4">
+        <DateBlock iso={p.starts_at} now={now} muted={past} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-s2">
+            <span className="flex min-w-0 items-center gap-s2 text-[13px] leading-[18px] font-medium text-ink-2">
+              <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: POD_SOLID[hue] }} />
+              <span className="truncate">
+                {p.podName}
+                {p.sequence ? ` · #${p.sequence}` : ""}
+              </span>
             </span>
-          </span>
-        </Link>
-        {needsYou ? (
-          <Button size="sm" variant="secondary" onClick={() => void rsvp(p, "going")}>
-            I&apos;m in
-          </Button>
-        ) : (
-          <span className="shrink-0 text-label font-semibold text-ink-2">{past ? outcome : stateWord(p)}</span>
-        )}
+            <Pill s={s} />
+          </div>
+          <Link href={planHref(p)} scroll={false} className="mt-s1 block rounded-[6px] outline-offset-2 after:absolute after:inset-0 after:rounded-[20px] after:content-['']">
+            <span className={`block text-[17px] leading-[22px] font-semibold tracking-[-0.01em] ${past ? "text-ink-2" : "text-ink"}`}>{titleOf(p)}</span>
+          </Link>
+          <p className="tabular mt-s1 truncate text-[14px] leading-[20px] text-ink-2">
+            {span(p)} · {place(p)}
+            {x?.cost && !past ? ` · ${x.cost}` : ""}
+          </p>
+          {!past && (
+            <div className="mt-s3 flex flex-wrap items-center justify-between gap-x-s3 gap-y-s2">
+              <Count p={p} x={x} locked={p.locked} />
+              <div className="relative z-10 flex items-center gap-s2">
+                {s.key === "vote" ? (
+                  <Button asChild size="sm">
+                    <Link href={`/app/pods/${p.podId}`}>Vote</Link>
+                  </Button>
+                ) : answer ? (
+                  <Button size="sm" variant="spark" onClick={() => void rsvp(p, "going")}>
+                    I&apos;m in
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="secondary" onClick={() => calendar(p)}>
+                    Add to calendar
+                  </Button>
+                )}
+                {p.venue && (
+                  <Button asChild size="sm" variant="secondary">
+                    <a href={directionsUrl(p.venue)} target="_blank" rel="noreferrer" aria-label={`Directions to ${place(p)}`}>
+                      Directions
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+          {past && (s.key === "checkin" || x?.vote) && (
+            <div className="relative z-10 mt-s3 flex gap-s2">
+              <Button asChild size="sm">
+                <Link href={`/app/pods/${p.podId}`}>{s.key === "checkin" ? "Check in" : "Vote on the next one"}</Link>
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </motion.li>
+  );
+}
+
+/** Laptop: the next hangout in full beside the agenda, so the width carries the details instead of white space. */
+function NextUp({ p, x, hue, now }: { p: PlanItem; x?: Extra; hue: PodHueKey; now: number }) {
+  const { rsvp, calendar } = useActions();
+  const s = statusOf(p, x, false);
+  const days = Math.round((Date.parse(`${toChicagoISO(Date.parse(p.starts_at)).slice(0, 10)}T00:00:00Z`) - Date.parse(`${toChicagoISO(now).slice(0, 10)}T00:00:00Z`)) / 86_400_000);
+  const when = days <= 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
+  const answer = p.me !== "going" && p.me !== "not_going" && s.key !== "vote";
+  return (
+    <div className="overflow-hidden rounded-[24px] bg-lit shadow-[inset_0_0_0_1px_var(--line),var(--shadow-md)]">
+      <div className="px-s6 pt-s5 pb-s5" style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${POD_SOLID[hue]} 10%, var(--lit)), var(--lit))` }}>
+        <div className="flex items-center justify-between gap-s2">
+          <span className="text-[13px] leading-[18px] font-semibold tracking-[0.02em] text-ink-2 uppercase">Next up · {when}</span>
+          <Pill s={s} />
+        </div>
+        <Link href={planHref(p)} scroll={false} className="mt-s2 block text-[22px] leading-[28px] font-semibold tracking-[-0.02em] text-ink hover:underline">
+          {titleOf(p)}
+        </Link>
+        <p className="tabular mt-s1 text-[15px] leading-[20px] text-ink-2">
+          {formatInTimeZone(p.starts_at, TZ, "EEEE, MMM d")} · {span(p)}
+        </p>
+        <p className="text-[15px] leading-[20px] text-ink-2">{place(p)}</p>
+      </div>
+      <dl className="divide-y divide-line border-t border-line px-s6">
+        <Fact k="Who's in" icon="person">
+          {x?.names.length ? x.names.join(", ") : "No one yet"}
+          <span className="block font-normal text-ink-2">
+            {p.locked ? "Locked" : `${Math.max(0, (x?.threshold ?? 4) - p.going)} more and it locks`} · {p.going} of {x?.size ?? p.going}
+          </span>
+        </Fact>
+        {!!x?.bring.length && <Fact k="Bring" icon="check">{x.bring.slice(0, 3).join(" · ")}</Fact>}
+        {x?.rain && <Fact k="Rain backup" icon="rain">{x.rain}</Fact>}
+        {x?.reason && <Fact k="Why this plan" icon="why">{x.reason}</Fact>}
+      </dl>
+      <div className="flex flex-wrap gap-s2 border-t border-line px-s6 py-s4">
+        {answer ? (
+          <Button size="sm" variant="spark" onClick={() => void rsvp(p, "going")}>
+            I&apos;m in
+          </Button>
+        ) : p.me === "going" && !p.locked ? (
+          <Button size="sm" variant="secondary" onClick={() => void rsvp(p, "not_going")}>
+            Can&apos;t make it
+          </Button>
+        ) : null}
+        <Button size="sm" variant="secondary" onClick={() => calendar(p)}>
+          Add to calendar
+        </Button>
+        <Button asChild size="sm" variant="ghost">
+          <Link href={planHref(p)} scroll={false}>
+            Full plan
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Fact({ k, icon, children }: { k: string; icon: "person" | "check" | "rain" | "why"; children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-s3 py-s3">
+      <Icon name={icon} size={18} className={icon === "rain" ? "mt-0.5 text-[var(--color-info-text)]" : icon === "why" ? "mt-0.5 text-select" : "mt-0.5 text-ink-2"} />
+      <div className="min-w-0">
+        <dt className="text-[12px] leading-[16px] font-medium text-ink-2">{k}</dt>
+        <dd className="mt-0.5 text-[15px] leading-[20px] font-semibold text-ink">{children}</dd>
+      </div>
+    </div>
+  );
+}
+
+function Empty({ title, body, href, cta }: { title: string; body: string; href: string; cta: string }) {
+  return (
+    <section className="flex flex-col items-start gap-s3 rounded-[20px] bg-lit/90 p-s6 shadow-[inset_0_0_0_1px_var(--line)]">
+      <Icon name="day" size={24} className="text-ink-2" />
+      <h2 className="text-[17px] leading-[22px] font-semibold text-ink">{title}</h2>
+      <p className="max-w-[46ch] text-[15px] leading-[22px] text-ink-2">{body}</p>
+      <Button asChild size="sm" variant="secondary" className="mt-s1">
+        <Link href={href}>{cta}</Link>
+      </Button>
+    </section>
+  );
+}
+
+/** The loop in one line, so every status pill reads (Fit + Repeat). */
+function Loop() {
+  const steps = ["AI proposes", "4 in locks it", "Check in", "Vote on the next"];
+  return (
+    <ol aria-label="How plans work" className="flex flex-wrap items-center gap-x-s2 gap-y-s1 text-[13px] leading-[18px] text-ink-2">
+      {steps.map((s, i) => (
+        <li key={s} className="flex items-center gap-s2">
+          <span className="tabular grid size-5 place-items-center rounded-full bg-sunken text-[11px] font-semibold text-ink-2">{i + 1}</span>
+          {s}
+          {i < steps.length - 1 && <span aria-hidden className="text-line-2">—</span>}
+        </li>
+      ))}
+    </ol>
   );
 }

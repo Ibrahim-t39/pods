@@ -1,12 +1,9 @@
-// /app/safety, "If something's off" (PLATFORM_SPEC §F9, V3_SPEC §6.5; never "Safety center" or "safe", library I #4).
-// QA round 1: the emergency lines are one compact card of two large controls at the top (always one tap, never a
-// plain row), then labelled groups, each one job (DESIGN §9: rows touch inside a group, s8 between):
-//   card             Call 911 (the only red a member sees) · Call or text 988
-//   During a hangout Share my plan (says why when it can't yet) · Check in (on the day) · the person you trust
-//   People           Report someone (→ People, then Report or Block on the person) · Blocked (count or "No one")
-//   More             Guidelines (/safety) · Write to us
-// Every row shows its state on the right, so nothing is a bare arrow. Laptop: the object on the right is you and the
-// person you trust, two beads meeting. Teal is trust here (COLOR_LIFE §6.2).
+// /app/safety, "If something's off" (PLATFORM_SPEC §F9, V3_SPEC §6.5; never "Safety center"). Redesign r2 (Grab safety
+// tools, Cash App account safety): emergency first, then the tools tied to your real next hangout, then people, then
+// the guidelines inline (not a bare link).
+//   left    emergency (Call 911, the only red · Call or text 988) · your next hangout (share it, check in) · someone you trust
+//   right   people (report, blocked) · the guidelines in four lines · write to us
+// Teal is trust here (COLOR_LIFE §6.2).
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -14,19 +11,25 @@ import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { Button, ResponsiveSheet, notify } from "@/components/ui";
 import { Disc } from "@/components/brand/disc";
-import { Stage } from "@/components/brand/stage";
 import { GENTLE, STAGGER } from "@/components/brand/motion";
-import { CondensingHead } from "@/components/shell/condensing-head";
+import { Icon } from "@/components/icons";
 import { useDb, useHydrated, useMe, useRepo } from "@/lib/db/hooks";
 import { useClock } from "@/lib/time/clock";
 import { formatTime, formatWhen } from "@/lib/time/format";
 import { myPlans, planShareText, smsHref } from "@/lib/platform/selectors";
-import { GoLink, GroupLabel, PageName, PillField, Rows, SheetFoot, SheetRow } from "@/components/profile/kit";
+import { GoLink, PageName, PillField, SheetFoot } from "@/components/profile/kit";
+import { Card, Row, Section, TextAction, YouHead, YouPage } from "@/components/profile/you-kit";
 import { BlockedList, useBlockedPeople } from "./blocked-list";
-import { EmergencyCard, WRITE_TO_US } from "./help-lines";
-import "@/components/profile/seat.css";
+import { WRITE_TO_US } from "./help-lines";
 
 const DAY = 86_400_000;
+
+const GUIDES = [
+  { icon: "place", text: "Every hangout is at a public place." },
+  { icon: "room", text: "Meet as a group. Skip one-on-one until you’re ready." },
+  { icon: "off", text: "Leave anytime. No one needs a reason." },
+  { icon: "flag", text: "Report anything that feels off, right from their profile." },
+] as const;
 
 export function SafetyPage() {
   const hydrated = useHydrated();
@@ -43,6 +46,7 @@ export function SafetyPage() {
 
   // the next locked hangout I'm going to (share it); a hangout today or just ended that I haven't checked in to
   const next = useMemo(() => plans.upcoming.find((p) => p.locked && p.me === "going") ?? null, [plans]);
+  const soon = useMemo(() => next ?? plans.upcoming.find((p) => p.me === "going") ?? null, [plans, next]);
   const checkIn = useMemo(() => {
     const all = [...plans.upcoming, ...plans.past];
     return (
@@ -66,58 +70,120 @@ export function SafetyPage() {
       /* dismissed */
     }
   }
-
-  const groups = [
-    <EmergencyCard key="now" />,
-    <div key="during">
-      <GroupLabel>During a hangout</GroupLabel>
-      <Rows label="During a hangout">
-        {shareText && contact ? (
-          <SheetRow icon="send" label="Share my plan" value={<span data-nc>{contact.name}</span>} href={smsHref(contact.phone, shareText)} external />
-        ) : shareText ? (
-          <SheetRow icon="send" label="Share my plan" value="Send" onClick={shareWithoutContact} />
-        ) : (
-          <SheetRow icon="send" label="Share my plan" value="After a plan locks" disabled />
-        )}
-        {checkIn && <SheetRow icon="here" label="Check in" value="Today" href={`/app/plans/${checkIn.id}`} arrow />}
-        <SheetRow
-          icon={contact ? "person" : "add"}
-          label="Someone you trust"
-          value={contact ? <span data-nc>{contact.name}</span> : "No one added yet"}
-          arrow
-          onClick={() => setSheet("contact")}
-        />
-      </Rows>
-    </div>,
-    <div key="people">
-      <GroupLabel>People</GroupLabel>
-      <Rows label="People">
-        <SheetRow icon="flag" label="Report someone" href="/app/people" arrow />
-        <SheetRow icon="block" label="Blocked" value={<span data-nc className="tabular-nums">{blocked ? blocked : "No one"}</span>} arrow onClick={() => setSheet("blocked")} />
-      </Rows>
-    </div>,
-    <div key="more">
-      <GroupLabel>More</GroupLabel>
-      <Rows label="More">
-        <SheetRow icon="why" label="Guidelines" href="/safety" arrow />
-        <SheetRow icon="talk" label="Write to us" href={WRITE_TO_US} external />
-      </Rows>
-    </div>,
-  ];
+  const fade = (i: number) => ({ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { ...GENTLE, delay: 0.04 + i * STAGGER } });
 
   return (
-    <div className="seat-pg">
-      <Stage light="paper" />
-      <CondensingHead left="mark" size="md" title="If something’s off." compact="If something’s off" className="seat-head" />
-      <div className="seat-body">
-        <div className="seat-col safe-col">
-          {groups.map((g, i) => (
-            <motion.div key={i} className={i > 0 ? "settle" : undefined} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ ...GENTLE, delay: 0.06 + i * STAGGER }}>
-              {g}
+    <YouPage>
+      <YouHead title="If something’s off" sub="Pods can’t send help. In danger, call 911 first." />
+      <div className="yo-wrap yo-body">
+        <div className="yo-cols" data-even>
+          <div>
+            <motion.div {...fade(0)}>
+              <Section label="Right now">
+                <div className="yo-sos" role="group" aria-label="Emergency">
+                  <a href="tel:911" className="pressable" data-tone="red">
+                    <Icon name="help" size={22} />
+                    Call 911
+                  </a>
+                  <a href="tel:988" className="pressable">
+                    <Icon name="talk" size={22} />
+                    Call or text 988
+                  </a>
+                </div>
+              </Section>
             </motion.div>
-          ))}
+
+            <motion.div {...fade(1)}>
+              <Section label="Your next hangout" className="mt-s6">
+                <Card tone="safe">
+                  {soon ? (
+                    <>
+                      <div className="yo-pad">
+                        <p className="text-[13px] font-medium text-ink-2" data-nc>
+                          {soon.podName} · {soon.locked ? "Locked" : "Planned"}
+                        </p>
+                        <p className="mt-s1 text-[18px] font-semibold tracking-[-0.01em]" data-nc>
+                          {soon.title}
+                        </p>
+                        <p className="mt-s1 text-[15px] text-ink-2" data-nc>
+                          {formatWhen(soon.starts_at)}
+                          {soon.venue ? ` · ${soon.venue.name}` : ""}
+                        </p>
+                        <div className="mt-s4 flex flex-wrap gap-s2">
+                          {shareText && contact ? (
+                            <Button asChild size="sm" leadingIcon={<Icon name="send" size={16} />}>
+                              <a href={smsHref(contact.phone, shareText)} data-nc>
+                                Send to {contact.name}
+                              </a>
+                            </Button>
+                          ) : shareText ? (
+                            <Button size="sm" onClick={shareWithoutContact} leadingIcon={<Icon name="send" size={16} />}>
+                              Share my plan
+                            </Button>
+                          ) : (
+                            <p className="text-[14px] text-ink-2">You can share it once it locks.</p>
+                          )}
+                          {checkIn && (
+                            <Button asChild size="sm" variant="secondary" leadingIcon={<Icon name="here" size={16} />}>
+                              <a href={`/app/plans/${checkIn.id}`}>Check in</a>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="yo-pad text-[15px] text-ink-2">When a plan locks, you can send it to someone you trust in one tap.</p>
+                  )}
+                </Card>
+              </Section>
+            </motion.div>
+
+            <motion.div {...fade(2)}>
+              <Section label="Someone you trust" action={contact ? <TextAction onClick={() => setSheet("contact")}>Edit</TextAction> : undefined} className="mt-s6">
+                <Card>
+                  {contact ? (
+                    <Row
+                      lead={<Disc tone="grove" seed={contact.name} initial={contact.name.slice(0, 1)} size={40} />}
+                      label={<span data-nc>{contact.name}</span>}
+                      hint={<span data-nc>{prettyPhone(contact.phone)} · gets your plan when you share it</span>}
+                      onClick={() => setSheet("contact")}
+                      arrow
+                    />
+                  ) : (
+                    <div className="yo-pad flex items-center justify-between gap-s4">
+                      <p className="text-[15px] text-ink-2">A friend or family member who gets your plan in one tap.</p>
+                      <Button size="sm" variant="secondary" onClick={() => setSheet("contact")} leadingIcon={<Icon name="add" size={16} />}>
+                        Add
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              </Section>
+            </motion.div>
+          </div>
+
+          <div>
+            <motion.div {...fade(3)}>
+              <Section label="People">
+                <Card>
+                  <Row icon="flag" tone="safe" label="Report someone" hint="Open their profile, then Report or Block" href="/app/people" arrow />
+                  <Row icon="block" tone="safe" label="Blocked" value={<span className="tabular-nums">{blocked ? blocked : "No one"}</span>} arrow onClick={() => setSheet("blocked")} />
+                </Card>
+              </Section>
+            </motion.div>
+            <motion.div {...fade(4)}>
+              <Section label="How Pods stays safe" className="mt-s6">
+                <Card>
+                  {GUIDES.map((g) => (
+                    <Row key={g.text} icon={g.icon} tone="safe" label={<span className="whitespace-normal">{g.text}</span>} />
+                  ))}
+                  <Row icon="why" label="Read the guidelines" href="/safety" arrow />
+                  <Row icon="talk" label="Write to us" href={WRITE_TO_US} external arrow />
+                </Card>
+              </Section>
+            </motion.div>
+          </div>
         </div>
-        <TrustObject name={contact?.name ?? null} meInitial={me.first_name.slice(0, 1)} onAdd={() => setSheet("contact")} />
       </div>
 
       <ContactSheet open={sheet === "contact"} onClose={() => setSheet(null)} />
@@ -125,27 +191,7 @@ export function SafetyPage() {
         <PageName>If something’s off</PageName>
         <BlockedList />
       </ResponsiveSheet>
-    </div>
-  );
-}
-
-/** Laptop only: you and the person you trust, two beads meeting. Empty: their seat is a dashed ring you can fill. */
-function TrustObject({ name, meInitial, onAdd }: { name: string | null; meInitial: string; onAdd: () => void }) {
-  return (
-    <div className="safe-obj" aria-hidden={name ? true : undefined}>
-      <motion.div className="safe-pair" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={GENTLE}>
-        <Disc tone="you" initial={meInitial} size={176} />
-        {name ? (
-          <motion.span key={name} initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={GENTLE} className="-ml-12">
-            <Disc tone="grove" seed={name} initial={name.slice(0, 1)} size={176} />
-          </motion.span>
-        ) : (
-          <button type="button" onClick={onAdd} aria-label="Add someone you trust" className="pressable -ml-12 rounded-full outline-offset-4">
-            <Disc tone="open" size={176} />
-          </button>
-        )}
-      </motion.div>
-    </div>
+    </YouPage>
   );
 }
 

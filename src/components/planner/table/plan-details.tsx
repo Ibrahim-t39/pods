@@ -26,7 +26,10 @@ import { downloadIcs, directionsUrl } from "../plan-utils";
 import { usePlanActions } from "../use-plan-actions";
 import { ProposeSheet } from "./propose-sheet";
 import { GiveUpSheet } from "./sheets";
-import { hm, placeWord, rainWord, sourceLine, weekday, type TableModel } from "./model";
+import { hm, placeWord, rainWord, sourceLine, type TableModel } from "./model";
+
+const startOfDay = (iso: string) => Date.parse(`${new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Chicago" })}T00:00:00Z`);
+const dayLong = (iso: string) => new Date(iso).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "America/Chicago" });
 import { costWord, planTitle, SeatRow, seatDots } from "./plan-card";
 import { whyRows } from "./sheets";
 
@@ -101,6 +104,18 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
         ? { line: `Moves to ${placeWord(m.rainVenue)}.`, sub: `Same time · ${rainWord(m.rainVenue)} · indoors` }
         : { line: "We pick a new time.", sub: "Same week. You confirm." };
 
+  const ends = v.hangout?.ends_at ?? p?.ends_at ?? null;
+  const goingNames = m.people.filter((x) => v.going.includes(x.id)).map((x) => (x.me ? "You" : x.name));
+  const toLock = Math.max(0, v.threshold - going);
+  const status = locked ? "Locked" : v.imIn ? "You're in" : toLock > 0 ? `${toLock} more to lock` : "Proposed";
+  const days = iso ? Math.round((startOfDay(iso) - startOfDay(new Date(m.nowMs).toISOString())) / 86_400_000) : null;
+  const soon = days === null ? "" : days <= 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
+  const reason = m.plan?.plan_json.reason?.replace(/\.$/, "");
+  const calendar = () => {
+    const t = v.hangout ?? (iso && ends ? { id: v.targetId ?? m.pod.id, starts_at: iso, ends_at: ends } : null);
+    if (t) downloadIcs({ id: t.id, title: `${m.name}: ${title}`, starts_at: t.starts_at, ends_at: t.ends_at, venue: m.venue });
+  };
+
   return (
     <div className="pd-root" role="presentation">
       <motion.button
@@ -137,83 +152,140 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
           <span className="pd-field" aria-hidden />
           <div className="pd-grab" onPointerDown={(e) => drag.start(e)}>
             <span className="pd-handle" aria-hidden />
+            <p className="pd-over">
+              <span className="pd-dot" aria-hidden />
+              {m.name} <span className="tabular">· Hangout #{v.round}</span>
+            </p>
             <button type="button" className="pd-x pressable" onClick={onClose} aria-label="Close">
               <Icon name="close" size={22} />
             </button>
           </div>
 
-            <header className="pd-head">
-              <p className="pd-over">
-                {m.name} <span className="tabular">#{v.round}</span>
-              </p>
-              <h1 id="pd-title" className="pd-title">
-                {title}
-              </h1>
-              {iso && (
-                <p className="pd-when tabular">
-                  <span>{weekday(iso)}.</span>
-                  <span>{hm(iso)}.</span>
-                  <span className="pd-place">{place}.</span>
-                </p>
-              )}
-              <p className="pd-tags">
-                {m.plan && (
-                  <span className="pd-tag" data-ai="">
-                    <Icon name="why" size={16} />
-                    {sourceLine(m.plan)}
+          <header className="pd-head">
+            <span className="pd-status" data-locked={locked ? "" : undefined} data-in={v.imIn && !locked ? "" : undefined}>
+              {locked && <Icon name="locked" size={14} />}
+              {status}
+            </span>
+            <h1 id="pd-title" className="pd-title">
+              {title}
+            </h1>
+          </header>
+
+          <ul className="pd-facts">
+            {iso && (
+              <li>
+                <Icon name="clock" size={20} />
+                <span className="pd-fact">
+                  <span className="pd-fact-k tabular">
+                    {dayLong(iso)} · {hm(iso)}
+                    {ends ? `–${hm(ends)}` : ""}
+                  </span>
+                  {soon && <span className="pd-fact-s">{soon}</span>}
+                </span>
+                <button type="button" className="pd-act pressable" onClick={calendar}>
+                  Add to calendar
+                </button>
+              </li>
+            )}
+            <li>
+              <Icon name="place" size={20} />
+              <span className="pd-fact">
+                <span className="pd-fact-k">{place}</span>
+                {m.venue && (
+                  <span className="pd-fact-s" data-allow-city>
+                    {m.venue.meet_note ? m.venue.meet_note.replace(/\.$/, "") : m.venue.address}
                   </span>
                 )}
-                {cost && <span className="pd-tag">{cost}</span>}
-                <span className="pd-tag">{m.venue?.indoor ? "Indoors" : "Outdoors"}</span>
-                <span className="pd-tag">Public</span>
+              </span>
+              {m.venue && (
+                <a className="pd-act pressable" href={directionsUrl(m.venue)} target="_blank" rel="noreferrer">
+                  Directions
+                </a>
+              )}
+            </li>
+            <li>
+              <Icon name="here" size={20} />
+              <span className="pd-fact">
+                <span className="pd-fact-k">{[cost, m.venue?.indoor ? "Indoors" : "Outdoors", "Public place"].filter(Boolean).join(" · ")}</span>
+              </span>
+            </li>
+            {m.plan && (
+              <li data-ai="">
+                <Icon name="why" size={20} />
+                <span className="pd-fact">
+                  <span className="pd-fact-k">{sourceLine(m.plan)}</span>
+                  {reason && <span className="pd-fact-s">{reason}</span>}
+                </span>
+              </li>
+            )}
+          </ul>
+
+          <section className="pd-block pd-who" aria-labelledby="pd-who">
+            <h2 id="pd-who" className="pd-h">
+              Who&apos;s in
+            </h2>
+            <div className="pd-who-row">
+              <SeatRow dots={seatDots(m)} lockAt={v.threshold} locked={locked} size={28} />
+              <p className="pd-who-names">
+                {goingNames.length ? goingNames.join(", ") : "No one yet"}
+                <span className="pd-fact-s">{locked ? `${going} going · locked at ${v.threshold}` : toLock > 0 ? `${toLock} more and it locks` : `${going} of ${of}`}</span>
               </p>
-            </header>
+            </div>
+          </section>
 
-          {p?.schedule?.length ? (
-            <section className="pd-block settle" aria-labelledby="pd-plan">
-              <h2 id="pd-plan" className="pd-h">
-                <Icon name="clock" size={18} />
-                The plan
-              </h2>
-              <ol className="pd-sched">
-                {p.schedule.slice(0, 5).map((r, i) => (
-                  <li key={i}>
-                    <span className="pd-t tabular">{r.time.replace(/:00/, "").replace(/\s?(AM|PM)/, (x) => x.trim().toLowerCase())}</span>
-                    <span>{r.item}</span>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          ) : null}
+          <div className="pd-grid">
+            {p?.schedule?.length ? (
+              <section className="pd-block" aria-labelledby="pd-plan">
+                <h2 id="pd-plan" className="pd-h">
+                  The plan
+                </h2>
+                <ol className="pd-sched">
+                  {p.schedule.slice(0, 5).map((r, i) => (
+                    <li key={i}>
+                      <span className="pd-t tabular">{r.time.replace(/:00/, "").replace(/\s?(AM|PM)/, (x) => x.trim().toLowerCase())}</span>
+                      <span>{r.item}</span>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            ) : null}
 
-          {p?.bring?.length ? (
-            <section className="pd-block settle" aria-labelledby="pd-bring">
-              <h2 id="pd-bring" className="pd-h">
-                <Icon name="check" size={18} />
-                Bring
-              </h2>
-              <ul className="pd-bring">
-                {p.bring.slice(0, 4).map((b) => (
-                  <li key={b}>{b}</li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
+            <div className="pd-col">
+              {p?.bring?.length ? (
+                <section className="pd-block" aria-labelledby="pd-bring">
+                  <h2 id="pd-bring" className="pd-h">
+                    Bring
+                  </h2>
+                  <ul className="pd-bring">
+                    {p.bring.slice(0, 4).map((b) => (
+                      <li key={b}>
+                        <Icon name="check" size={18} />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
 
-          {rain && (
-            <section className="pd-block settle" aria-labelledby="pd-rain">
-              <h2 id="pd-rain" className="pd-h">
-                <Icon name="rain" size={18} className="text-info-text" />
-                Rain backup
-              </h2>
-              <p className="pd-line">{rain.line}</p>
-              <p className="pd-sub">{rain.sub}</p>
-            </section>
-          )}
+              {rain && (
+                <section className="pd-block" aria-labelledby="pd-rain">
+                  <h2 id="pd-rain" className="pd-h">
+                    Rain backup
+                  </h2>
+                  <p className="pd-rain">
+                    <Icon name="rain" size={20} />
+                    <span>
+                      <span className="pd-fact-k">{rain.line}</span>
+                      <span className="pd-fact-s">{rain.sub}</span>
+                    </span>
+                  </p>
+                </section>
+              )}
+            </div>
+          </div>
 
-          <section className="pd-block settle" aria-labelledby="pd-why">
+          <section className="pd-block" aria-labelledby="pd-why">
             <h2 id="pd-why" className="pd-h">
-              <Icon name="why" size={18} />
               Why this plan
             </h2>
             <dl className="pt-rows pd-rows" data-nc-list>
@@ -224,64 +296,55 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
                 </div>
               ))}
             </dl>
-            <p className="pd-sub">{sourceLine(m.plan)}.</p>
-            {m.venue && (
-              <a className="pd-dir pressable" href={directionsUrl(m.venue)} target="_blank" rel="noreferrer">
-                Directions
-                <Icon name="arrow" size={18} />
-              </a>
-            )}
           </section>
 
-          <nav className="pd-more settle" aria-label="More for this plan">
-            {canGiveUp && (
-              <button type="button" className="pd-more-b pressable" onClick={() => setSide("giveup")}>
-                <Icon name="undo" size={20} />
-                Can&apos;t make it
-              </button>
-            )}
+          <nav className="pd-more" aria-label="More for this plan">
             {canAsk && (
               <button type="button" className="pd-more-b pressable" onClick={ask}>
                 <Icon name="turn" size={20} />
-                Ask AI for a new plan
+                Ask AI for a different plan
               </button>
             )}
             <button type="button" className="pd-more-b pressable" onClick={() => setSide("propose")}>
               <Icon name="add" size={20} />
               Propose a hangout
             </button>
+            {canGiveUp && (
+              <button type="button" className="pd-more-b pressable" onClick={() => setSide("giveup")}>
+                <Icon name="undo" size={20} />
+                Can&apos;t make it
+              </button>
+            )}
           </nav>
         </div>
 
         <footer className="pd-foot glass">
           <span className="pd-count">
-            <SeatRow dots={seatDots(m)} lockAt={v.threshold} locked={locked} size={desktop ? 26 : 22} />
             <InCount n={going} of={of} locked={locked} />
+            <span className="pd-fact-s">{locked ? (v.imIn ? "You're going" : "Still room for you") : v.imIn ? "You're in. It locks at " + v.threshold : soon}</span>
           </span>
           {locked ? (
             v.imIn ? (
-              <Button
-                variant="secondary"
-                size="xl"
-                onClick={() => v.hangout && downloadIcs({ id: v.hangout.id, title: `${m.name} #${v.round}`, starts_at: v.hangout.starts_at, ends_at: v.hangout.ends_at, venue: m.venue })}
-              >
+              <Button variant="secondary" size="lg" onClick={calendar}>
                 Add to calendar
               </Button>
             ) : (
-              <Button variant="spark" size="xl" onClick={() => void imIn()} loading={busy}>
+              <Button variant="spark" size="lg" onClick={() => void imIn()} loading={busy}>
                 I&apos;m in
               </Button>
             )
           ) : v.imIn ? (
-            <span className="pd-in">You&apos;re in</span>
+            <Button variant="secondary" size="lg" onClick={calendar}>
+              Add to calendar
+            </Button>
           ) : (
-            <Button variant="spark" size="xl" onClick={() => void imIn()} loading={busy} disabled={!v.targetId}>
+            <Button variant="spark" size="lg" onClick={() => void imIn()} loading={busy} disabled={!v.targetId}>
               I&apos;m in
             </Button>
           )}
         </footer>
       </motion.section>
-      <ProposeSheet m={m} open={side === "propose"} onOpenChange={(o) => setSide(o ? "propose" : null)} />
+      <ProposeSheet m={m} open={side === "propose"} onOpenChange={(o) => setSide(o ? "propose" : null)} onAskAI={canAsk ? ask : undefined} />
       <GiveUpSheet open={side === "giveup"} onOpenChange={(o) => setSide(o ? "giveup" : null)} onGiveUp={() => void giveUp()} />
     </div>
   );

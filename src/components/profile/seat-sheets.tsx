@@ -3,7 +3,7 @@
 // (a list sheet 24), at most one filled primary, choices as ring rows (never switches; J #7).
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Button, Chip, ResponsiveSheet, notify } from "@/components/ui";
 import { Disc } from "@/components/brand/disc";
@@ -14,7 +14,8 @@ import { useDb, useMe, useRepo } from "@/lib/db/hooks";
 import { faithLadder, faithNode, heritageLadder, heritageNode } from "@/data/taxonomy";
 import type { FaithValue, HeritageValue, Slot } from "@/lib/types";
 import { BlockedList, PrivacyCenter } from "@/components/safety";
-import { PageName, ChoiceRow, Rows, SheetFoot, SheetLine, GoLink, RingMark } from "./kit";
+import { PageName, ChoiceRow, Rows, SheetFoot, SheetLine, GoLink } from "./kit";
+import "./you.css";
 import { useSeatPrefs } from "./local-prefs";
 import { TEXT_KINDS, shortLike } from "./words";
 
@@ -29,15 +30,56 @@ const done = (onClose: () => void) => <SheetFoot right={<Button onClick={onClose
 export function LikesSheet({ open, onClose }: SheetProps) {
   const repo = useRepo();
   const me = useMe();
+  const file = useRef<HTMLInputElement>(null);
+  const [asking, setAsking] = useState(false);
+  function pickPhoto(f: File | undefined) {
+    if (!f || !me) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const r = await repo.setPhotos([String(reader.result), ...me.photo_urls.slice(1)]);
+      if (!r.ok) notify.error("Photo not saved. Try a JPG or PNG.");
+    };
+    reader.readAsDataURL(f);
+  }
+  const photo = me?.photo_urls[0];
+  return (
+    <ResponsiveSheet
+      open={open}
+      onOpenChange={(o) => !o && onClose()}
+      title="You’re into"
+      // one filled primary per sheet: while a new pod asks Join, Done steps back to the quiet pill
+      footer={<SheetFoot right={<Button variant={asking ? "secondary" : "primary"} onClick={onClose}>Done</Button>} />}
+    >
+      <PageName>Your seat</PageName>
+      <LikesPicker onAsking={setAsking} />
+      <div className="mt-s8 flex items-center gap-s4 border-t border-line pt-s4">
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo} alt="" className="size-14 rounded-full object-cover" />
+        ) : (
+          <Disc initial={me?.first_name.slice(0, 1)} size={56} />
+        )}
+        <GoLink onClick={() => file.current?.click()}>{photo ? "Change photo" : "Add a photo"}</GoLink>
+        <input ref={file} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => pickPhoto(e.target.files?.[0])} />
+      </div>
+    </ResponsiveSheet>
+  );
+}
+
+/** The likes chips with continuous placement: adding one looks for its pod and offers it inline. Shared by the sheet
+ *  and /app/profile/edit. `onAsking` reports when a new pod is waiting on Join (so the host can quiet its own primary). */
+export function LikesPicker({ onAsking }: { onAsking?: (asking: boolean) => void }) {
+  const repo = useRepo();
   const all = useDb((db) => Object.values(db.interests).filter((i) => i.active));
   const mine = useDb((db) => db.userInterests.filter((u) => u.user_id === db.me).map((u) => u.interest_id));
   const max = useDb((db) => db.config.placement.maxInterestPods);
-  const file = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
   // The last like you added and what placement found for it (continuous placement: likes are never final).
   const [found, setFound] = useState<{ id: string; word: string; state: "looking" | "match" | "none" } | null>(null);
   const match = useDb((db) => (found?.state === "match" ? ((db.podMatches ?? []).find((m) => m.user_id === db.me && m.kind === "interest" && m.topic_key === found.id) ?? null) : null));
   const full = mine.length >= max;
+  const asking = !!(match && match.status === "new");
+  useEffect(() => onAsking?.(asking), [asking, onAsking]);
 
   async function toggle(id: string, on: boolean, word: string) {
     if (on && full) return;
@@ -56,28 +98,10 @@ export function LikesSheet({ open, onClose }: SheetProps) {
     } else if (found?.id === id) setFound(null);
   }
 
-  function pickPhoto(f: File | undefined) {
-    if (!f || !me) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const r = await repo.setPhotos([String(reader.result), ...me.photo_urls.slice(1)]);
-      if (!r.ok) notify.error("Photo not saved. Try a JPG or PNG.");
-    };
-    reader.readAsDataURL(f);
-  }
-
   // yours first, then the rest: what you hold reads as one group, what you can add as another (Meetup, Bumble)
   const ordered = [...all.filter((i) => mine.includes(i.id)), ...all.filter((i) => !mine.includes(i.id))];
-  const photo = me?.photo_urls[0];
   return (
-    <ResponsiveSheet
-      open={open}
-      onOpenChange={(o) => !o && onClose()}
-      title="You’re into"
-      // one filled primary per sheet: while a new pod asks Join, Done steps back to the quiet pill
-      footer={<SheetFoot right={<Button variant={match && match.status === "new" ? "secondary" : "primary"} onClick={onClose}>Done</Button>} />}
-    >
-      <PageName>Your seat</PageName>
+    <>
       <SheetLine className="-mt-s3 mb-s6">{full ? `Up to ${max}. Remove one to add another.` : "Add more anytime. New pods find you."}</SheetLine>
       <motion.div layout className="flex flex-wrap gap-s2" role="group" aria-label="You’re into">
         {ordered.map((i) => {
@@ -111,17 +135,7 @@ export function LikesSheet({ open, onClose }: SheetProps) {
           <p className="min-h-14 text-label text-ink-2">No {found.word} pod nearby yet. We’ll keep looking.</p>
         )}
       </div>
-      <div className="mt-s8 flex items-center gap-s4 border-t border-line pt-s4">
-        {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt="" className="size-14 rounded-full object-cover" />
-        ) : (
-          <Disc initial={me?.first_name.slice(0, 1)} size={56} />
-        )}
-        <GoLink onClick={() => file.current?.click()}>{photo ? "Change photo" : "Add a photo"}</GoLink>
-        <input ref={file} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => pickPhoto(e.target.files?.[0])} />
-      </div>
-    </ResponsiveSheet>
+    </>
   );
 }
 
@@ -133,54 +147,63 @@ const PARTS = [
   { key: "evening", label: "Evening" },
 ] as const;
 const DAYS = [
-  { key: "saturday", label: "Sat" },
-  { key: "sunday", label: "Sun" },
+  { key: "saturday", label: "Sat", full: "Saturday" },
+  { key: "sunday", label: "Sun", full: "Sunday" },
 ] as const;
 
-/** Free times as a field of seats: each one fills when you tap it. */
-export function FreeSheet({ open, onClose }: SheetProps) {
+/** Free times as a grid: days down, parts of the day across; a filled cell is a time you are free. Read-only when
+ *  `onToggle` is absent (the profile shows it), a control otherwise (the sheet and /app/profile/edit). */
+export function FreeGrid({ slots, onToggle }: { slots: Slot[]; onToggle?: (s: Slot) => void }) {
+  const cell = (s: Slot | null, label: string) => {
+    if (!s) return <span key={label} className="yo-free-cell" data-na aria-hidden />;
+    const on = slots.includes(s);
+    if (!onToggle) return <span key={s} className="yo-free-cell" data-on={on || undefined} role="img" aria-label={`${label}: ${on ? "free" : "busy"}`} />;
+    return <button key={s} type="button" role="checkbox" aria-checked={on} aria-label={label} onClick={() => onToggle(s)} className="yo-free-cell pressable" data-on={on || undefined} />;
+  };
+  return (
+    <div className="yo-free">
+      <span />
+      {PARTS.map((p) => (
+        <span key={p.key} className="text-center">
+          {p.label}
+        </span>
+      ))}
+      {DAYS.map((d) => (
+        <FreeRow key={d.key} label={d.full}>
+          {PARTS.map((p) => cell(`${d.key}-${p.key}` as Slot, `${d.full} ${p.label.toLowerCase()}`))}
+        </FreeRow>
+      ))}
+      <FreeRow label="Weeknights">
+        {cell(null, "wk-m")}
+        {cell(null, "wk-a")}
+        {cell("weekday-evening", "Weeknight evenings")}
+      </FreeRow>
+    </div>
+  );
+}
+
+/** Saves a toggled slot (and drops blocked days the new free times no longer touch). */
+export function useToggleSlot() {
   const repo = useRepo();
   const me = useMe();
-  const slots = me?.availability ?? [];
-
-  async function toggle(s: Slot) {
+  return async (s: Slot) => {
     if (!me) return;
+    const slots = me.availability;
     const next = slots.includes(s) ? slots.filter((x) => x !== s) : [...slots, s];
     const days = me.blocked_days.filter((d) => !next.some((x) => x.startsWith(d)));
     const r = await repo.setAvailability(next, days);
     if (!r.ok) notify.error("Not saved. Try again.");
-  }
-
-  const seat = (s: Slot, label: string) => {
-    const on = slots.includes(s);
-    return (
-      <button key={s} type="button" role="checkbox" aria-checked={on} aria-label={label} onClick={() => toggle(s)} className="pressable grid size-14 place-items-center rounded-full outline-offset-2">
-        <RingMark on={on} size={32} />
-      </button>
-    );
   };
+}
 
+export function FreeSheet({ open, onClose }: SheetProps) {
+  const me = useMe();
+  const toggle = useToggleSlot();
   return (
     <ResponsiveSheet open={open} onOpenChange={(o) => !o && onClose()} title="When you’re free" footer={done(onClose)}>
       <PageName>Your seat</PageName>
-      <div className="grid grid-cols-[88px_repeat(3,56px)] items-center justify-between gap-y-s2 text-label text-ink-2">
-        <span />
-        {PARTS.map((p) => (
-          <span key={p.key} className="text-center text-caption">
-            {p.label}
-          </span>
-        ))}
-        {DAYS.map((d) => (
-          <FreeRow key={d.key} label={d.label}>
-            {PARTS.map((p) => seat(`${d.key}-${p.key}` as Slot, `${d.label} ${p.label.toLowerCase()}`))}
-          </FreeRow>
-        ))}
-        <FreeRow label="Weeknights">
-          <span />
-          <span />
-          {seat("weekday-evening", "Weeknight evenings")}
-        </FreeRow>
-      </div>
+      <SheetLine className="-mt-s3 mb-s6">The AI plans hangouts inside these times.</SheetLine>
+      <FreeGrid slots={me?.availability ?? []} onToggle={toggle} />
     </ResponsiveSheet>
   );
 }
@@ -188,7 +211,7 @@ export function FreeSheet({ open, onClose }: SheetProps) {
 function FreeRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <>
-      <span className="text-[16px] text-ink">{label}</span>
+      <span className="yo-free-day">{label}</span>
       {children}
     </>
   );
@@ -221,6 +244,23 @@ function ownLabel(o: Opt, code: string | undefined) {
 }
 
 export function CommunitySheet({ open, onClose }: SheetProps) {
+  const [asking, setAsking] = useState(false);
+  return (
+    <ResponsiveSheet
+      open={open}
+      onOpenChange={(o) => !o && onClose()}
+      title="Community pods"
+      footer={<SheetFoot right={<Button variant={asking ? "secondary" : "primary"} onClick={onClose}>Done</Button>} />}
+    >
+      <PageName>Your seat</PageName>
+      <SheetLine className="-mt-s3 mb-s4">Only members see you there. Change it anytime.</SheetLine>
+      <CommunityPicker onAsking={setAsking} />
+    </ResponsiveSheet>
+  );
+}
+
+/** Community pod families as ring rows; adding one proposes its pod inline. Shared by the sheet and the edit page. */
+export function CommunityPicker({ onAsking }: { onAsking?: (asking: boolean) => void }) {
   const repo = useRepo();
   // Only the signed-in person's own identity is read here (never a member view).
   const ident = useDb((db) => (db.me ? (db.identities[db.me] ?? null) : null));
@@ -233,6 +273,8 @@ export function CommunitySheet({ open, onClose }: SheetProps) {
   const match = useDb((db) =>
     asked ? ((db.podMatches ?? []).filter((m) => !asked.before.includes(m.id) && m.user_id === db.me && m.kind === asked.kind && m.status !== "skipped").at(-1) ?? null) : null,
   );
+  const asking = !!(match && match.status === "new");
+  useEffect(() => onAsking?.(asking), [asking, onAsking]);
 
   async function pick(o: Opt) {
     const before = known;
@@ -246,14 +288,7 @@ export function CommunitySheet({ open, onClose }: SheetProps) {
   }
 
   return (
-    <ResponsiveSheet
-      open={open}
-      onOpenChange={(o) => !o && onClose()}
-      title="Community pods"
-      footer={<SheetFoot right={<Button variant={match && match.status === "new" ? "secondary" : "primary"} onClick={onClose}>Done</Button>} />}
-    >
-      <PageName>Your seat</PageName>
-      <SheetLine className="-mt-s3 mb-s4">Only members see you there. Change it anytime.</SheetLine>
+    <>
       <Rows label="Community pods">
         {COMMUNITY.map((o) => {
           const on = o.heritage ? under(h?.code, o.key, "heritage") : under(f?.code, o.key, "faith");
@@ -265,8 +300,17 @@ export function CommunitySheet({ open, onClose }: SheetProps) {
           <NewPodCard key={match.id} match={match} variant="inline" onSkipped={() => setAsked(null)} />
         </div>
       )}
-    </ResponsiveSheet>
+    </>
   );
+}
+
+/** The communities you hold, in your own words ("Zambian", "Seventh-day Adventist"). Own identity only. */
+export function useMyCommunities(): string[] {
+  const ident = useDb((db) => (db.me ? (db.identities[db.me] ?? null) : null));
+  const out: string[] = [];
+  if (ident?.heritage?.code) out.push(heritageNode(ident.heritage.code)?.label ?? ident.heritage.code);
+  if (ident?.faith?.code) out.push(faithNode(ident.faith.code)?.label ?? ident.faith.code);
+  return out;
 }
 
 /* ── Texts (Y02): SMS off unless chosen (library C #7) ─────────────────────────────────────────────────────────── */

@@ -1,38 +1,42 @@
-// /app/settings (QA round 1; PLATFORM_SPEC §F10 Settings; wireframe Y06 grown into a page). Reached from Your seat ›
-// Settings. Labelled 56px rows in four groups, each one job (DESIGN §9: rows touch inside a group, s8 between):
-//   Notifications   Texts · AI plans                                (sheets shared with Your seat)
-//   Privacy         Privacy and terms (sheet: hide names, download, the AI disclosure) · Blocked · If something's off
-//   App             Mode (Live / Demo, the only place the word shows; data-allow-mode) · Help (write to us)
-//   apart           Sign out, then, apart again, Delete my seat (its own confirm sheet, Y03)
-// No toggle wall (J #7): every choice is one tap to a sheet with ring rows. Appearance is not offered: Pods has one
-// theme (lib/theme.ts); a dark set of tokens is a foundation change.
-//   phone   back to Your seat · "Settings." · 24 · the groups · room for the floating nav
-//   laptop  the 520 column on the left (anatomy F)
+// /app/settings (redesign r2; PLATFORM_SPEC §F10): one clean grouped list, inset-grouped cards (Delphi / iOS).
+//   Account          you (photo, name, phone) → Edit profile
+//   Mode             Live / Demo as two radio cards, right here (easy to find; data-allow-mode)
+//   Notifications    Texts · AI plans (sheets shared with the profile)
+//   Privacy, safety  Privacy and terms · Blocked · If something's off
+//   Help             Guidelines · Write to us
+//   Sign out, then Delete my seat (its own confirm flow)
+// phone: one stack. laptop: two even columns (account + mode + notifications | privacy + help + leave).
 "use client";
 
 import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
-import { Stage } from "@/components/brand/stage";
+import { Disc } from "@/components/brand/disc";
 import { GENTLE, STAGGER } from "@/components/brand/motion";
-import { CondensingHead } from "@/components/shell/condensing-head";
 import { notify } from "@/components/ui";
-import { useHydrated, useMe, useMode } from "@/lib/db/hooks";
+import { useHydrated, useMe } from "@/lib/db/hooks";
 import { signOut } from "@/lib/safety/sign-out";
+import { displayName } from "@/lib/utils";
 import { DeleteAccountFlow, WRITE_TO_US, useBlockedPeople } from "@/components/safety";
-import { Apart, GroupLabel, Rows, SheetRow } from "./kit";
 import { useSeatPrefs } from "./local-prefs";
 import { textsValue } from "./words";
 import { AiSheet, BlockedSheet, PrivacySheet, TextsSheet } from "./seat-sheets";
-import "./seat.css";
+import { ModePicker } from "./mode-screen";
+import { Card, Row, Section, YouHead, YouPage } from "./you-kit";
 
 type SettingsSheet = "texts" | "ai" | "privacy" | "blocked" | "delete";
 const SHEETS: SettingsSheet[] = ["texts", "ai", "privacy", "blocked", "delete"];
 
+/** "(256) 555-0142" for US numbers, else as saved. */
+function prettyPhone(p: string) {
+  const d = p.replace(/\D/g, "");
+  const us = d.length === 11 && d.startsWith("1") ? d.slice(1) : d.length === 10 ? d : null;
+  return us ? `(${us.slice(0, 3)}) ${us.slice(3, 6)}-${us.slice(6)}` : p;
+}
+
 export function SettingsScreen() {
   const hydrated = useHydrated();
   const me = useMe();
-  const mode = useMode();
   const router = useRouter();
   const sp = useSearchParams();
   const asked = sp.get("sheet") as SettingsSheet | null;
@@ -48,64 +52,94 @@ export function SettingsScreen() {
   const close = () => router.replace("/app/settings", { scroll: false });
 
   if (!hydrated || !me) return null;
+  const name = displayName(me);
+  const photo = me.photo_urls[0];
+  const fade = (i: number) => ({ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { ...GENTLE, delay: 0.04 + i * STAGGER } });
 
-  const groups = [
-    <div key="notify">
-      <GroupLabel>Notifications</GroupLabel>
-      <Rows label="Notifications">
-        <SheetRow icon="bell" tone="quiet" label="Texts" value={textsValue(me.notification_prefs.sms, prefs.texts)} arrow onClick={() => go("texts")} />
-        <SheetRow icon="clock" tone="quiet" label="AI plans" value={prefs.claude ? "On" : "Off"} arrow onClick={() => go("ai")} />
-      </Rows>
-    </div>,
-    <div key="privacy">
-      <GroupLabel>Privacy</GroupLabel>
-      <Rows label="Privacy">
-        <SheetRow icon="why" label="Privacy and terms" arrow onClick={() => go("privacy")} />
-        <SheetRow icon="block" label="Blocked" value={<span className="tabular-nums">{blocked ? blocked : "No one"}</span>} arrow onClick={() => go("blocked")} />
-        <SheetRow icon="here" label="If something’s off" href="/app/safety" arrow />
-      </Rows>
-    </div>,
-    <div key="app">
-      <GroupLabel>App</GroupLabel>
-      <Rows label="App">
-        <span data-allow-mode className="contents">
-          <SheetRow icon="again" tone="quiet" label="Mode" value={mode === "demo" ? "Demo" : "Live"} href="/app/settings/mode" arrow />
-        </span>
-        <SheetRow icon="talk" tone="quiet" label="Help" value="Write to us" href={WRITE_TO_US} external />
-      </Rows>
-    </div>,
-    <div key="account">
-      <Rows label="Account">
-        <SheetRow
-          icon="back"
-          tone="quiet"
-          label="Sign out"
-          onClick={() => {
-            leaving.current = true;
-            signOut();
-            router.replace("/");
-          }}
-        />
-      </Rows>
-      <Apart>
-        <Rows>
-          <SheetRow icon="off" tone="quiet" label="Delete my seat" arrow onClick={() => go("delete")} />
-        </Rows>
-      </Apart>
-    </div>,
-  ];
+  const left = (
+    <>
+      <motion.div {...fade(0)}>
+        <Section label="Account">
+          <Card>
+            <Row
+              href="/app/profile/edit"
+              lead={
+                photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photo} alt="" className="size-12 shrink-0 rounded-full object-cover" />
+                ) : (
+                  <Disc initial={name.slice(0, 1)} size={48} />
+                )
+              }
+              label={<span data-nc>{name}</span>}
+              hint={me.phone ? prettyPhone(me.phone) : "Edit profile"}
+              value="Edit"
+              arrow
+            />
+          </Card>
+        </Section>
+      </motion.div>
+      <motion.div {...fade(1)}>
+        <Section label="Mode" className="mt-s6">
+          <ModePicker />
+        </Section>
+      </motion.div>
+      <motion.div {...fade(2)}>
+        <Section label="Notifications" className="mt-s6">
+          <Card>
+            <Row icon="bell" label="Texts" hint="Sent to your phone" value={textsValue(me.notification_prefs.sms, prefs.texts)} arrow onClick={() => go("texts")} />
+            <Row icon="clock" label="AI plans" hint="Picks a time and place from your free times" value={prefs.claude ? "On" : "Off"} arrow onClick={() => go("ai")} />
+          </Card>
+        </Section>
+      </motion.div>
+    </>
+  );
+
+  const right = (
+    <>
+      <motion.div {...fade(3)}>
+        <Section label="Privacy and safety">
+          <Card>
+            <Row icon="why" tone="safe" label="Privacy and terms" hint="What others see, your data" arrow onClick={() => go("privacy")} />
+            <Row icon="block" tone="safe" label="Blocked" value={<span className="tabular-nums">{blocked ? blocked : "No one"}</span>} arrow onClick={() => go("blocked")} />
+            <Row icon="here" tone="safe" label="If something’s off" hint="Emergency lines, share your plan, report" href="/app/safety" arrow />
+          </Card>
+        </Section>
+      </motion.div>
+      <motion.div {...fade(4)}>
+        <Section label="Help" className="mt-s6">
+          <Card>
+            <Row icon="list" label="Guidelines" href="/safety" arrow />
+            <Row icon="talk" label="Write to us" href={WRITE_TO_US} external arrow />
+          </Card>
+        </Section>
+      </motion.div>
+      <motion.div {...fade(5)}>
+        <Section className="mt-s6">
+          <Card>
+            <Row
+              icon="back"
+              label="Sign out"
+              onClick={() => {
+                leaving.current = true;
+                signOut();
+                router.replace("/");
+              }}
+            />
+            <Row icon="off" tone="danger" label="Delete my seat" hint="Removes your profile and pods for good" onClick={() => go("delete")} />
+          </Card>
+        </Section>
+      </motion.div>
+    </>
+  );
 
   return (
-    <div className="seat-pg">
-      <Stage light="paper" />
-      <CondensingHead left="back" backHref="/app/profile" backLabel="Your seat" size="lg" title="Settings." compact="Settings" className="seat-head" />
-      <div className="seat-body">
-        <div className="seat-col safe-col">
-          {groups.map((g, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ ...GENTLE, delay: 0.06 + i * STAGGER }}>
-              {g}
-            </motion.div>
-          ))}
+    <YouPage>
+      <YouHead back="/app/profile" backLabel="Your profile" title="Settings" />
+      <div className="yo-wrap yo-body">
+        <div className="yo-cols" data-even>
+          <div>{left}</div>
+          <div>{right}</div>
         </div>
       </div>
 
@@ -123,6 +157,6 @@ export function SettingsScreen() {
           notify("Your seat is cleared.");
         }}
       />
-    </div>
+    </YouPage>
   );
 }

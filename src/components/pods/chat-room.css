@@ -1,0 +1,21 @@
+/* The chat page on a laptop (chat-room.tsx): fills the main column beside the rail; the pod's table under it is hidden. */
+.pods-chat-room {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 232px;
+  z-index: var(--z-sticky);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  background: var(--paper);
+}
+@media (min-width: 1280px) {
+  .pods-chat-room {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+}
+body:has([data-chat-room]) .pods-pg,
+body:has([data-chat-room]) .pods-talk-dock {
+  visibility: hidden;
+}

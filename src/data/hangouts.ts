@@ -158,11 +158,12 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
       const a1 = author("d1"); const a2 = author("d2", a1.id); const a3 = author("d3", a2.id);
       if (isHoopers) {
         pushMsg(null, "Malik, Ama and Tobi are in for Saturday", at(NOV1, "12:40"), "system");
-        pushMsg(botId("Malik"), "I'll grab the far court if we're early", at(NOV1, "12:42"));
-        pushMsg(botId("Tobi"), "Same! Tacos after?", at(NOV1, "12:47"));
+        pushMsg(botId("Malik"), "I'll grab the far court if we're early", at(NOV1, "12:42"), "text", { reactions: { fire: [botId("Tobi"), botId("Ama")] } });
+        pushMsg(botId("Tobi"), "Same! Tacos after?", at(NOV1, "12:47"), "text", { reactions: { laugh: [botId("Malik")], thumbs: [botId("Ama"), botId("Kayla")] } });
         pushMsg(botId("Marcus"), "Saturday mornings are my thing. Let me check and I'll tap in", at("2026-11-02", "08:15"));
         pushMsg(botId("Ama"), "I'll bring a ball and a pump, mine's a little flat", at("2026-11-02", "19:30"));
-        pushMsg(botId("Kayla"), "Cool, I'll be the one in the pink socks", at("2026-11-03", "20:05"));
+        pushMsg(botId("Tobi"), "Legend. I've got water for everyone", at("2026-11-02", "19:36"), "text", { reply_to: msgs[msgs.length - 1].id, reactions: { heart: [botId("Ama")] } });
+        pushMsg(botId("Kayla"), "Cool, I'll be the one in the pink socks", at("2026-11-03", "20:05"), "text", { reactions: { laugh: [botId("Tobi"), botId("Malik")] } });
       } else if (onDeckPod) {
         pushMsg(a1.id, pickLine(lines.misc, "m1"), at("2026-11-02", "11:25"));
         pushMsg(a2.id, pickLine(lines.misc, "m2"), at("2026-11-03", "18:40"));

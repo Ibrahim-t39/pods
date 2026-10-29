@@ -13,10 +13,11 @@ import { buildIdentities } from "./identities";
 import { VENUES, assertVenues } from "./venues";
 import { buildPodWorld } from "./hangouts";
 import { buildExtras } from "./extras";
+import { buildSeedPolls } from "./polls";
 import { POD_DEFS } from "./pods";
 import { addDays, dateOf } from "./time";
 
-export const SEED_VERSION = "u2-3-sat10";
+export const SEED_VERSION = "u2-3-sat10-polls";
 
 export function buildSeed(anchor: string): DbState {
   assertVenues(VENUES);
@@ -27,7 +28,8 @@ export function buildSeed(anchor: string): DbState {
   const extras = buildExtras(users);
 
   // splice in the messages that reports point at
-  for (const f of extras.flagged) {
+  const seedPolls = buildSeedPolls();
+  for (const f of [...extras.flagged, ...seedPolls.flagged]) {
     const list = world.messages[f.pod_id];
     list.push(f.message);
     list.sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
@@ -77,7 +79,7 @@ export function buildSeed(anchor: string): DbState {
     placementRuns: [],
     notifications: [],
     plannerCache: Object.fromEntries(world.plannerCache.map((c) => [`${c.pod_id}:${c.job}`, c])),
-    polls: {},
+    polls: byKey(seedPolls.polls, (p) => p.id),
     memories: {},
     invites: {},
     podRequests: [],

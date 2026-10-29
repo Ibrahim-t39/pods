@@ -1,62 +1,70 @@
-// Your seat (wireframe Y01; template.md anatomy F; V3_SPEC §6.5; PLATFORM_SPEC §F10 "You"; QA round 1).
-// What you told us, as labelled fields: a quiet label, the value, an edit mark, each one tap to the sheet that changes
-// it. The photo is the first field (tap to add or change). Under them, two labelled rows: Settings (/app/settings,
-// where Mode, privacy, sign out and delete live) and If something's off (/app/safety). No toggle wall (J #7).
-//
-//   phone   mark · "Chanda, 22." (bold lg, condenses into a glass bar on scroll) · 24 · six 72px fields on
-//           hairlines · 32 · two 56px labelled rows · 48 · your seat at the table · room for the floating nav
-//   laptop  the 520 text column on the left, your seat at the table on the right (anatomy F + PB 1.1)
-// Motion (MOTION_SYSTEM §4, §10): rows arrive on STAGGER; the table is the `you` shared element.
-//
-// Sheets are addressed by ?sheet=. The account sheets (more, privacy, blocked, delete) moved to /app/settings; old
-// addresses are forwarded there. While a sheet is open, the field it changes stays lit and the others step back.
+// /app/profile: who you are and what Pods knows about you, at a glance and one tap from changing (redesign r2).
+//   identity   photo (tap to change), name, age, since · Edit profile · three numbers (pods, hangouts, people)
+//   pods       your pods with their colour, size and next hangout (tap opens the pod)
+//   into       interests as chips: × removes, + Add opens the picker (adding one looks for a new pod)
+//   community  your community pods in your own words, Edit
+//   free       the week grid (read-only here; Edit opens the sheet)
+//   more       Invite a friend · Settings · If something's off
+//   phone   one stack; laptop   identity + more on the left (sticky), pods / into / community / free on the right.
+// Sheets are addressed by ?sheet= (likes, free, community, texts, ai); account sheets forward to /app/settings.
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Disc } from "@/components/brand/disc";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
-import { Stage } from "@/components/brand/stage";
-import { TableRing, GENTLE, type Seat } from "@/components/brand/table-ring";
-import { STAGGER } from "@/components/brand/motion";
+import { Disc, POD_SOLID } from "@/components/brand/disc";
+import { GENTLE, STAGGER } from "@/components/brand/motion";
 import { PullCircles } from "@/components/brand/pull-circles";
-import { Shared, sharedName } from "@/components/brand/shared";
-import { CondensingHead } from "@/components/shell/condensing-head";
-import { useStore } from "@/lib/db/store";
+import { Icon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 import { notify } from "@/components/ui";
+import { useStore } from "@/lib/db/store";
 import { useDb, useHydrated, useMe, useRepo } from "@/lib/db/hooks";
-import { nowISO } from "@/lib/time/clock";
+import { myPlans, podLabel } from "@/lib/platform/selectors";
+import { nowISO, useClock } from "@/lib/time/clock";
+import { formatWhen } from "@/lib/time/format";
 import { displayName, toPublicMember } from "@/lib/utils";
-import { useMediaQuery } from "@/components/ui/use-media-query";
+import type { DbState } from "@/lib/types";
+import { podHue } from "./hue";
 import { useSeatPrefs } from "./local-prefs";
-import { FieldRow, Rows, SheetRow } from "./kit";
-import { freeLine, likesLine, textsValue, valueOf } from "./words";
-import { AiSheet, CommunitySheet, FreeSheet, LikesSheet, SEAT_SHEETS, TextsSheet, type SeatSheet } from "./seat-sheets";
-import "./seat.css";
+import { shortLike, textsValue } from "./words";
+import { AiSheet, CommunitySheet, FreeGrid, FreeSheet, LikesSheet, SEAT_SHEETS, TextsSheet, useMyCommunities, type SeatSheet } from "./seat-sheets";
+import { Card, Row, Section, TextAction, YouHead, YouPage } from "./you-kit";
 
 /** Sheets that live on /app/settings now; an old Your seat address is forwarded there. */
 const MOVED: Partial<Record<SeatSheet, string>> = { more: "", privacy: "privacy", blocked: "blocked", delete: "delete" };
+const ALL = (db: DbState) => db;
 
 export function YourSeat() {
   const me = useMe();
   const hydrated = useHydrated();
-  const wide = useMediaQuery("(min-width: 1024px)");
   const router = useRouter();
   const sp = useSearchParams();
   const asked = sp.get("sheet");
-  // old addresses: ?sheet=claude is the AI sheet now; ?sheet=help is the If something's off page
   const raw = (asked === "claude" ? "ai" : asked) as SeatSheet | null;
   const sheet = raw && SEAT_SHEETS.includes(raw) ? raw : null;
   useEffect(() => {
     if (asked === "help") router.replace("/app/safety");
     else if (raw && raw in MOVED) router.replace(MOVED[raw] ? `/app/settings?sheet=${MOVED[raw]}` : "/app/settings");
   }, [asked, raw, router]);
-  // no seat in this world yet (a fresh Live, or signed out): /app routes to first run
   useEffect(() => {
     if (hydrated && !me) router.replace("/app");
   }, [hydrated, me, router]);
+
   const repo = useRepo();
+  const db = useDb(ALL);
+  const now = useClock().getTime();
+  const { prefs } = useSeatPrefs();
+  const communities = useMyCommunities();
   const file = useRef<HTMLInputElement>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
+
+  const go = (s: SeatSheet) => router.replace(`/app/profile?sheet=${s}`, { scroll: false });
+  const close = () => router.replace("/app/profile", { scroll: false });
+
+  if (!hydrated || !me) return null;
+
   function pickPhoto(f: File | undefined) {
     if (!f || !me) return;
     const reader = new FileReader();
@@ -67,101 +75,195 @@ export function YourSeat() {
     };
     reader.readAsDataURL(f);
   }
-  const { prefs } = useSeatPrefs();
-  const likes = useDb((db) =>
-    db.userInterests
-      .filter((u) => u.user_id === db.me)
-      .map((u) => db.interests[u.interest_id])
-      .filter(Boolean)
-      .map((i) => ({ id: i.id, label: i.label })),
-  );
-  const community = useDb((db) => !!(db.me && db.identities[db.me] && (db.identities[db.me].heritage || db.identities[db.me].faith)));
 
-  const go = (s: SeatSheet) => router.replace(`/app/profile?sheet=${s}`, { scroll: false });
-  const close = () => router.replace("/app/profile", { scroll: false });
+  const likes = db.userInterests
+    .filter((u) => u.user_id === db.me)
+    .map((u) => db.interests[u.interest_id])
+    .filter(Boolean);
+  async function removeLike(id: string, word: string) {
+    setRemoving(id);
+    const r = await repo.removeInterest(id);
+    setRemoving(null);
+    if (!r.ok) return notify.error("Not saved. Try again.");
+    notify(`Removed ${word}`, { undo: () => void repo.addInterest(id) });
+  }
 
-  if (!hydrated || !me) return null;
+  const myIds = db.memberships.filter((m) => m.user_id === db.me && !m.left_at).map((m) => m.pod_id);
+  const plans = myPlans(db, now);
+  const pods = myIds
+    .map((id) => db.pods[id])
+    .filter(Boolean)
+    .map((p) => {
+      const members = db.memberships.filter((m) => m.pod_id === p.id && !m.left_at).length;
+      const next = plans.upcoming.find((x) => x.podId === p.id) ?? null;
+      return { id: p.id, name: podLabel(db, p), type: p.type, members, hue: podHue(db, p.id), next };
+    });
+  const people = new Set(db.memberships.filter((m) => myIds.includes(m.pod_id) && !m.left_at && m.user_id !== db.me).map((m) => m.user_id)).size;
+  const went = plans.past.filter((p) => p.me === "going" || p.checkedIn).length;
 
   const age = toPublicMember(me, nowISO()).age;
   const name = displayName(me);
   const photo = me.photo_urls[0];
-  const rows: { key: SeatSheet; label: string; value: string }[] = [
-    { key: "likes", label: "Into", value: valueOf(likesLine(likes), "Into ") },
-    { key: "free", label: "Free", value: valueOf(freeLine(me.availability), "Free ") },
-    { key: "community", label: "Community pods", value: community ? "On" : "Off" },
-    { key: "texts", label: "Texts", value: textsValue(me.notification_prefs.sms, prefs.texts) },
-    { key: "ai", label: "AI plans", value: prefs.claude ? "On" : "Off" },
-  ];
-  const owner = sheet && !(sheet in MOVED) ? sheet : null;
-  const seats: Seat[] = [{ in: true, ink: true, initial: name.slice(0, 1) }, { open: true }, { open: true }, { open: true }];
+  const since = new Date(me.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const fade = (i: number) => ({ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { ...GENTLE, delay: 0.04 + i * STAGGER } });
+
+  const identity = (
+    <Card className="yo-pad">
+      <div className="yo-id">
+        <button type="button" className="yo-photo pressable" onClick={() => file.current?.click()} aria-label={photo ? "Change photo" : "Add a photo"}>
+          {photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photo} alt="" />
+          ) : (
+            <Disc initial={name.slice(0, 1)} size={72} />
+          )}
+          <span className="yo-photo-cam" aria-hidden>
+            <Icon name="edit" size={14} />
+          </span>
+        </button>
+        <input ref={file} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => pickPhoto(e.target.files?.[0])} />
+        <div className="min-w-0 flex-1">
+          <p className="yo-name" data-nc>
+            {name}, <span className="tabular-nums">{age}</span>
+          </p>
+          <p className="mt-s1 text-[14px] text-ink-2">
+            {me.verified ? "Verified · " : ""}On Pods since {since}
+          </p>
+        </div>
+      </div>
+      <div className="yo-stats">
+        <div className="yo-stat">
+          <b>{pods.length}</b>
+          <span>{pods.length === 1 ? "pod" : "pods"}</span>
+        </div>
+        <div className="yo-stat">
+          <b>{went}</b>
+          <span>{went === 1 ? "hangout" : "hangouts"}</span>
+        </div>
+        <div className="yo-stat">
+          <b>{people}</b>
+          <span>people</span>
+        </div>
+      </div>
+      <Button asChild variant="secondary" size="sm" className="mt-s4 w-full">
+        <Link href="/app/profile/edit">Edit profile</Link>
+      </Button>
+    </Card>
+  );
+
+  const more = (
+    <Section label="More">
+      <Card>
+        <Row icon="add" label="Invite a friend" hint="Save them a seat in your pod" href="/app/invite" arrow />
+        <Row icon="bell" label="Texts" value={textsValue(me.notification_prefs.sms, prefs.texts)} onClick={() => go("texts")} arrow />
+        <Row icon="more" label="Settings" href="/app/settings" arrow />
+        <Row icon="here" tone="safe" label="If something’s off" href="/app/safety" arrow />
+      </Card>
+    </Section>
+  );
 
   return (
-    <div className="seat-pg">
-      <Stage light="paper" />
-      <PullCircles label="Refreshing your seat" onRefresh={() => useStore.persist.rehydrate()} />
-      <CondensingHead
-        left="mark"
-        size="lg"
-        compact={`${name}, ${age}`}
-        className="seat-head"
-        title={
-          <span data-nc>
-            {name}, {age}.
-          </span>
-        }
-      />
-
-      <div className="seat-body">
-        <div className="seat-col">
-          <ul className="seat-rows" aria-label="What you told us">
-            <motion.li initial={{ opacity: 0, y: 12 }} animate={{ opacity: owner ? 0.32 : 1, y: 0 }} transition={{ ...GENTLE, delay: owner ? 0 : 0.08 }}>
-              <FieldRow
-                label="Photo"
-                value={photo ? "Change photo" : "Add a photo"}
-                lead={
-                  photo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={photo} alt="" className="size-10 shrink-0 rounded-full object-cover" />
-                  ) : (
-                    <Disc initial={name.slice(0, 1)} size={40} />
-                  )
-                }
-                onClick={() => file.current?.click()}
-              />
-              <input ref={file} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => pickPhoto(e.target.files?.[0])} />
-            </motion.li>
-            {rows.map((r, i) => (
-              <motion.li
-                key={r.key}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: owner && owner !== r.key ? 0.32 : 1, y: 0 }}
-                transition={{ ...GENTLE, delay: owner ? 0 : 0.08 + (i + 1) * STAGGER }}
-              >
-                <FieldRow label={r.label} value={<span data-nc={r.key === "likes" || undefined}>{r.value}</span>} expanded={owner === r.key} onClick={() => go(r.key)} />
-              </motion.li>
-            ))}
-          </ul>
-
-          <motion.div className="seat-quiet" initial={{ opacity: 0 }} animate={{ opacity: owner ? 0.32 : 1 }} transition={{ ...GENTLE, delay: owner ? 0 : 0.4 }}>
-            <Rows label="More of your seat">
-              <SheetRow icon="more" tone="quiet" label="Settings" href="/app/settings" arrow />
-              <SheetRow icon="here" label="If something’s off" href="/app/safety" arrow />
-            </Rows>
+    <YouPage>
+      <PullCircles label="Refreshing your profile" onRefresh={() => useStore.persist.rehydrate()} />
+      <YouHead title="You" />
+      <div className="yo-wrap yo-body">
+        <div className="yo-cols">
+          <motion.div className="yo-sticky" {...fade(0)}>
+            {identity}
+            <div className="hidden lg:block">
+              <div className="mt-s6">{more}</div>
+            </div>
           </motion.div>
-        </div>
 
-        {/* the object: your seat at a table that is waiting for you. On laptop it steps aside for a sheet. */}
-        <div className="seat-obj settle">
-          <Shared name={sharedName.you}>
-            <motion.div
-              aria-hidden
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={wide && sheet ? { opacity: 1, scale: 0.62, x: -240, y: 80 } : { opacity: 1, scale: 1, x: 0, y: 0 }}
-              transition={GENTLE}
-            >
-              <TableRing size={wide ? 400 : 168} seats={seats} names={false} youWaiting={false} />
+          <div>
+            <motion.div {...fade(1)}>
+              <Section label={`Your pods · ${pods.length}`} action={<TextAction href="/app/discover">Find more</TextAction>}>
+                {pods.length ? (
+                  <Card>
+                    {pods.map((p) => (
+                      <Row
+                        key={p.id}
+                        href={`/app/pods/${p.id}`}
+                        lead={<PodBead hue={p.hue} members={p.members} />}
+                        label={<span data-nc>{p.name}</span>}
+                        hint={p.next ? `${p.next.locked ? "Locked" : "Next"} · ${formatWhen(p.next.starts_at)}` : `${p.members} people · nothing planned yet`}
+                        value={<span className="tabular-nums">{p.members}</span>}
+                        arrow
+                      />
+                    ))}
+                  </Card>
+                ) : (
+                  <Card className="yo-pad">
+                    <p className="text-[15px] text-ink-2">No pods yet. Add what you’re into and we’ll find one.</p>
+                  </Card>
+                )}
+              </Section>
             </motion.div>
-          </Shared>
+
+            <motion.div {...fade(2)}>
+              <Section label="Into" action={<TextAction href="/app/profile/edit#into">Edit</TextAction>} className="mt-s6">
+                <Card className="yo-pad">
+                  <div className="yo-chips" role="list" aria-label="You’re into">
+                    {likes.map((i) => {
+                      const word = shortLike(i.id, i.label);
+                      const label = word.charAt(0).toUpperCase() + word.slice(1);
+                      return (
+                        <span key={i.id} role="listitem" className="yo-chip">
+                          {label}
+                          <button
+                            type="button"
+                            className="yo-chip-x pressable"
+                            aria-label={`Remove ${label}`}
+                            disabled={removing === i.id || likes.length === 1}
+                            onClick={() => removeLike(i.id, word)}
+                          >
+                            <Icon name="close" size={14} />
+                          </button>
+                        </span>
+                      );
+                    })}
+                    <button type="button" className="yo-chip yo-chip-add pressable" onClick={() => go("likes")}>
+                      <Icon name="add" size={16} />
+                      Add
+                    </button>
+                  </div>
+                  <p className="mt-s3 text-[14px] text-ink-2">Each one you add looks for a pod near you.</p>
+                </Card>
+              </Section>
+            </motion.div>
+
+            <motion.div {...fade(3)}>
+              <Section label="Community pods" action={<TextAction onClick={() => go("community")}>{communities.length ? "Edit" : "Add"}</TextAction>} className="mt-s6">
+                <Card className="yo-pad">
+                  {communities.length ? (
+                    <div className="yo-chips">
+                      {communities.map((c) => (
+                        <span key={c} className="yo-chip yo-chip-static" data-hue="grove" data-nc>
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[15px] text-ink-2">Off. Turn on to meet people who share your roots or faith.</p>
+                  )}
+                  <p className="mt-s3 text-[14px] text-ink-2">Only members of that pod see it.</p>
+                </Card>
+              </Section>
+            </motion.div>
+
+            <motion.div {...fade(4)}>
+              <Section label="Free" action={<TextAction onClick={() => go("free")}>Edit</TextAction>} className="mt-s6">
+                <Card className="yo-pad">
+                  <FreeGrid slots={me.availability} />
+                  <p className="mt-s3 text-[14px] text-ink-2">{prefs.claude ? "The AI plans hangouts inside these times." : "AI plans are off. Turn them on in Settings."}</p>
+                </Card>
+              </Section>
+            </motion.div>
+
+            <motion.div className="mt-s6 lg:hidden" {...fade(5)}>
+              {more}
+            </motion.div>
+          </div>
         </div>
       </div>
 
@@ -170,6 +272,19 @@ export function YourSeat() {
       <CommunitySheet open={sheet === "community"} onClose={close} />
       <TextsSheet open={sheet === "texts"} onClose={close} />
       <AiSheet open={sheet === "ai"} onClose={close} />
-    </div>
+    </YouPage>
+  );
+}
+
+/** A pod as the logo draws people: a solid circle in the pod's colour with white dots (one per person, up to 8). */
+export function PodBead({ hue, members, size = 40 }: { hue: "ember" | "signal" | "grove"; members: number; size?: number }) {
+  const n = Math.max(1, Math.min(8, members));
+  return (
+    <span className="yo-bead" style={{ background: POD_SOLID[hue], width: size, height: size }} aria-hidden>
+      {Array.from({ length: n }, (_, i) => {
+        const a = -Math.PI / 2 + (i / n) * Math.PI * 2;
+        return <i key={i} style={{ left: `calc(50% + ${Math.cos(a) * 30}% - 3px)`, top: `calc(50% + ${Math.sin(a) * 30}% - 3px)` }} />;
+      })}
+    </span>
   );
 }
