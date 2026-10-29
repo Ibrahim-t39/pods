@@ -1,4 +1,4 @@
-// <TryIt />: the landing's playable story (STORY.md §2, beats 2-6). No account, nothing stored; "Start over" resets.
+// <TryIt />: the landing's playable story (STORY.md §2, beats 2-6). No account, nothing stored.
 // Fit (pick interests) -> Pod (circles move together, the pod lands) -> Plan (AI shows its work, the card assembles)
 // -> I'm in (3 of 8 ticks to 4, Locked, the four move together) -> Repeat (run it back, overlaps deepen).
 // Every beat plays as you scroll to it; nothing waits for a tap (picking interests only changes which pod you see).
@@ -8,7 +8,6 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useInView } from "motion/react";
-import { Button } from "@/components/ui/button";
 import { InCount } from "@/components/brand/in-count";
 import { PlanHalo } from "@/components/brand/plan-halo";
 import { SNAPPY, useCalmMotion } from "@/components/brand/motion";
@@ -62,7 +61,6 @@ interface Try {
   imIn: () => void;
   votes: ("yes" | "no")[];
   vote: (v: "yes" | "no") => void;
-  reset: () => void;
 }
 const Ctx = createContext<Try | null>(null);
 const useTry = () => useContext(Ctx)!;
@@ -70,7 +68,7 @@ const useTry = () => useContext(Ctx)!;
 export function TryIt() {
   const calm = useCalmMotion();
   const [picked, setPicked] = useState<Key[]>([]);
-  const [run, setRun] = useState(0);
+  const [run] = useState(0);
   const [done, setDone] = useState<Record<StepId, boolean>>({ fit: false, pod: false, plan: false, in: false, repeat: false });
   const [inn, setIn] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -102,19 +100,8 @@ export function TryIt() {
     seq.forEach((x, i) => later(() => setVotes((cur) => [...cur, x]), 250 + i * 420));
     later(() => mark("repeat"), 250 + 4 * 420);
   };
-  const reset = () => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-    setPicked([]);
-    setIn(false);
-    setLocked(false);
-    setVotes([]);
-    setDone({ fit: false, pod: false, plan: false, in: false, repeat: false });
-    setRun((r) => r + 1);
-    document.getElementById("fit")?.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" });
-  };
 
-  const value: Try = { picked, toggle, pod, others, run, done, mark, n, locked, imIn, votes, vote, reset };
+  const value: Try = { picked, toggle, pod, others, run, done, mark, n, locked, imIn, votes, vote };
   return (
     <Ctx.Provider value={value}>
       <section id="try" className="tr" aria-labelledby="tr-h">
@@ -179,11 +166,7 @@ function Head({ k, line, sub }: { k: string; line: React.ReactNode; sub?: React.
 
 /* ── 1 Fit ─────────────────────────────────────────────────────────────────────────────────────────────────── */
 function Fit() {
-  const { picked, toggle, mark } = useTry();
-  const go = () => {
-    mark("fit");
-    document.getElementById("pod")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const { picked, toggle } = useTry();
   return (
     <div id="fit" className="tr-beat">
       <Head k="Fit" line="What do you like?" sub="Pick a few. Add more anytime." />
@@ -199,9 +182,6 @@ function Fit() {
             );
           })}
         </div>
-        <Button size="lg" variant={picked.length ? "primary" : "secondary"} onClick={go}>
-          {picked.length ? "Find my pod" : "Skip, show me one"}
-        </Button>
       </div>
     </div>
   );
@@ -209,7 +189,7 @@ function Fit() {
 
 /* ── 2 Pod: "Finding your pods" — the circles move together and the pod lands in the centre ───────────────── */
 function Pod() {
-  const { pod, others, picked, mark, run, done } = useTry();
+  const { pod, others, picked, mark, run } = useTry();
   const calm = useCalmMotion();
   const ref = useRef<HTMLDivElement>(null);
   const seen = useInView(ref, { amount: 0.5 });
@@ -217,6 +197,7 @@ function Pod() {
   useEffect(() => {
     if (seen && !played) {
       setPlayed(true);
+      mark("fit");
       mark("pod");
     }
   }, [seen, played, mark]);
@@ -257,7 +238,7 @@ function Pod() {
           </ul>
           <p className="tr-faces-l">8 people. Same pod each time.</p>
         </div>
-        {!picked.length && !done.fit && <p className="tr-note">Showing basketball. Pick yours above.</p>}
+        {!picked.length && <p className="tr-note">Showing basketball. Pick yours above.</p>}
       </div>
     </div>
   );
@@ -379,7 +360,7 @@ function ImIn() {
 
 /* ── 5 Repeat: run it back; the other three answer; same people again, overlaps deepen ─────────────────────── */
 function Repeat() {
-  const { votes, vote, reset, pod } = useTry();
+  const { votes, vote, pod } = useTry();
   const yes = votes.filter((v) => v === "yes").length;
   const all = votes.length === 4;
   const ref = useRef<HTMLDivElement>(null);
@@ -407,11 +388,6 @@ function Repeat() {
             {votes.length ? `${yes} of 4 yes` : "0 of 4"}
           </span>
         </div>
-        {all && (
-          <button type="button" className="tr-again pressable" onClick={reset}>
-            Play it again
-          </button>
-        )}
       </div>
     </div>
   );
