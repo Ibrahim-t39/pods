@@ -48,7 +48,7 @@ export function SheetRow({ icon, label, value, arrow, className, href, external,
       {icon && <Icon name={icon} size={24} className={cn("shrink-0", tone === "danger" ? "text-danger-text" : tone === "quiet" ? "text-ink-2" : "text-safe")} />}
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {value != null && <span className="shrink-0 text-label text-ink-2">{value}</span>}
-      {arrow && <Icon name="arrow" size={20} className="shrink-0 text-ink-2" />}
+      {arrow && <Icon name="arrow" size={16} stroke={2} className="shrink-0 text-ink-2" />}
     </>
   );
   const cls = cn(ROW, tone === "quiet" ? HOVER : HOVER_SAFE, tone === "danger" && "font-medium text-danger-text", className);

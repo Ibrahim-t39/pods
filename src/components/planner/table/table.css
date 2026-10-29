@@ -643,6 +643,14 @@ html[data-light="night"] .pt-over {
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
+/* laptop: the pod stays readable behind the panel, dimmed, never blurred */
+@media (min-width: 1024px) {
+  .pd-scrim {
+    background: color-mix(in srgb, var(--ink) 24%, transparent);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
 .pd {
   position: absolute;
   left: 0;
@@ -803,7 +811,7 @@ html[data-light="night"] .pt-over {
 }
 /* the facts: icon · two lines · one action, like a calendar event (Google Calendar, Luma) */
 .pd-facts {
-  margin: var(--s6) 0 0;
+  margin: var(--s4) 0 0;
   padding: 0;
   list-style: none;
   border-radius: 20px;
@@ -860,16 +868,18 @@ html[data-light="night"] .pt-over {
   box-shadow: inset 0 0 0 1px var(--line-2);
 }
 .pd-block {
-  margin-top: var(--s8);
+  margin-top: var(--s6);
 }
+.pd-pair > .pd-block {
+  min-width: 0;
+}
+/* section label: sentence case, 13px, 500 (one label style app-wide) */
 .pd-h {
   font-size: 13px;
   line-height: 18px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-weight: 500;
   color: var(--ink-2);
-  margin-bottom: var(--s3);
+  margin-bottom: var(--s2);
 }
 .pd-who-row {
   display: flex;
@@ -938,6 +948,10 @@ html[data-light="night"] .pt-over {
   border-radius: 16px;
   background: color-mix(in srgb, var(--color-info-text, #1b78fe) 7%, var(--lit));
 }
+.pd-rain > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .pd-rain > svg {
   margin-top: 1px;
   color: var(--color-info-text);
@@ -965,7 +979,7 @@ html[data-light="night"] .pt-over {
 }
 @media (min-width: 640px) {
   .pd-grid {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 @media (min-width: 1024px) {
@@ -988,10 +1002,6 @@ html[data-light="night"] .pt-over {
   }
   .pd-handle {
     display: none;
-  }
-  .pd-title {
-    font-size: 32px;
-    line-height: 36px;
   }
   .pd-foot {
     padding: var(--s4) var(--s8);

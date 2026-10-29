@@ -105,7 +105,7 @@ export function Disc({ initial, tone = "you", size = 40, ring, label, seed, clas
   );
 }
 
-/** Overlapping discs (30% overlap), like the logo. `max` caps the visible count and adds "+n" as a label disc. */
+/** Overlapping discs (light overlap, letters stay whole). `max` caps the visible count and adds "+n" as a label disc. */
 export function DiscStack({
   people,
   size = 32,
@@ -119,11 +119,21 @@ export function DiscStack({
 }) {
   const shown = people.slice(0, max);
   const extra = people.length - shown.length;
-  const ov = Math.round(size * 0.3);
+  // founder review r3: a 30% overlap cut the initials in half. A light overlap (~22%, -6px at 28) with a 2px ring in the
+  // card's colour keeps every letter whole; the first person sits on top.
+  const ov = Math.max(4, Math.round(size * 0.22));
   return (
     <span className={cn("inline-flex items-center", className)} style={{ paddingLeft: ov }}>
       {shown.map((p, i) => (
-        <Disc key={i} initial={p.initial} tone={p.tone} label={p.label} seed={p.seed} size={size} ring style={{ marginLeft: -ov, zIndex: i }} />
+        <Disc
+          key={i}
+          initial={p.initial}
+          tone={p.tone}
+          label={p.label}
+          seed={p.seed}
+          size={size}
+          style={{ marginLeft: -ov, zIndex: shown.length - i, fontSize: Math.round(size * 0.42), fontFamily: "var(--font-ui, inherit)", fontWeight: 600, boxShadow: "0 0 0 2px var(--stack-ring, var(--lit))" }}
+        />
       ))}
       {extra > 0 && (
         <span className="text-label text-ink-2" style={{ marginLeft: 8 }}>

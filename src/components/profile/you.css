@@ -167,23 +167,20 @@
 .yo-row-tap:active {
   background: color-mix(in srgb, var(--select) 9%, transparent);
 }
+/* one row-icon style app-wide: a bare 20px glyph in a 24px slot (no tinted tiles) */
 .yo-row-ic {
   display: grid;
   place-items: center;
   flex: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: 24px;
+  height: 24px;
   color: var(--ink-2);
-  background: color-mix(in srgb, var(--ink) 5%, transparent);
 }
 .yo-row-ic[data-tone="safe"] {
   color: var(--teal);
-  background: color-mix(in srgb, var(--teal) 9%, transparent);
 }
 .yo-row-ic[data-tone="danger"] {
   color: var(--color-danger-text);
-  background: color-mix(in srgb, #e2314e 10%, transparent);
 }
 .yo-row-label {
   display: block;
@@ -275,6 +272,24 @@
 .yo-chip-add:hover {
   box-shadow: inset 0 0 0 1.5px var(--select);
 }
+.yo-chip-pick {
+  padding: 0 var(--s4);
+  outline-offset: 2px;
+}
+.yo-chip-pick:hover:not(:disabled):not([data-on]) {
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+}
+.yo-chip-pick[data-on] {
+  padding-left: var(--s3);
+  color: var(--color-ember-text);
+  background: color-mix(in srgb, var(--color-ember, #fd6123) 16%, var(--lit));
+}
+.yo-chip-pick:disabled {
+  cursor: default;
+}
+.yo-chip-pick:disabled:not([data-on]) {
+  opacity: 0.5;
+}
 .yo-chip-static {
   padding: 0 var(--s4);
 }
@@ -350,6 +365,13 @@
   height: 40px;
   border-radius: 9999px;
 }
+.yo-bead[data-muted] {
+  filter: saturate(0.15);
+  opacity: 0.5;
+}
+.yo-row-muted .yo-row-label {
+  color: var(--ink-2);
+}
 .yo-bead i {
   position: absolute;
   width: 6px;
@@ -383,8 +405,7 @@ button.yo-free-cell:hover:not([data-on]) {
   background: color-mix(in srgb, var(--select) 14%, transparent);
 }
 .yo-free-cell[data-na] {
-  background: transparent;
-  border: 1px dashed var(--line);
+  visibility: hidden;
 }
 .yo-free-day {
   font-size: 14px;
@@ -489,6 +510,19 @@ button.yo-free-cell:hover:not([data-on]) {
   color: var(--ink);
   background: var(--lit);
   box-shadow: 0 0 0 1px var(--line);
+}
+.yo-any {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  color: var(--ink-2);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.yo-row-on {
+  background: color-mix(in srgb, var(--select) 5%, transparent);
 }
 .yo-steps {
   counter-reset: step;

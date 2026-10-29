@@ -15,15 +15,16 @@ import { inviteUrl } from "@/lib/platform/invite";
 import { podLabel } from "@/lib/platform/selectors";
 import type { DbState } from "@/lib/types";
 import { podHue } from "./hue";
-import { RingMark } from "./kit";
+import { Icon } from "@/components/icons";
 import { PodBead } from "./your-seat";
 import { Card, Row, Section, YouHead, YouPage } from "./you-kit";
 
-/** "pods.app/i/JjyyQXz4": the link people read, without the scheme. */
+/** "pods.app/i/JjyyQXz4": the link people read, without the scheme or a port (a local host reads as pods.app). */
 function shortLink(url: string): string {
   try {
     const u = new URL(url);
-    return `${u.host.replace(/^www\./, "")}${u.pathname}`;
+    const local = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|10\.|192\.168\.)/.test(u.hostname);
+    return `${local ? "pods.app" : u.hostname.replace(/^www\./, "")}${u.pathname}`;
   } catch {
     return url;
   }
@@ -122,21 +123,28 @@ export function InviteScreen() {
             <motion.div {...fade(1)}>
               <Section label="Save them a seat in" className="mt-s6">
                 <Card>
-                  <div role="group" aria-label="Pod">
+                  <div role="radiogroup" aria-label="Pod">
                     <Row
                       onClick={() => pickPod(null)}
-                      lead={<RingMark on={!chosen} size={22} />}
+                      lead={
+                        <span className="yo-any" aria-hidden>
+                          <Icon name="room" size={20} />
+                        </span>
+                      }
                       label="Any pod"
                       hint="We place them where they fit"
+                      trailing={<Picked on={!chosen} />}
+                      className={!chosen ? "yo-row-on" : undefined}
                     />
                     {pods.map((p) => (
                       <Row
                         key={p.id}
                         onClick={() => pickPod(p.id)}
-                        lead={<RingMark on={chosen?.id === p.id} size={22} />}
+                        lead={<PodBead hue={p.hue} members={p.members} size={36} />}
                         label={<span data-nc>{p.name}</span>}
                         hint={`${p.members} people`}
-                        trailing={<PodBead hue={p.hue} members={p.members} size={28} />}
+                        trailing={<Picked on={chosen?.id === p.id} />}
+                        className={chosen?.id === p.id ? "yo-row-on" : undefined}
                       />
                     ))}
                   </div>
@@ -167,25 +175,33 @@ export function InviteScreen() {
                     </li>
                   ))}
                 </ol>
+                {!joined.length && <p className="mt-s1 border-t border-line pt-s3 text-[14px] text-ink-2">Friends who join from your link show up here.</p>}
               </Card>
             </Section>
           </motion.div>
-            <motion.div {...fade(4)}>
-              <Section label="Joined from your links" className="mt-s6">
-                <Card>
-                  {joined.length ? (
-                    joined.map((j, i) => (
+            {joined.length > 0 && (
+              <motion.div {...fade(4)}>
+                <Section label={`Joined from your links · ${joined.length}`} className="mt-s6">
+                  <Card>
+                    {joined.map((j, i) => (
                       <Row key={i} icon="person" label={<span data-nc>{j.user!.first_name}</span>} hint={j.pod ? <span data-nc>In {podLabel(db, j.pod)}</span> : "Placed in a pod"} />
-                    ))
-                  ) : (
-                    <p className="yo-pad text-[15px] text-ink-2">No one yet. When a friend joins, they show up here.</p>
-                  )}
-                </Card>
-              </Section>
-            </motion.div>
+                    ))}
+                  </Card>
+                </Section>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>
     </YouPage>
+  );
+}
+
+/** The chosen pod's mark on the right: a tick in the select blue, nothing when not chosen. */
+function Picked({ on }: { on: boolean }) {
+  return (
+    <span className="grid size-6 shrink-0 place-items-center text-select" role="presentation">
+      {on && <Icon name="tick" size={20} stroke={2.2} label="Chosen" />}
+    </span>
   );
 }

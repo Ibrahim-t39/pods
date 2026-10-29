@@ -11,8 +11,8 @@ export const ICON_PATHS = {
   room: '<circle cx="12" cy="8.6" r="4.6"/><circle cx="8.4" cy="14.6" r="4.6"/><circle cx="15.6" cy="14.6" r="4.6"/>',
   /** A seat: a ring with a notch where one more person fits. */
   seat: '<path d="M14.6 19.2A7.6 7.6 0 1 1 19.3 14.6"/><circle cx="18.2" cy="18.2" r="1.6" fill="currentColor" stroke="none"/>',
-  /** Back: a dot leaving the ring to the left (step out of the room you are in). */
-  back: '<path d="M10 5.2A7 7 0 1 1 10 18.8"/><circle cx="4.6" cy="12" r="1.9" fill="currentColor" stroke="none"/>',
+  /** Back: a plain chevron (the ring-and-dot version read as a loading spinner). */
+  back: '<path d="M14.5 5.5 8 12l6.5 6.5"/>',
   /** Close: two soft arcs (kept near-universal on purpose). */
   close: '<path d="M6.5 6.5c4 3.2 7.8 7 11 11"/><path d="M17.5 6.5c-3.2 4-7 7.8-11 11"/>',
   /** Menu: the logo laid flat, three small overlapping circles. */
@@ -51,8 +51,8 @@ export const ICON_PATHS = {
   turn: '<path d="M19.4 12A7.4 7.4 0 1 1 15.6 5.5"/><circle cx="15.6" cy="5.5" r="1.6" fill="currentColor" stroke="none"/>',
   /** Offline. */
   off: '<path d="M4.5 9a10.5 10.5 0 0 1 15 0"/><path d="M7.5 12.5a6 6 0 0 1 9 0"/><circle cx="12" cy="16.5" r="1.3" fill="currentColor"/><path d="M4 4l16 16"/>',
-  /** Go: a line arriving at a dot (used after a text link). */
-  arrow: '<circle cx="18" cy="12" r="1.8" fill="currentColor" stroke="none"/><path d="M4 12h10"/>',
+  /** Go: a chevron (rows that open something, text links). Founder review: the old line-and-dot read as a dash. Rotate 90 for a dropdown. */
+  arrow: '<path d="M9.5 6.5 15 12l-5.5 5.5"/>',
   /** Add: a ring with a centre cross made of two short strokes. */
   add: '<circle cx="12" cy="12" r="7.5"/><path d="M12 8.6v6.8M8.6 12h6.8"/>',
   /** Calendar: a ring sitting on a line (a day on the week). */
@@ -63,6 +63,18 @@ export const ICON_PATHS = {
   locked: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="4.5" r="1.6" fill="currentColor" stroke="none"/><circle cx="19.5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19.5" r="1.6" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
   /** Again: two circles re-overlapping with an arc (run it back). */
   again: '<circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5" stroke-dasharray="2.4 2.4"/>',
+  /** Delete: a bin, lid and two strokes. */
+  trash: '<path d="M4.5 7h15"/><path d="M9.5 7V5.2h5V7"/><path d="M6.5 7l.9 11.6a1.5 1.5 0 0 0 1.5 1.4h6.2a1.5 1.5 0 0 0 1.5-1.4L17.5 7"/><path d="M10.2 11v5M13.8 11v5"/>',
+  /** Leave: a door frame with the way out. */
+  exit: '<path d="M13.5 4.5H7a1.5 1.5 0 0 0-1.5 1.5v12A1.5 1.5 0 0 0 7 19.5h6.5"/><path d="M11 12h9"/><path d="M16.8 8.5 20.3 12l-3.5 3.5"/>',
+  /** Blocked: a ring with a slash. */
+  blocked: '<circle cx="12" cy="12" r="7.5"/><path d="M6.7 17.3 17.3 6.7"/>',
+  /** Privacy: a shield. */
+  shield: '<path d="M12 3.8 5.5 6.3v5.2c0 4 2.8 7.4 6.5 8.7 3.7-1.3 6.5-4.7 6.5-8.7V6.3z"/>',
+  /** Write to us: an envelope. */
+  mail: '<rect x="3.8" y="6" width="16.4" height="12" rx="2"/><path d="m4.5 7.2 7.5 5.6 7.5-5.6"/>',
+  /** Tick: a picked chip (selected interests). */
+  tick: '<path d="M5.5 12.5l4.2 4.2 8.8-9.4"/>',
   /** Person: one flat disc on a shoulder arc. */
   person: '<circle cx="12" cy="9" r="3.6"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/>',
 } as const;

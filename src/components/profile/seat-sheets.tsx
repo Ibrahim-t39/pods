@@ -3,10 +3,11 @@
 // (a list sheet 24), at most one filled primary, choices as ring rows (never switches; J #7).
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Button, Chip, ResponsiveSheet, notify } from "@/components/ui";
+import { Button, ResponsiveSheet, notify } from "@/components/ui";
 import { Disc } from "@/components/brand/disc";
+import { Icon } from "@/components/icons";
 import { CirclesLoader } from "@/components/brand/circles-loader";
 import { NewPodCard } from "@/components/placement/new-pod";
 import { SNAPPY } from "@/components/brand/table-ring";
@@ -74,6 +75,13 @@ export function LikesPicker({ onAsking }: { onAsking?: (asking: boolean) => void
   const mine = useDb((db) => db.userInterests.filter((u) => u.user_id === db.me).map((u) => u.interest_id));
   const max = useDb((db) => db.config.placement.maxInterestPods);
   const [busy, setBusy] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const userInterests = useDb((db) => db.userInterests);
+  const popular = useMemo(() => {
+    const n: Record<string, number> = {};
+    for (const u of userInterests) n[u.interest_id] = (n[u.interest_id] ?? 0) + 1;
+    return n;
+  }, [userInterests]);
   // The last like you added and what placement found for it (continuous placement: likes are never final).
   const [found, setFound] = useState<{ id: string; word: string; state: "looking" | "match" | "none" } | null>(null);
   const match = useDb((db) => (found?.state === "match" ? ((db.podMatches ?? []).find((m) => m.user_id === db.me && m.kind === "interest" && m.topic_key === found.id) ?? null) : null));
@@ -98,31 +106,39 @@ export function LikesPicker({ onAsking }: { onAsking?: (asking: boolean) => void
     } else if (found?.id === id) setFound(null);
   }
 
-  // yours first, then the rest: what you hold reads as one group, what you can add as another (Meetup, Bumble)
-  const ordered = [...all.filter((i) => mine.includes(i.id)), ...all.filter((i) => !mine.includes(i.id))];
+  // yours first, then the likes most people near you share (the ones most likely to have a pod); six until "More"
+  const ordered = [...all.filter((i) => mine.includes(i.id)), ...all.filter((i) => !mine.includes(i.id)).sort((a, b) => (popular[b.id] ?? 0) - (popular[a.id] ?? 0))];
+  const cap = Math.max(6, mine.length + 2);
+  const shown = showAll ? ordered : ordered.slice(0, cap);
   return (
     <>
-      <SheetLine className="-mt-s3 mb-s6">{full ? `Up to ${max}. Remove one to add another.` : "Add more anytime. New pods find you."}</SheetLine>
-      <motion.div layout className="flex flex-wrap gap-s2" role="group" aria-label="You’re into">
-        {ordered.map((i) => {
+      <SheetLine className="-mt-s3 mb-s4">{full ? `Up to ${max}. Remove one to add another.` : "Tap to add. Each one looks for a pod near you."}</SheetLine>
+      <motion.div layout className="yo-chips" role="group" aria-label="You’re into">
+        {shown.map((i) => {
           const on = mine.includes(i.id);
           const word = shortLike(i.id, i.label);
           const label = word.charAt(0).toUpperCase() + word.slice(1);
           return (
             <motion.span key={i.id} layout="position" transition={SNAPPY}>
-              <Chip
-                size="sm"
-                selected={on}
-                aria-label={label}
-                className={on ? "border-select bg-select text-on-select" : "hover:border-select"}
+              <button
+                type="button"
+                aria-pressed={on}
+                className="yo-chip yo-chip-pick pressable"
+                data-on={on || undefined}
                 disabled={busy === i.id || (on && mine.length === 1) || (!on && full)}
-                onSelectedChange={(v) => toggle(i.id, v, word)}
+                onClick={() => toggle(i.id, !on, word)}
               >
+                {on && <Icon name="tick" size={16} stroke={2.2} />}
                 {label}
-              </Chip>
+              </button>
             </motion.span>
           );
         })}
+        {ordered.length > cap && (
+          <button type="button" className="yo-chip yo-chip-add pressable" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
+            {showAll ? "Fewer" : `More · ${ordered.length - cap}`}
+          </button>
+        )}
       </motion.div>
       <div aria-live="polite" className="mt-s6 empty:hidden">
         {found?.state === "looking" && (

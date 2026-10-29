@@ -134,7 +134,7 @@ export function Home() {
                           <span className="block text-[16px] font-semibold text-ink">Inbox</span>
                           <span className="block truncate text-[14px] text-ink-2">{unread === 1 ? "1 new update" : `${unread} new updates`}</span>
                         </span>
-                        <Icon name="arrow" size={18} className="text-ink-3" />
+                        <Icon name="arrow" size={16} stroke={2} className="text-ink-2" />
                       </Link>
                     </li>
                   )}
@@ -239,7 +239,7 @@ function Lead({ table, minute, moment }: { table: RoomTable; minute: number; mom
           <span className="mt-0.5 block text-[15px] text-ink-2">{line}</span>
         </span>
         <span className={cn(buttonVariants({ variant: needsYou(table) ? "spark" : "secondary", size: "sm" }), "max-sm:hidden")}>{cta}</span>
-        <Icon name="arrow" size={20} className="text-ink-3 sm:hidden" />
+        <Icon name="arrow" size={16} stroke={2} className="text-ink-2 sm:hidden" />
       </Link>
     );
   }

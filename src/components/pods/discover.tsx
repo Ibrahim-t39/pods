@@ -15,7 +15,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { SNAPPY, STAGGER, Disc, DiscStack, type PodHueKey } from "@/components/brand";
-import { POD_SOLID } from "@/components/brand/disc";
 import { Button } from "@/components/ui/button";
 import { ResponsiveSheet } from "@/components/ui/sheet";
 import { notify } from "@/components/ui/toast";
@@ -27,6 +26,7 @@ import { useClock } from "@/lib/time/clock";
 import { toChicagoISO } from "@/lib/time/tz";
 import { displayName } from "@/lib/utils";
 import { shortDay, shortTime } from "./model";
+import { PodOrb } from "./pod-orb";
 
 /** A pod's kind decides its colour, so the list reads as different places, not one card repeated. */
 const MOVING = new Set(["basketball", "pickleball", "soccer", "running", "disc_golf", "climbing", "climbing_gym", "volleyball", "tennis", "cycling", "swimming", "yoga"]);
@@ -38,6 +38,8 @@ function hueOf(topicKey: string): PodHueKey {
 }
 
 const WEEK = 7 * 864e5;
+/** Interest labels are stored lowercase ("climbing & bouldering"); a label leads with a capital. */
+const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 type Filter = "all" | "people" | "week" | "free";
 const FILTERS: [Filter, string][] = [
   ["all", "All"],
@@ -148,14 +150,14 @@ export function Discover() {
           <aside aria-label="Open hangouts" className="min-w-0 lg:sticky lg:top-s8 lg:col-start-2 lg:row-start-1 lg:self-start">
             <SectionLabel>Open hangouts</SectionLabel>
             <p className="mt-1 hidden text-[14px] text-ink-2 lg:block">Pods meeting soon with room for one more.</p>
-            <ul className="-mx-gutter mt-s3 flex snap-x gap-s3 overflow-x-auto px-gutter pb-1 [scrollbar-width:none] lg:mx-0 lg:block lg:overflow-visible lg:rounded-2xl lg:bg-surface lg:px-0 lg:pb-0 lg:shadow-[inset_0_0_0_1px_var(--line)]">
+            <ul className="-mx-gutter mt-s3 flex snap-x snap-mandatory scroll-px-gutter gap-s3 overflow-x-auto px-gutter pb-1 [scrollbar-width:none] lg:mx-0 lg:block lg:overflow-visible lg:rounded-2xl lg:bg-surface lg:px-0 lg:pb-0 lg:shadow-[inset_0_0_0_1px_var(--line)]">
               {open.map((r, i) => (
-                <li key={r.pod.id} className={cn("w-[272px] shrink-0 snap-start rounded-2xl bg-surface shadow-[inset_0_0_0_1px_var(--line)] lg:w-auto lg:rounded-none lg:bg-transparent lg:shadow-none", i > 0 && "lg:border-t lg:border-line")}>
-                  <button type="button" onClick={() => setPeek(r)} className="pressable flex w-full items-center gap-s3 px-s4 py-s3 text-left outline-offset-[-2px]">
+                <li key={r.pod.id} className={cn("w-[300px] shrink-0 snap-start rounded-2xl bg-surface shadow-[inset_0_0_0_1px_var(--line)] lg:w-auto lg:rounded-none lg:bg-transparent lg:shadow-none", i > 0 && "lg:border-t lg:border-line")}>
+                  <button type="button" onClick={() => setPeek(r)} className="pressable flex h-full w-full items-start gap-s3 px-s4 py-s3 text-left outline-offset-[-2px]">
                     <DateBlock iso={r.next!.starts_at} size={40} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-semibold text-ink">{r.title ?? r.pod.name}</span>
-                      <span className="tabular block truncate text-[13px] text-ink-2">
+                      <span className="line-clamp-2 text-[15px] leading-[1.3] font-semibold text-ink">{r.title ?? r.pod.name}</span>
+                      <span className="tabular mt-0.5 block truncate text-[13px] text-ink-2">
                         {shortDay(r.next!.starts_at, nowMs)} {shortTime(r.next!.starts_at)}
                         {r.next!.venueName ? ` · ${r.next!.venueName}` : ""}
                       </span>
@@ -175,7 +177,7 @@ export function Discover() {
           {shown.length ? (
             <ul className="mt-s3 border-t border-line lg:rounded-2xl lg:border-t-0 lg:bg-surface lg:shadow-[inset_0_0_0_1px_var(--line)]">
               {shown.map((r, i) => (
-                <PodItem key={r.pod.id} row={r} i={i} now={nowMs} onPeek={() => setPeek(r)} />
+                <PodItem key={r.pod.id} row={r} i={i} now={nowMs} lead={i < 3 && r.known.length > 0} onPeek={() => setPeek(r)} />
               ))}
             </ul>
           ) : rows.length ? (
@@ -203,33 +205,6 @@ export function Discover() {
   );
 }
 
-/** The pod's circle: flat solid in its kind's colour, its people as white dots, open seats as hollow dots. */
-function PodDots({ members, open, hue, size }: { members: number; open: number; hue: PodHueKey; size: number }) {
-  const seats = Math.min(10, members + open);
-  return (
-    <span aria-hidden className="relative block shrink-0 rounded-full" style={{ width: size, height: size, backgroundColor: POD_SOLID[hue] }}>
-      {Array.from({ length: seats }, (_, d) => {
-        const a = -Math.PI / 2 + (d / seats) * Math.PI * 2;
-        const taken = d < members;
-        return (
-          <span
-            key={d}
-            data-nc
-            className="absolute size-[13%] rounded-full"
-            style={{
-              left: `${50 + Math.cos(a) * 31}%`,
-              top: `${50 + Math.sin(a) * 31}%`,
-              transform: "translate(-50%,-50%)",
-              backgroundColor: taken ? "#fff" : "transparent",
-              boxShadow: taken ? undefined : "inset 0 0 0 1.25px rgb(255 255 255 / .85)",
-            }}
-          />
-        );
-      })}
-    </span>
-  );
-}
-
 function useJoin(row: Enriched | null, after?: () => void) {
   const repo = useRepo();
   const router = useRouter();
@@ -252,7 +227,7 @@ function useJoin(row: Enriched | null, after?: () => void) {
   return { busy, take };
 }
 
-function PodItem({ row, i, now, onPeek }: { row: Enriched; i: number; now: number; onPeek: () => void }) {
+function PodItem({ row, i, now, lead, onPeek }: { row: Enriched; i: number; now: number; lead: boolean; onPeek: () => void }) {
   const reduce = useReducedMotion();
   const { busy, take } = useJoin(row);
   const when = row.next ? `${shortDay(row.next.starts_at, now)} ${shortTime(row.next.starts_at)}` : "First plan after you join";
@@ -269,13 +244,13 @@ function PodItem({ row, i, now, onPeek }: { row: Enriched; i: number; now: numbe
         className="pressable flex w-full items-start gap-s3 py-s4 pr-[92px] text-left outline-offset-[-2px] lg:px-s4 lg:pr-[112px]"
         aria-label={`${row.pod.name}, ${row.pod.topic}. ${row.why}.`}
       >
-        <PodDots members={row.members} open={row.seatsOpen} hue={hueOf(row.pod.topic_key)} size={44} />
+        <PodOrb hue={hueOf(row.pod.topic_key)} people={row.members + row.seatsOpen} inCount={row.members} you={false} size={40} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[16px] leading-[1.3] font-semibold text-ink">{row.pod.name}</span>
           <span className="tabular block truncate text-[14px] leading-[1.4] text-ink-2">
-            {row.pod.topic} · {when}
+            {cap(row.pod.topic)} · {when}
           </span>
-          <span className={cn("mt-s2 flex items-center gap-s2 text-[13px] leading-[1.3] font-medium", row.known.length ? "text-select" : "text-ink-2")}>
+          <span className={cn("mt-s2 flex items-center gap-s2 text-[13px] leading-[1.3]", row.known.length ? "font-medium text-ink-2" : "text-ink-3")}>
             {row.known.length > 0 && <DiscStack size={20} max={3} people={row.known.map((k) => ({ initial: k.name.slice(0, 1), seed: k.name, tone: "ember" as const }))} />}
             <span className="truncate">{row.why}</span>
           </span>
@@ -293,7 +268,7 @@ function PodItem({ row, i, now, onPeek }: { row: Enriched; i: number; now: numbe
             onClick={() => void take()}
             className={cn(
               "pressable inline-flex h-9 min-w-[76px] items-center justify-center rounded-full px-s4 text-[14px] font-semibold disabled:opacity-60",
-              "text-ink shadow-[inset_0_0_0_1.5px_var(--line-2)] hover:bg-ink hover:text-paper hover:shadow-none",
+              lead ? "bg-ink text-paper hover:opacity-90" : "text-ink shadow-[inset_0_0_0_1.5px_var(--line-2)] hover:bg-ink hover:text-paper hover:shadow-none",
             )}
           >
             {row.verdict === "join" ? "Join" : "Ask"}
@@ -334,8 +309,8 @@ function SeatPreview({ row, now, onClose }: { row: Enriched | null; now: number;
       open
       onOpenChange={(o) => !o && onClose()}
       title={row.pod.name}
-      description={row.met >= 2 ? `${row.pod.topic} · met ${row.met} times` : row.pod.topic}
-      media={<PodDots members={row.members} open={row.seatsOpen} hue={hueOf(row.pod.topic_key)} size={64} />}
+      description={row.met >= 2 ? `${cap(row.pod.topic)} · met ${row.met} times` : cap(row.pod.topic)}
+      media={<PodOrb hue={hueOf(row.pod.topic_key)} people={row.members + row.seatsOpen} inCount={row.members} you={false} size={40} />}
     >
       <div className="flex items-center gap-s3">
         <span className="flex -space-x-2">
@@ -343,7 +318,7 @@ function SeatPreview({ row, now, onClose }: { row: Enriched | null; now: number;
             <Disc key={f.id} initial={f.name.slice(0, 1)} seed={f.name} tone="ember" size={32} ring />
           ))}
         </span>
-        <p className="min-w-0 text-[14px] text-ink-2">{row.known.length ? <span className="font-medium text-select">{row.why}</span> : row.faces.slice(0, 3).map((f) => f.name).join(", ") + (row.faces.length > 3 ? ` +${row.faces.length - 3}` : "")}</p>
+        <p className="min-w-0 text-[14px] text-ink-2">{row.known.length ? <span className="font-medium text-ink">{row.why}</span> : row.faces.slice(0, 3).map((f) => f.name).join(", ") + (row.faces.length > 3 ? ` +${row.faces.length - 3}` : "")}</p>
       </div>
       <dl className="mt-s4 border-t border-line">
         {facts.map(([k, v]) => (

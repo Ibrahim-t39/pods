@@ -111,19 +111,6 @@ export function PodSections({
 
   return (
     <div className="pods-pod-more">
-      <Section title="Members" action={<button type="button" onClick={() => onSheet("members")} className={linkCls}>See all {members.length}</button>}>
-        <button type="button" onClick={() => onSheet("members")} className="pods-card pressable flex w-full items-center gap-s3 p-s4 text-left outline-offset-2">
-          <DiscStack size={32} max={6} people={members.map((m) => ({ initial: m.name.slice(0, 1).toUpperCase(), tone: m.you ? "you" : hue, seed: m.name }))} />
-          <span className="min-w-0 flex-1 truncate text-[14px] text-ink-2">
-            {members
-              .slice(0, 4)
-              .map((m) => (m.you ? "You" : m.name))
-              .join(", ")}
-            {members.length > 4 ? ` and ${members.length - 4} more` : ""}
-          </span>
-        </button>
-      </Section>
-
       {!docked && (
         <Section
           title="Talk"
@@ -156,6 +143,19 @@ export function PodSections({
           </button>
         </Section>
       )}
+
+      <Section title="Members" action={<button type="button" onClick={() => onSheet("members")} className={linkCls}>See all {members.length}</button>}>
+        <button type="button" onClick={() => onSheet("members")} className="pods-card pressable flex w-full items-center gap-s3 p-s4 text-left outline-offset-2">
+          <DiscStack size={32} max={6} people={members.map((m) => ({ initial: m.name.slice(0, 1).toUpperCase(), tone: m.you ? "you" : hue, seed: m.name }))} />
+          <span className="min-w-0 flex-1 truncate text-[14px] text-ink-2">
+            {members
+              .slice(0, 4)
+              .map((m) => (m.you ? "You" : m.name))
+              .join(", ")}
+            {members.length > 4 ? ` and ${members.length - 4} more` : ""}
+          </span>
+        </button>
+      </Section>
 
       <Section title="Memories" action={<button type="button" onClick={() => onSheet("memories")} className={linkCls}>{memoryCount > 2 ? `See all ${memoryCount}` : "Add"}</button>}>
         <button type="button" onClick={() => onSheet("memories")} className="pods-card pressable block w-full p-s4 text-left outline-offset-2">
@@ -219,7 +219,7 @@ function SettingRow({ icon, label, href, onClick, end, pressed }: { icon: IconNa
     <>
       <Icon name={icon} size={20} className="shrink-0 text-ink-2" />
       <span className="flex-1">{label}</span>
-      {end ?? <Icon name="arrow" size={16} className="text-ink-3" />}
+      {end ?? <Icon name="arrow" size={16} stroke={2} className="text-ink-2" />}
     </>
   );
   return href ? (

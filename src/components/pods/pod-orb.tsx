@@ -13,6 +13,7 @@ export function PodOrb({
   size = 48,
   open = true,
   needs,
+  you = true,
   className,
 }: {
   hue: PodHueKey;
@@ -24,6 +25,8 @@ export function PodOrb({
   open?: boolean;
   /** a small ember spark: this pod waits on you */
   needs?: boolean;
+  /** false when you are not in this pod (Discover, Search): no larger "you" dot, filled dots = people in */
+  you?: boolean;
   className?: string;
 }) {
   const n = Math.max(1, Math.min(10, people));
@@ -34,9 +37,9 @@ export function PodOrb({
     <span aria-hidden data-nc className={cn("relative block shrink-0 rounded-full", className)} style={style}>
       {Array.from({ length: n }, (_, d) => {
         const a = -Math.PI / 2 + (d / n) * Math.PI * 2;
-        const you = d === 0;
+        const me = you && d === 0;
         const lit = d < inCount;
-        const dot = you ? 16 : 11;
+        const dot = me ? 16 : 11;
         return (
           <span
             key={d}
@@ -47,7 +50,7 @@ export function PodOrb({
               left: `${50 + Math.cos(a) * r}%`,
               top: `${50 + Math.sin(a) * r}%`,
               transform: "translate(-50%,-50%)",
-              background: open ? (lit || you ? "#fff" : "rgb(255 255 255 / .45)") : `color-mix(in oklab, ${H} ${lit ? 80 : 40}%, white)`,
+              background: open ? (lit || me ? "#fff" : "rgb(255 255 255 / .45)") : `color-mix(in oklab, ${H} ${lit ? 80 : 40}%, white)`,
             }}
           />
         );

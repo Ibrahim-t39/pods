@@ -99,7 +99,7 @@ export function Row({ icon, lead, label, hint, value, arrow, tone, href, externa
       </span>
       {value != null && <span className="yo-row-value">{value}</span>}
       {trailing}
-      {arrow && <Icon name="arrow" size={18} className="shrink-0 text-ink-3" />}
+      {arrow && <Icon name="arrow" size={16} stroke={2} className="shrink-0 text-ink-2" />}
     </>
   );
   const cls = cn("yo-row", (href || onClick) && !disabled && "yo-row-tap pressable", tone === "danger" && "yo-row-danger", className);

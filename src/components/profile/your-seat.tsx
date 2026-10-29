@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
-import { Disc, POD_SOLID } from "@/components/brand/disc";
+import { Disc } from "@/components/brand/disc";
 import { GENTLE, STAGGER } from "@/components/brand/motion";
 import { PullCircles } from "@/components/brand/pull-circles";
 import { Icon } from "@/components/icons";
@@ -22,6 +22,8 @@ import { notify } from "@/components/ui";
 import { useStore } from "@/lib/db/store";
 import { useDb, useHydrated, useMe, useRepo } from "@/lib/db/hooks";
 import { myPlans, podLabel } from "@/lib/platform/selectors";
+import { opensAfter, roomTables, shortDay } from "@/components/pods/model";
+import { PodOrb } from "@/components/pods/pod-orb";
 import { nowISO, useClock } from "@/lib/time/clock";
 import { formatWhen } from "@/lib/time/format";
 import { displayName, toPublicMember } from "@/lib/utils";
@@ -88,23 +90,32 @@ export function YourSeat() {
     notify(`Removed ${word}`, { undo: () => void repo.addInterest(id) });
   }
 
-  const myIds = db.memberships.filter((m) => m.user_id === db.me && !m.left_at).map((m) => m.pod_id);
+  // Counted the way Pods and People count: open pods, and the people in them. Pods that open after your first
+  // hangout are listed muted, the same as on Pods.
   const plans = myPlans(db, now);
-  const pods = myIds
-    .map((id) => db.pods[id])
-    .filter(Boolean)
-    .map((p) => {
-      const members = db.memberships.filter((m) => m.pod_id === p.id && !m.left_at).length;
-      const next = plans.upcoming.find((x) => x.podId === p.id) ?? null;
-      return { id: p.id, name: podLabel(db, p), type: p.type, members, hue: podHue(db, p.id), next };
-    });
-  const people = new Set(db.memberships.filter((m) => myIds.includes(m.pod_id) && !m.left_at && m.user_id !== db.me).map((m) => m.user_id)).size;
+  const tables = roomTables(db, now);
+  const opens = opensAfter(tables, now);
+  const pods = tables.map((t) => {
+    const p = t.row.pod;
+    const members = db.memberships.filter((m) => m.pod_id === p.id && !m.left_at).length;
+    const next = plans.upcoming.find((x) => x.podId === p.id) ?? null;
+    return { id: p.id, name: podLabel(db, p), members, hue: podHue(db, p.id), next, open: t.open };
+  });
+  const openPods = pods.filter((p) => p.open);
+  const people = new Set(tables.filter((t) => t.open).flatMap((t) => t.people.map((x) => x.id))).size;
   const went = plans.past.filter((p) => p.me === "going" || p.checkedIn).length;
+  const firstUp = plans.upcoming[0]?.starts_at ?? null;
 
   const age = toPublicMember(me, nowISO()).age;
   const name = displayName(me);
   const photo = me.photo_urls[0];
-  const since = new Date(me.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  const joinedDays = (now - Date.parse(me.created_at)) / 86_400_000;
+  const since =
+    joinedDays < 7
+      ? "Joined this week"
+      : joinedDays < 31
+        ? "Joined this month"
+        : `Since ${new Date(me.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
   const fade = (i: number) => ({ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { ...GENTLE, delay: 0.04 + i * STAGGER } });
 
   const identity = (
@@ -127,19 +138,27 @@ export function YourSeat() {
             {name}, <span className="tabular-nums">{age}</span>
           </p>
           <p className="mt-s1 text-[14px] text-ink-2">
-            {me.verified ? "Verified · " : ""}Since {since}
+            {me.verified ? "Verified · " : ""}
+            {since}
           </p>
         </div>
       </div>
       <div className="yo-stats">
         <div className="yo-stat">
-          <b>{pods.length}</b>
-          <span>{pods.length === 1 ? "pod" : "pods"}</span>
+          <b>{openPods.length}</b>
+          <span>{openPods.length === 1 ? "pod" : "pods"}</span>
         </div>
-        <div className="yo-stat">
-          <b>{went}</b>
-          <span>{went === 1 ? "hangout" : "hangouts"}</span>
-        </div>
+        {went > 0 || !firstUp ? (
+          <div className="yo-stat">
+            <b>{went}</b>
+            <span>{went === 1 ? "hangout" : "hangouts"}</span>
+          </div>
+        ) : (
+          <div className="yo-stat">
+            <b>{shortDay(firstUp, now)}</b>
+            <span>first hangout</span>
+          </div>
+        )}
         <div className="yo-stat">
           <b>{people}</b>
           <span>people</span>
@@ -177,16 +196,21 @@ export function YourSeat() {
 
           <div>
             <motion.div {...fade(1)}>
-              <Section label={`Your pods · ${pods.length}`} action={<TextAction href="/app/discover">Find more</TextAction>}>
+              <Section label="Your pods" action={<TextAction href="/app/discover">Find more</TextAction>}>
                 {pods.length ? (
                   <Card>
                     {pods.map((p) => (
                       <Row
                         key={p.id}
                         href={`/app/pods/${p.id}`}
-                        lead={<PodBead hue={p.hue} members={p.members} />}
+                        lead={<PodBead hue={p.hue} members={p.members} muted={!p.open} />}
                         label={<span data-nc>{p.name}</span>}
-                        hint={`${p.members} people · ${p.next ? `${p.next.locked ? "locked" : "next"} ${formatWhen(p.next.starts_at)}` : "nothing planned yet"}`}
+                        hint={
+                          !p.open
+                            ? `${p.members} people · ${opens}`
+                            : `${p.members} people · ${p.next ? `${p.next.locked ? "Locked" : "Next"} ${formatWhen(p.next.starts_at)}` : "Planning the first one"}`
+                        }
+                        className={p.open ? undefined : "yo-row-muted"}
                         arrow
                       />
                     ))}
@@ -276,14 +300,7 @@ export function YourSeat() {
 }
 
 /** A pod as the logo draws people: a solid circle in the pod's colour with white dots (one per person, up to 8). */
-export function PodBead({ hue, members, size = 40 }: { hue: "ember" | "signal" | "grove"; members: number; size?: number }) {
-  const n = Math.max(1, Math.min(8, members));
-  return (
-    <span className="yo-bead" style={{ background: POD_SOLID[hue], width: size, height: size }} aria-hidden>
-      {Array.from({ length: n }, (_, i) => {
-        const a = -Math.PI / 2 + (i / n) * Math.PI * 2;
-        return <i key={i} style={{ left: `calc(50% + ${Math.cos(a) * 30}% - 3px)`, top: `calc(50% + ${Math.sin(a) * 30}% - 3px)` }} />;
-      })}
-    </span>
-  );
+export function PodBead({ hue, members, size = 40, muted }: { hue: "ember" | "signal" | "grove"; members: number; size?: number; muted?: boolean }) {
+  // one mark across the app: the shared PodOrb at its two list sizes (40, 28)
+  return <PodOrb hue={hue} people={members} inCount={members} you={false} open={!muted} size={size <= 32 ? 28 : 40} />;
 }

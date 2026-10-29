@@ -106,7 +106,7 @@ function PodTableInner({ podId }: { podId: string }) {
     }
   }, [docked, sheet]);
   const api: PodTableApi = useMemo(
-    () => ({ podId, unread: docked ? 0 : unread, openTalk: () => (docked ? setFocusTalk((k) => k + 1) : setSheet("talk")), openMenu: () => setSheet("menu") }),
+    () => ({ podId, unread: docked ? 0 : unread, openTalk: () => (docked ? setFocusTalk((k) => k + 1) : setSheet("talk")), openMenu: () => setSheet("menu"), openMembers: () => setSheet("members") }),
     [podId, unread, docked],
   );
   const name = here?.row.name ?? "";
@@ -161,7 +161,7 @@ function PodTableInner({ podId }: { podId: string }) {
   }
 
   const canGiveUp = !!view && !!view.targetId && view.imIn && ["proposed", "in", "locked", "starting_soon"].includes(view.phase);
-  // the ring sits beside the plan while there is a plan (or a call to plan one); the repeat loop's cards take the row
+  // Who's in sits beside the plan while there is a plan (or a call to plan one); the repeat loop's cards take the row
   const ringMode = !!stage.foot;
   const menuBtn = <GlyphButton icon="more" label={`${name} menu`} onClick={() => setSheet("menu")} className="max-lg:hidden" />;
 
@@ -200,14 +200,15 @@ function PodTableInner({ podId }: { podId: string }) {
               actions={menuBtn}
             />
           </div>
-          <div className={ringMode ? "pods-pod-plan" : "pods-pod-plan pods-pod-plan-wide"}>
-            {stage.head}
-            {stage.foot && <div className="pods-pod-foot">{stage.foot}</div>}
-            {!ringMode && stage.object}
-          </div>
-          {ringMode && (
-            <div className="pods-pod-ring">
-              <div className="pods-pod-ring-fit">{stage.object}</div>
+          {ringMode ? (
+            <>
+              <div className="pods-pod-plan">{stage.head}</div>
+              <div className="pods-pod-who">{stage.object}</div>
+            </>
+          ) : (
+            <div className="pods-pod-plan pods-pod-plan-wide">
+              {stage.head}
+              {stage.object}
             </div>
           )}
           <PodSections

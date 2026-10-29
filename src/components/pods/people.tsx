@@ -19,6 +19,9 @@ import { useDb } from "@/lib/db/hooks";
 import { myPeople, podLabel } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
 import { toChicagoISO } from "@/lib/time/tz";
+import { roomTables } from "./model";
+import { PodOrb } from "./pod-orb";
+import type { PodHueKey } from "@/components/brand/disc";
 
 interface Row {
   id: string;
@@ -31,7 +34,8 @@ interface Row {
 }
 
 export function People() {
-  const iso = toChicagoISO(useClock(60_000).getTime());
+  const nowMs = useClock(60_000).getTime();
+  const iso = toChicagoISO(nowMs);
   const wide = useMediaQuery("(min-width: 1024px)");
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<string | null>(null);
@@ -54,15 +58,19 @@ export function People() {
             bio: p.member.bio,
           };
         });
+        const tables = new Map(roomTables(db, nowMs).map((t) => [t.row.pod.id, t]));
         const podIds = [...new Set(rows.flatMap((r) => r.pods))];
         const pods = podIds
           .map((id) => db.pods[id])
           .filter(Boolean)
           .sort((a, b) => Number(a.type === "community") - Number(b.type === "community"))
-          .map((p) => ({ id: p.id, name: podLabel(db, p) }));
+          .map((p) => {
+            const t = tables.get(p.id);
+            return { id: p.id, name: podLabel(db, p), hue: (t?.hue ?? "signal") as PodHueKey, size: t?.row.size ?? 0, going: t?.row.plan?.going.length ?? 0 };
+          });
         return { rows, pods };
       },
-      [iso],
+      [iso, nowMs],
     ),
   );
 
@@ -71,11 +79,11 @@ export function People() {
     const hit = data.rows.filter((r) => !needle || r.name.toLowerCase().includes(needle) || r.common.some((c) => c.includes(needle)) || r.likes.some((c) => c.includes(needle)));
     const shared = hit.filter((r) => r.pods.length > 1);
     const seen = new Set(shared.map((r) => r.id));
-    const out: { id: string; name: string; rows: Row[] }[] = [];
+    const out: { id: string; name: string; rows: Row[]; pod?: (typeof data.pods)[number] }[] = [];
     if (shared.length) out.push({ id: "_shared", name: "In more than one pod with you", rows: shared });
     for (const p of data.pods) {
       const rows = hit.filter((r) => r.pods[0] === p.id && !seen.has(r.id)).sort((a, b) => b.common.length - a.common.length || a.name.localeCompare(b.name));
-      if (rows.length) out.push({ id: p.id, name: p.name, rows });
+      if (rows.length) out.push({ id: p.id, name: p.name, rows, pod: p });
     }
     return out;
   }, [data, needle]);
@@ -119,11 +127,17 @@ export function People() {
 
           {groups.map((g) => (
             <section key={g.id} className="mt-s6">
-              <SectionLabel count={g.rows.length}>{g.name}</SectionLabel>
+              <SectionLabel count={g.rows.length}>
+                <span className="inline-flex items-center gap-s2 align-middle">
+                  {g.pod && <PodOrb hue={g.pod.hue} people={Math.max(1, g.pod.size)} inCount={g.pod.going} size={28} />}
+                  {g.name}
+                </span>
+              </SectionLabel>
               <ul className="mt-s2">
                 {g.rows.map((r) => {
                   const on = wide && r.id === selected;
-                  const likeLine = r.common.length ? `Also into ${r.common.slice(0, 2).join(", ")}` : r.likes.length ? `Into ${r.likes.slice(0, 2).join(", ")}` : (r.bio ?? "New here");
+                  // what you share leads; otherwise their own words, which read like a person, not a template
+                  const likeLine = r.common.length ? `Also into ${r.common.slice(0, 2).join(", ")}` : (r.bio ?? (r.likes.length ? `Into ${r.likes.slice(0, 2).join(", ")}` : "New here"));
                   return (
                     <li key={r.id}>
                       <Link

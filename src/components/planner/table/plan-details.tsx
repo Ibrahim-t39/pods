@@ -26,14 +26,21 @@ import { downloadIcs, directionsUrl } from "../plan-utils";
 import { usePlanActions } from "../use-plan-actions";
 import { ProposeSheet } from "./propose-sheet";
 import { GiveUpSheet } from "./sheets";
-import { hm, placeWord, rainWord, sourceLine, type TableModel } from "./model";
+import { placeWord, rainWord, sourceLine, type TableModel } from "./model";
 
-const startOfDay = (iso: string) => Date.parse(`${new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Chicago" })}T00:00:00Z`);
-const dayLong = (iso: string) => new Date(iso).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "America/Chicago" });
+import { formatInTimeZone } from "date-fns-tz";
+import { TZ } from "@/lib/time/tz";
+import { planPlace, planSoon, planWhen } from "../plan-display";
 import { costWord, planTitle, SeatRow, seatDots } from "./plan-card";
 import { whyRows } from "./sheets";
 
-export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void }) {
+export function PlanDetails({
+  m,
+  onClose,
+}: {
+  m: TableModel;
+  onClose: () => void;
+}) {
   const repo = useRepo();
   const router = useRouter();
   const desktop = useIsDesktop();
@@ -55,7 +62,10 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
 
   useEffect(() => {
     sheet.current?.focus({ preventScroll: true });
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector('[role="dialog"][data-state="open"]') && onClose();
+    const onKey = (e: KeyboardEvent) =>
+      e.key === "Escape" &&
+      !document.querySelector('[role="dialog"][data-state="open"]') &&
+      onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
@@ -64,7 +74,10 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
     const t = v.targetId;
     if (!t || busy) return;
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
-      notify("Not sent. You're offline.", { retry: () => void imIn(), duration: 6000 });
+      notify("Not sent. You're offline.", {
+        retry: () => void imIn(),
+        duration: 6000,
+      });
       return;
     }
     setBusy(true);
@@ -76,13 +89,21 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
     }
     if (r.data.locked) {
       // beat 6: let "4 of 8 in · Locked" land on camera, then hand back to the pod for the lock moment
-      setTimeout(() => router.replace(`/app/pods/${m.pod.id}`, { scroll: false }), calm ? 900 : 1700);
-    } else notify("You're in.", { undo: () => void repo.rsvp(t, "not_going"), duration: 6000 });
+      setTimeout(
+        () => router.replace(`/app/pods/${m.pod.id}`, { scroll: false }),
+        calm ? 900 : 1700,
+      );
+    } else
+      notify("You're in.", {
+        undo: () => void repo.rsvp(t, "not_going"),
+        duration: 6000,
+      });
   };
 
   // the quiet "more" row: one line of text links under the plan, never a second filled button
   const canAsk = (v.phase === "proposed" || v.phase === "in") && !!v.suggestion;
-  const canGiveUp = v.imIn && ["in", "locked", "starting_soon"].includes(v.phase);
+  const canGiveUp =
+    v.imIn && ["in", "locked", "starting_soon"].includes(v.phase);
   const ask = () => {
     if (!v.suggestion) return;
     onClose();
@@ -93,27 +114,66 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
     const t = v.hangout?.id ?? v.targetId;
     if (!t) return;
     const r = await repo.rsvp(t, "not_going");
-    if (r.ok) notify("Seat given back.", { undo: () => void repo.rsvp(t, "going"), duration: 6000 });
+    if (r.ok)
+      notify("Seat given back.", {
+        undo: () => void repo.rsvp(t, "going"),
+        duration: 6000,
+      });
   };
 
   const rain = !m.venue
     ? null
     : m.venue.indoor
-      ? { line: "Indoors already.", sub: "Rain won't change it." }
+      ? { line: "Indoors already", sub: "Rain won't change it" }
       : m.rainVenue
-        ? { line: `Moves to ${placeWord(m.rainVenue)}.`, sub: `Same time · ${rainWord(m.rainVenue)} · indoors` }
-        : { line: "We pick a new time.", sub: "Same week. You confirm." };
+        ? {
+            line: `Moves to ${planPlace(m.rainVenue)}`,
+            sub: `Same time · ${rainWord(m.rainVenue)} · indoors`,
+          }
+        : { line: "We pick a new time", sub: "Same week, you confirm" };
 
   const ends = v.hangout?.ends_at ?? p?.ends_at ?? null;
-  const goingNames = m.people.filter((x) => v.going.includes(x.id)).map((x) => (x.me ? "You" : x.name));
+  const goingNames = m.people
+    .filter((x) => v.going.includes(x.id))
+    .map((x) => (x.me ? "You" : x.name));
   const toLock = Math.max(0, v.threshold - going);
-  const status = locked ? "Locked" : v.imIn ? "You're in" : toLock > 0 ? `${toLock} more to lock` : "Proposed";
-  const days = iso ? Math.round((startOfDay(iso) - startOfDay(new Date(m.nowMs).toISOString())) / 86_400_000) : null;
-  const soon = days === null ? "" : days <= 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
+  const status = locked
+    ? "Locked"
+    : v.imIn
+      ? "You're in"
+      : toLock > 0
+        ? `${toLock} more to lock`
+        : "Proposed";
+  const soon = iso ? planSoon(iso, m.nowMs) : "";
+  // "Sat 10am–12pm" / "Nov 7 · In 3 days" (one date style app-wide, plan-display)
+  const when = iso ? planWhen(iso, m.nowMs, ends) : "";
+  const whenSub = iso
+    ? when.includes(" · ")
+      ? soon
+      : [formatInTimeZone(iso, TZ, "MMM d"), soon].filter(Boolean).join(" · ")
+    : "";
+  const placeSub = [
+    m.venue?.meet_note?.replace(/\.$/, "") || m.venue?.address,
+    cost,
+    m.venue ? (m.venue.indoor ? "Indoors" : "Outdoors") : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const reason = m.plan?.plan_json.reason?.replace(/\.$/, "");
   const calendar = () => {
-    const t = v.hangout ?? (iso && ends ? { id: v.targetId ?? m.pod.id, starts_at: iso, ends_at: ends } : null);
-    if (t) downloadIcs({ id: t.id, title: `${m.name}: ${title}`, starts_at: t.starts_at, ends_at: t.ends_at, venue: m.venue });
+    const t =
+      v.hangout ??
+      (iso && ends
+        ? { id: v.targetId ?? m.pod.id, starts_at: iso, ends_at: ends }
+        : null);
+    if (t)
+      downloadIcs({
+        id: t.id,
+        title: `${m.name}: ${title}`,
+        starts_at: t.starts_at,
+        ends_at: t.ends_at,
+        venue: m.venue,
+      });
   };
 
   return (
@@ -136,9 +196,21 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
         aria-labelledby="pd-title"
         className="pd"
         data-pod-hue={m.hue}
-        initial={calm ? { opacity: 0 } : desktop ? { opacity: 0, x: 32 } : { y: "100%" }}
-        animate={calm ? { opacity: 1 } : desktop ? { opacity: 1, x: 0 } : { y: 0 }}
-        transition={calm ? { duration: 0.16 } : { type: "spring", stiffness: 260, damping: 32 }}
+        initial={
+          calm
+            ? { opacity: 0 }
+            : desktop
+              ? { opacity: 0, x: 32 }
+              : { y: "100%" }
+        }
+        animate={
+          calm ? { opacity: 1 } : desktop ? { opacity: 1, x: 0 } : { y: 0 }
+        }
+        transition={
+          calm
+            ? { duration: 0.16 }
+            : { type: "spring", stiffness: 260, damping: 32 }
+        }
         drag={desktop ? false : "y"}
         dragControls={drag}
         dragListener={false}
@@ -156,13 +228,22 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
               <span className="pd-dot" aria-hidden />
               <span className="truncate">{`${m.name} · Hangout #${v.round}`}</span>
             </p>
-            <button type="button" className="pd-x pressable" onClick={onClose} aria-label="Close">
+            <button
+              type="button"
+              className="pd-x pressable"
+              onClick={onClose}
+              aria-label="Close"
+            >
               <Icon name="close" size={22} />
             </button>
           </div>
 
           <header className="pd-head">
-            <span className="pd-status" data-locked={locked ? "" : undefined} data-in={v.imIn && !locked ? "" : undefined}>
+            <span
+              className="pd-status"
+              data-locked={locked ? "" : undefined}
+              data-in={v.imIn && !locked ? "" : undefined}
+            >
               {locked && <Icon name="locked" size={14} />}
               {status}
             </span>
@@ -176,14 +257,17 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
               <li>
                 <Icon name="clock" size={20} />
                 <span className="pd-fact">
-                  <span className="pd-fact-k">{dayLong(iso)}</span>
-                  <span className="pd-fact-s tabular">
-                    {hm(iso)}
-                    {ends ? `–${hm(ends)}` : ""}
-                    {soon ? ` · ${soon}` : ""}
-                  </span>
+                  <span className="pd-fact-k tabular">{when}</span>
+                  {whenSub && (
+                    <span className="pd-fact-s tabular">{whenSub}</span>
+                  )}
                 </span>
-                <button type="button" className="pd-act pressable" onClick={calendar} aria-label="Add to calendar">
+                <button
+                  type="button"
+                  className="pd-act pressable"
+                  onClick={calendar}
+                  aria-label="Add to calendar"
+                >
                   Calendar
                 </button>
               </li>
@@ -192,23 +276,22 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
               <Icon name="place" size={20} />
               <span className="pd-fact">
                 <span className="pd-fact-k">{place}</span>
-                {m.venue && (
+                {placeSub && (
                   <span className="pd-fact-s" data-allow-city>
-                    {m.venue.meet_note ? m.venue.meet_note.replace(/\.$/, "") : m.venue.address}
+                    {placeSub}
                   </span>
                 )}
               </span>
               {m.venue && (
-                <a className="pd-act pressable" href={directionsUrl(m.venue)} target="_blank" rel="noreferrer">
+                <a
+                  className="pd-act pressable"
+                  href={directionsUrl(m.venue)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Directions
                 </a>
               )}
-            </li>
-            <li>
-              <Icon name="here" size={20} />
-              <span className="pd-fact">
-                <span className="pd-fact-k">{[cost, m.venue?.indoor ? "Indoors" : "Outdoors", "Public place"].filter(Boolean).join(" · ")}</span>
-              </span>
             </li>
             {m.plan && (
               <li data-ai="">
@@ -221,69 +304,82 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
             )}
           </ul>
 
+          <div className="pd-grid pd-pair">
+            {p?.bring?.length ? (
+              <section className="pd-block" aria-labelledby="pd-bring">
+                <h2 id="pd-bring" className="pd-h">
+                  Bring
+                </h2>
+                <ul className="pd-bring">
+                  {p.bring.slice(0, 4).map((b) => (
+                    <li key={b}>
+                      <Icon name="check" size={18} />
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+
+            {rain && (
+              <section className="pd-block" aria-labelledby="pd-rain">
+                <h2 id="pd-rain" className="pd-h">
+                  Rain backup
+                </h2>
+                <p className="pd-rain">
+                  <Icon name="rain" size={20} />
+                  <span>
+                    <span className="pd-fact-k">{rain.line}</span>
+                    <span className="pd-fact-s">{rain.sub}</span>
+                  </span>
+                </p>
+              </section>
+            )}
+          </div>
+
           <section className="pd-block pd-who" aria-labelledby="pd-who">
             <h2 id="pd-who" className="pd-h">
               Who&apos;s in
             </h2>
             <div className="pd-who-row">
-              <SeatRow dots={seatDots(m)} lockAt={v.threshold} locked={locked} size={24} />
+              <SeatRow
+                dots={seatDots(m)}
+                lockAt={v.threshold}
+                locked={locked}
+                size={24}
+              />
               <p className="pd-who-names">
                 {goingNames.length ? goingNames.join(", ") : "No one yet"}
-                <span className="pd-fact-s">{locked ? `${going} going · locked at ${v.threshold}` : toLock > 0 ? `${toLock} more and it locks` : `${going} of ${of}`}</span>
+                <span className="pd-fact-s">
+                  {locked
+                    ? `${going} going · locked at ${v.threshold}`
+                    : toLock > 0
+                      ? `${toLock} more and it locks`
+                      : `${going} of ${of}`}
+                </span>
               </p>
             </div>
           </section>
 
-          <div className="pd-grid">
-            {p?.schedule?.length ? (
-              <section className="pd-block" aria-labelledby="pd-plan">
-                <h2 id="pd-plan" className="pd-h">
-                  The plan
-                </h2>
-                <ol className="pd-sched">
-                  {p.schedule.slice(0, 5).map((r, i) => (
-                    <li key={i}>
-                      <span className="pd-t tabular">{r.time.replace(/:00/, "").replace(/\s?(AM|PM)/, (x) => x.trim().toLowerCase())}</span>
-                      <span>{r.item}</span>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            ) : null}
-
-            <div className="pd-col">
-              {p?.bring?.length ? (
-                <section className="pd-block" aria-labelledby="pd-bring">
-                  <h2 id="pd-bring" className="pd-h">
-                    Bring
-                  </h2>
-                  <ul className="pd-bring">
-                    {p.bring.slice(0, 4).map((b) => (
-                      <li key={b}>
-                        <Icon name="check" size={18} />
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ) : null}
-
-              {rain && (
-                <section className="pd-block" aria-labelledby="pd-rain">
-                  <h2 id="pd-rain" className="pd-h">
-                    Rain backup
-                  </h2>
-                  <p className="pd-rain">
-                    <Icon name="rain" size={20} />
-                    <span>
-                      <span className="pd-fact-k">{rain.line}</span>
-                      <span className="pd-fact-s">{rain.sub}</span>
+          {p?.schedule?.length ? (
+            <section className="pd-block" aria-labelledby="pd-plan">
+              <h2 id="pd-plan" className="pd-h">
+                The plan
+              </h2>
+              <ol className="pd-sched">
+                {p.schedule.slice(0, 5).map((r, i) => (
+                  <li key={i}>
+                    <span className="pd-t tabular">
+                      {r.time
+                        .replace(/:00/, "")
+                        .replace(/\s?(AM|PM)/, (x) => x.trim().toLowerCase())}
                     </span>
-                  </p>
-                </section>
-              )}
-            </div>
-          </div>
+                    <span>{r.item}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
 
           <section className="pd-block" aria-labelledby="pd-why">
             <h2 id="pd-why" className="pd-h">
@@ -301,17 +397,29 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
 
           <nav className="pd-more" aria-label="More for this plan">
             {canAsk && (
-              <button type="button" className="pd-more-b pressable" onClick={ask}>
+              <button
+                type="button"
+                className="pd-more-b pressable"
+                onClick={ask}
+              >
                 <Icon name="turn" size={20} />
                 Ask AI for a different plan
               </button>
             )}
-            <button type="button" className="pd-more-b pressable" onClick={() => setSide("propose")}>
+            <button
+              type="button"
+              className="pd-more-b pressable"
+              onClick={() => setSide("propose")}
+            >
               <Icon name="add" size={20} />
               Propose a hangout
             </button>
             {canGiveUp && (
-              <button type="button" className="pd-more-b pressable" onClick={() => setSide("giveup")}>
+              <button
+                type="button"
+                className="pd-more-b pressable"
+                onClick={() => setSide("giveup")}
+              >
                 <Icon name="undo" size={20} />
                 Can&apos;t make it
               </button>
@@ -322,7 +430,15 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
         <footer className="pd-foot glass">
           <span className="pd-count">
             <InCount n={going} of={of} locked={locked} />
-            <span className="pd-fact-s">{locked ? (v.imIn ? "You're going" : "Still room for you") : toLock > 0 ? `${toLock} more and it locks` : soon}</span>
+            <span className="pd-fact-s">
+              {locked
+                ? v.imIn
+                  ? "You're going"
+                  : "Still room for you"
+                : toLock > 0
+                  ? `${toLock} more and it locks`
+                  : soon}
+            </span>
           </span>
           {locked ? (
             v.imIn ? (
@@ -330,7 +446,12 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
                 Add to calendar
               </Button>
             ) : (
-              <Button variant="spark" size="lg" onClick={() => void imIn()} loading={busy}>
+              <Button
+                variant="spark"
+                size="lg"
+                onClick={() => void imIn()}
+                loading={busy}
+              >
                 I&apos;m in
               </Button>
             )
@@ -339,14 +460,29 @@ export function PlanDetails({ m, onClose }: { m: TableModel; onClose: () => void
               Add to calendar
             </Button>
           ) : (
-            <Button variant="spark" size="lg" onClick={() => void imIn()} loading={busy} disabled={!v.targetId}>
+            <Button
+              variant="spark"
+              size="lg"
+              onClick={() => void imIn()}
+              loading={busy}
+              disabled={!v.targetId}
+            >
               I&apos;m in
             </Button>
           )}
         </footer>
       </motion.section>
-      <ProposeSheet m={m} open={side === "propose"} onOpenChange={(o) => setSide(o ? "propose" : null)} onAskAI={canAsk ? ask : undefined} />
-      <GiveUpSheet open={side === "giveup"} onOpenChange={(o) => setSide(o ? "giveup" : null)} onGiveUp={() => void giveUp()} />
+      <ProposeSheet
+        m={m}
+        open={side === "propose"}
+        onOpenChange={(o) => setSide(o ? "propose" : null)}
+        onAskAI={canAsk ? ask : undefined}
+      />
+      <GiveUpSheet
+        open={side === "giveup"}
+        onOpenChange={(o) => setSide(o ? "giveup" : null)}
+        onGiveUp={() => void giveUp()}
+      />
     </div>
   );
 }

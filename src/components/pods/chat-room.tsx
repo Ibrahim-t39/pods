@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { personColor, YOU_COLOR } from "@/components/brand/disc";
 import { Icon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 import { notify } from "@/components/ui/toast";
 import { usePlanActions } from "@/components/planner/use-plan-actions";
 import { cn } from "@/lib/cn";
@@ -83,20 +84,21 @@ function PodAside({ podId, minute }: { podId: string; minute: number }) {
     useCallback(
       (db) =>
         podMembers(db, podId)
-          .map((m) => ({ id: m.user_id, name: m.user_id === db.me ? (db.users[m.user_id]?.first_name ?? "You") : firstName(db, m.user_id), you: m.user_id === db.me, pronouns: db.users[m.user_id]?.pronouns ?? null }))
+          .map((m) => ({ id: m.user_id, name: m.user_id === db.me ? (db.users[m.user_id]?.first_name ?? "You") : firstName(db, m.user_id), you: m.user_id === db.me }))
           .sort((a, b) => Number(b.you) - Number(a.you) || a.name.localeCompare(b.name)),
       [podId],
     ),
   );
   const photos = useDb(useCallback((db) => Object.values(db.memories).filter((x) => x.pod_id === podId && x.photo_url && !x.removed_at).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 6), [podId]));
-  const going = new Set(view?.going ?? []);
+  const meId = useDb((db) => db.me);
+  const going = new Set([...(view?.going ?? []), ...(view?.imIn && !LOOP.has(view.phase) ? [meId] : [])]);
   const sorted = [...people].sort((a, b) => Number(b.you) - Number(a.you) || Number(going.has(b.id)) - Number(going.has(a.id)));
 
   return (
     <aside aria-label="About this pod" className="min-h-0 overflow-y-auto border-l border-line bg-lit">
       {view && <NextPlan view={view} podId={podId} minute={minute} />}
       <Section
-        title={`Members · ${people.length}`}
+        title={`People · ${people.length}`}
         action={
           <Link href={`/app/pods/${podId}/members`} className="pressable text-[13px] font-semibold text-select hover:underline">
             See all
@@ -106,12 +108,11 @@ function PodAside({ podId, minute }: { podId: string; minute: number }) {
         <ul className="flex flex-col">
           {sorted.map((p) => (
             <li key={p.id} className="flex min-h-11 items-center gap-s3">
-              <Face name={p.name} you={p.you} />
-              <span className="min-w-0 flex-1 truncate text-[15px] text-ink">
-                {p.you ? "You" : p.name}
-                {p.pronouns && <span className="ml-s2 text-[13px] text-ink-3">{p.pronouns}</span>}
+              <span className={cn("rounded-full", going.has(p.id) && "shadow-[0_0_0_2px_var(--lit),0_0_0_4px_var(--grove-500)]")}>
+                <Face name={p.name} you={p.you} />
               </span>
-              {going.has(p.id) && <span className="text-[12px] font-semibold text-grove-text">In</span>}
+              <span className="min-w-0 flex-1 truncate text-[15px] text-ink">{p.you ? "You" : p.name}</span>
+              {going.has(p.id) && <span className="text-[13px] font-semibold text-grove-text">In</span>}
             </li>
           ))}
         </ul>
@@ -130,6 +131,15 @@ function PodAside({ podId, minute }: { podId: string; minute: number }) {
   );
 }
 
+/** "If rain is likely, Pods moves it to Brahan Spring Rec Center and tells everyone." -> "Moves to Brahan Spring Rec Center" */
+function rainShort(t: string) {
+  const to = t.match(/moves? (?:it |everyone )?to ([^,.]+?)(?: and\b|[,.]|$)/i);
+  if (to) return `Moves to ${to[1].trim()}`;
+  if (/indoors already/i.test(t)) return "Indoors, no change";
+  if (/new time/i.test(t)) return "The pod picks a new time";
+  return t.replace(/\.$/, "");
+}
+
 const LOOP = new Set(["check_in", "ballot", "waiting_reveal", "planning_next", "missed"]);
 
 function NextPlan({ view, podId, minute }: { view: CardView; podId: string; minute: number }) {
@@ -141,28 +151,33 @@ function NextPlan({ view, podId, minute }: { view: CardView; podId: string; minu
   const venue = view.venue;
   const title = plan?.event.split(/[,:;(—–]/)[0].trim() ?? view.hangout?.title ?? null;
   const href = view.suggestion && !LOOP.has(view.phase) ? `/app/pods/${podId}/plan/${view.suggestion.id}` : `/app/pods/${podId}`;
-  const btn = "pressable flex h-11 w-full items-center justify-center gap-s2 rounded-full text-[15px] font-semibold disabled:opacity-40";
 
   if (view.phase === "empty" || !title) {
     return (
       <Section title="Next hangout">
         <p className="text-[15px] leading-[1.4] text-ink-2">Nothing planned yet. The AI picks a time and place that works for most of you.</p>
-        <button type="button" disabled={actions.busy || actions.genKind !== null} onClick={() => void actions.planNow()} className={cn(btn, "mt-s4 bg-ink text-lit")}>
+        <Button size="sm" className="mt-s4" disabled={actions.genKind !== null} loading={actions.busy} onClick={() => void actions.planNow()}>
           Ask AI for a plan
-        </button>
+        </Button>
       </Section>
     );
   }
 
+  // one action, the app's standard small pill; settled states are a quiet status beside the count, never a slab
+  const status = (icon: "check" | "locked", label: string, tone = "text-ink") => (
+    <span className={cn("inline-flex h-11 items-center gap-s1 text-[15px] font-semibold", tone)}>
+      <Icon name={icon} size={18} /> {label}
+    </span>
+  );
   let action: React.ReactNode;
   switch (view.phase) {
     case "check_in":
       action = view.checkedIn ? (
-        <p className="flex h-11 items-center justify-center gap-s1 text-[15px] font-semibold text-select"><Icon name="check" size={18} /> Checked in</p>
+        status("check", "Checked in", "text-select")
       ) : (
-        <button
-          type="button"
-          disabled={busy}
+        <Button
+          size="sm"
+          loading={busy}
           onClick={async () => {
             if (!view.lastHangout) return;
             setBusy(true);
@@ -170,20 +185,15 @@ function NextPlan({ view, podId, minute }: { view: CardView; podId: string; minu
             setBusy(false);
             if (!r.ok) notify.error("Not checked in. Try again.");
           }}
-          className={cn(btn, "bg-select text-on-select")}
         >
           Check in
-        </button>
+        </Button>
       );
       break;
     case "locked":
     case "starting_soon":
     case "happening_now":
-      action = (
-        <p className="flex h-11 items-center justify-center gap-s1 rounded-full bg-sunken text-[15px] font-semibold text-ink">
-          <Icon name="locked" size={18} /> {view.phase === "happening_now" ? "Happening now" : "Locked"}
-        </p>
-      );
+      action = status("locked", view.phase === "happening_now" ? "Happening now" : "Locked");
       break;
     case "vote":
     case "ballot":
@@ -191,22 +201,23 @@ function NextPlan({ view, podId, minute }: { view: CardView; podId: string; minu
     case "planning_next":
     case "missed":
       action = (
-        <Link href={href} className={cn(btn, "bg-sunken text-ink hover:bg-line")}>
-          {view.phase === "vote" || (view.phase === "planning_next" && view.vote) ? "Vote on the time" : "Open"}
-        </Link>
+        <Button asChild size="sm" variant="secondary">
+          <Link href={href}>{view.phase === "vote" || (view.phase === "planning_next" && view.vote) ? "Vote on the time" : "Open"}</Link>
+        </Button>
       );
       break;
     default:
       action = view.imIn ? (
-        <p className="flex h-11 items-center justify-center gap-s1 rounded-full bg-sunken text-[15px] font-semibold text-select"><Icon name="check" size={18} /> You&apos;re in</p>
+        status("check", "You're in", "text-grove-text")
       ) : (
-        <button type="button" disabled={actions.busy || !view.targetId} onClick={() => view.targetId && void actions.rsvp(view.targetId, "going")} className={cn(btn, "bg-spark text-on-spark")}>
+        <Button size="sm" variant="spark" loading={actions.busy} disabled={!view.targetId} onClick={() => view.targetId && void actions.rsvp(view.targetId, "going")}>
           I&apos;m in
-        </button>
+        </Button>
       );
   }
 
   const loop = LOOP.has(view.phase);
+  const rain = plan?.rain_plan ? rainShort(plan.rain_plan) : null;
   return (
     <Section
       title={loop ? "Last hangout" : "Next hangout"}
@@ -226,25 +237,29 @@ function NextPlan({ view, podId, minute }: { view: CardView; podId: string; minu
         {venue ? ` · ${venue.short_name ?? venue.name}` : ""}
         {plan?.cost ? ` · ${plan.cost}` : ""}
       </p>
-      {!loop && (
-        <p className="tabular mt-s3 text-[14px] font-semibold text-ink">
-          {view.going.length} of {view.size} in
-        </p>
-      )}
-      <div className="mt-s4">{action}</div>
-      {!loop && plan && (plan.bring.length > 0 || plan.rain_plan) && (
-        <dl className="mt-s4 flex flex-col gap-s3 rounded-[16px] bg-sunken p-s4 text-[14px] leading-[1.4]">
+      <div className="mt-s4 flex items-center justify-between gap-s3">
+        {!loop ? (
+          <p className="tabular text-[15px] font-semibold text-ink">
+            {view.going.length} of {view.size} in
+          </p>
+        ) : (
+          <span />
+        )}
+        {action}
+      </div>
+      {!loop && plan && (plan.bring.length > 0 || rain) && (
+        <dl className="mt-s4 grid grid-cols-[auto_1fr] gap-x-s3 gap-y-s2 border-t border-line pt-s4 text-[14px] leading-[1.4]">
           {plan.bring.length > 0 && (
-            <div>
-              <dt className="text-[12px] font-semibold text-ink-2">Bring</dt>
+            <>
+              <dt className="font-semibold text-ink-2">Bring</dt>
               <dd className="text-ink">{plan.bring.join(" · ")}</dd>
-            </div>
+            </>
           )}
-          {plan.rain_plan && (
-            <div>
-              <dt className="text-[12px] font-semibold text-ink-2">If it rains</dt>
-              <dd className="text-ink">{plan.rain_plan}</dd>
-            </div>
+          {rain && (
+            <>
+              <dt className="font-semibold text-ink-2">Rain</dt>
+              <dd className="text-ink">{rain}</dd>
+            </>
           )}
         </dl>
       )}

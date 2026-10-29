@@ -1,8 +1,8 @@
 // Button v3 (DESIGN.md §8; COLOR_LIFE §6). commit = blue pill, the period of "pods." (one per screen) · spark = ember pill for the warm commits
 // (I'm in, Run it back) · go = text link · destructive = outlined ink pill · quiet = outlined line pill · glass = lamp
 // pill on the moment stage. Every size is >= 44px tall.
-// Finish (COLOR_LIFE §12.4): filled pills carry the sheen (top light + 1px lit edge) and a layered coloured shadow;
-// the sheen flattens on press. States: focus ring, pressed scale .96 then a spring back, disabled (outlined, ink-3), loading (spinner), success (filled-centre ring).
+// Finish (founder review r3): one primary treatment, solid and flat (no sheen, no coloured shadow). Ember (spark) commits
+// to a hangout; signal blue (primary) is everything else. Gloss stays a rare accent, never on buttons. States: focus ring, pressed scale .96 then a spring back, disabled (outlined, ink-3), loading (spinner), success (filled-centre ring).
 "use client";
 
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
@@ -25,17 +25,17 @@ export const buttonVariants = cva(
       variant: {
         /** commit: the one filled blue pill per screen (the blue period: the plan, settled; 5.6:1 with white). */
         primary: [
-          "sheen bg-primary text-on-primary shadow-primary hover:bg-primary-hover active:bg-primary-pressed",
+          "bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-pressed",
           "disabled:bg-transparent disabled:text-ink-3 disabled:shadow-[inset_0_0_0_1.5px_var(--line)]",
         ],
         /** spark: the warm commit. Ember with ink text (5.8:1). Only "I'm in" and "Run it back" (COLOR_LIFE §6). */
         spark: [
-          "sheen bg-spark text-on-spark shadow-spark hover:brightness-[1.05]",
+          "bg-spark text-on-spark hover:brightness-[1.05] active:brightness-[.97]",
           "disabled:bg-transparent disabled:text-ink-3 disabled:shadow-[inset_0_0_0_1.5px_var(--line)]",
         ],
         /** v1 name kept: the pod's own commit = spark */
         pod: [
-          "sheen bg-spark text-on-spark shadow-spark hover:brightness-[1.05]",
+          "bg-spark text-on-spark hover:brightness-[1.05] active:brightness-[.97]",
           "disabled:bg-transparent disabled:text-ink-3 disabled:shadow-[inset_0_0_0_1.5px_var(--line)]",
         ],
         /** quiet: an outlined pill for the second choice (Maybe, Keep it) */
@@ -54,6 +54,8 @@ export const buttonVariants = cva(
         lg: "h-14 px-7 text-[17px] [&_svg]:size-5",
         md: "h-12 px-6 text-[16px] [&_svg]:size-5",
         sm: "h-11 px-5 text-[15px] [&_svg]:size-[18px]",
+        /** page-header tools and in-row actions: 36px visual, 44px hit area */
+        xs: "h-9 px-4 text-[14px] [&_svg]:size-4 before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']",
       },
       shape: {
         pill: "rounded-full",

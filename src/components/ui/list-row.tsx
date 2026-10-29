@@ -34,7 +34,7 @@ export const ListRow = forwardRef<HTMLDivElement, ListRowProps>(function ListRow
       </span>
       {value != null && <span className="shrink-0 text-body-sm text-fg-muted tabular">{value}</span>}
       {trailing}
-      {chevron && <Icon name="arrow" size={20} className="shrink-0 text-ink-2 transition-transform duration-fast group-hover:translate-x-0.5" />}
+      {chevron && <Icon name="arrow" size={16} stroke={2} className="shrink-0 text-ink-2 transition-transform duration-fast group-hover:translate-x-0.5" />}
     </>
   );
   const cls = cn(
@@ -74,7 +74,7 @@ export function ListRowBody(props: Pick<ListRowProps, "icon" | "iconTone" | "tit
       </span>
       {value != null && <span className="shrink-0 text-body-sm text-fg-muted tabular">{value}</span>}
       {trailing}
-      {chevron && <Icon name="arrow" size={20} className="shrink-0 text-ink-2 transition-transform duration-fast group-hover:translate-x-0.5" />}
+      {chevron && <Icon name="arrow" size={16} stroke={2} className="shrink-0 text-ink-2 transition-transform duration-fast group-hover:translate-x-0.5" />}
     </>
   );
 }

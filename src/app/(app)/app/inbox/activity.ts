@@ -1,7 +1,7 @@
 // The Inbox's view model: every stored notification plus what the person's pods are doing right now (a plan waiting on
 // them, new messages, an open poll or vote, a check-in, a new pod), each with the one action that settles it.
 // Pure over DbState + the clock so Demo and Live behave the same. Ids are stable ("d:<kind>:<ref>") so read state sticks.
-import { buildInbox, maskText, podLabel, type InboxItem } from "@/lib/notifications/rules";
+import { buildInbox, COMMUNITY_LABEL, maskText, podLabel, type InboxItem } from "@/lib/notifications/rules";
 import { cardView, optionLabel } from "@/lib/planner/card-state";
 import { chicagoDaysBetween } from "@/lib/time/tz";
 import type { DbState, ID } from "@/lib/types";
@@ -166,6 +166,13 @@ export function buildActivity(db: DbState, now: Date, seen: Set<string>, discree
     }
     if (n.trigger === "poll_opened" && n.podId && pollsShown.has(`${n.podId}|${db.pods[n.podId] ? n.body : ""}`)) continue;
     if (n.id.startsWith("d:locked:") && n.podId && readyPods.has(n.podId)) continue;
+    // Stored lines were written with the lock-screen label; in the app the pod keeps its real name (unless masked in-app).
+    const cpod = n.podId ? db.pods[n.podId] : undefined;
+    if (!discreet && cpod?.type === "community") {
+      const fix = (t: string) => t.split(COMMUNITY_LABEL).join(cpod.name).split("your community pod").join(cpod.name);
+      n.title = fix(n.title);
+      n.body = fix(n.body);
+    }
     const base = { ...n, podName: name(n.podId), who: null as Activity["who"], act: null as Act | null };
     if (n.trigger === "placed" && !n.stored) {
       const open = mine.filter((m) => m.activation === "active").map((m) => podLabel(db.pods[m.pod_id], discreet));

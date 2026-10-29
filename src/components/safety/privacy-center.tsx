@@ -24,7 +24,7 @@ export function PrivacyCenter() {
         }}
       />
       <DownloadData />
-      <SheetRow icon="why" label="Privacy" href="/privacy" arrow />
+      <SheetRow icon="shield" label="Privacy" href="/privacy" arrow />
       <SheetRow icon="flag" label="Terms" href="/terms" arrow />
     </Rows>
     <SheetLine className="mt-s4">The AI is Claude, by Anthropic. Plans send only free times and an activity.</SheetLine>

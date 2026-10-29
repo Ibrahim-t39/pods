@@ -75,10 +75,11 @@
   }
 }
 
-/* ── A pod's page (redesign) ──
- * Phone: identity, the plan card with its in-count and I'm in right under it, the table (who's in), then members,
- *        Talk, memories and settings. Scrolls; clears the capsule (the shell pads non-.pods-pg pages).
- * Laptop: identity across; plan left, table right; the sections in two columns under them.
+/* ── A pod's page (redesign r3) ──
+ * Phone: identity, the plan card (in-count + I'm in on its bottom row), Who's in (seats with names), then Talk,
+ *        members, memories and settings. Compact and thumb-first; no ring.
+ * Laptop: identity across; the plan card and Who's in side by side at the same height (Who's in carries the pod's
+ *        solid mark); the sections in two columns right under them, so Talk and Members are in the first view.
  * Wide laptop (>=1280): Talk docks at the right (420), the page keeps the rest. */
 .pods-pod {
   min-height: 100dvh;
@@ -87,10 +88,13 @@
 .pods-pod-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--s6);
+  gap: var(--s4);
   max-width: 1120px;
   margin: 0 auto;
-  padding: var(--s4) var(--gutter) 0;
+  padding: var(--s2) var(--gutter) 0;
+}
+.pods-pod-id {
+  padding-bottom: var(--s1);
 }
 .pods-pod-plan {
   display: flex;
@@ -98,28 +102,24 @@
   gap: var(--s4);
   min-width: 0;
 }
-.pods-pod-foot {
+.pods-pod-who {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s4);
-  max-width: 440px;
-  padding: 0 var(--s1);
-}
-.pods-pod-ring {
-  display: grid;
-  place-items: center;
+  flex-direction: column;
   min-width: 0;
 }
-.pods-pod-ring-fit {
-  width: 100%;
-  height: 320px;
+.pods-pod-who > *,
+.pods-pod-plan > * {
+  flex: 1 1 auto;
+}
+.pods-who-mark {
+  display: none;
 }
 .pods-pod-more {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--s6);
   min-width: 0;
+  margin-top: var(--s4);
 }
 .pods-talk-dock {
   position: fixed;
@@ -135,33 +135,38 @@
 @media (min-width: 1024px) {
   .pods-pod-body {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: "id id" "plan ring" "more more";
-    column-gap: var(--s8);
-    row-gap: var(--s8);
+    grid-template-areas: "id id" "plan who" "more more";
+    column-gap: var(--s6);
+    row-gap: var(--s6);
     padding: var(--s8) var(--s12) 0;
   }
   .pods-pod-id {
     grid-area: id;
+    padding-bottom: 0;
   }
   .pods-pod-plan {
     grid-area: plan;
-    justify-content: center;
   }
   .pods-pod-plan-wide {
     grid-column: 1 / -1;
     max-width: 560px;
   }
-  .pods-pod-ring {
-    grid-area: ring;
+  .pods-pod-who {
+    grid-area: who;
   }
-  .pods-pod-ring-fit {
-    height: 340px;
+  .pods-who-mark {
+    display: grid;
+    flex: 1 1 auto;
+    place-items: center;
+    padding: var(--s4) 0 var(--s2);
   }
   .pods-pod-more {
     grid-area: more;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: var(--s8);
+    column-gap: var(--s6);
+    row-gap: var(--s6);
     align-items: start;
+    margin-top: var(--s2);
   }
 }
 @media (min-width: 1280px) {

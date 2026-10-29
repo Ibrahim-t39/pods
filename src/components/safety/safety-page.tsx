@@ -27,7 +27,7 @@ const DAY = 86_400_000;
 const GUIDES = [
   { icon: "place", text: "Every hangout is at a public place." },
   { icon: "room", text: "Meet as a group. Skip one-on-one until you’re ready." },
-  { icon: "off", text: "Leave anytime. No one needs a reason." },
+  { icon: "exit", text: "Leave anytime. No one needs a reason." },
   { icon: "flag", text: "Report anything that feels off, right from their profile." },
 ] as const;
 
@@ -172,7 +172,7 @@ export function SafetyPage() {
               <Section label="People">
                 <Card>
                   <Row icon="flag" tone="safe" label="Report someone" hint="Open their profile, then Report or Block" href="/app/people" arrow />
-                  <Row icon="block" tone="safe" label="Blocked" value={<span className="tabular-nums">{blocked ? blocked : "No one"}</span>} arrow onClick={() => setSheet("blocked")} />
+                  <Row icon="blocked" tone="safe" label="Blocked" value={<span className="tabular-nums">{blocked ? blocked : "No one"}</span>} arrow onClick={() => setSheet("blocked")} />
                 </Card>
               </Section>
             </motion.div>
@@ -187,8 +187,8 @@ export function SafetyPage() {
                       </li>
                     ))}
                   </ul>
-                  <Row icon="why" label="Read the guidelines" href="/safety" arrow />
-                  <Row icon="talk" label="Write to us" href={WRITE_TO_US} external arrow />
+                  <Row icon="list" label="Read the guidelines" href="/safety" arrow />
+                  <Row icon="mail" label="Write to us" href={WRITE_TO_US} external arrow />
                 </Card>
               </Section>
             </motion.div>

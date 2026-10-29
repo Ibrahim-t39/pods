@@ -88,7 +88,7 @@ export function SettingsScreen() {
         <Section label="Notifications" className="mt-s6">
           <Card>
             <Row icon="bell" label="Texts" hint="Sent to your phone" value={textsValue(me.notification_prefs.sms, prefs.texts)} arrow onClick={() => go("texts")} />
-            <Row icon="clock" label="AI plans" hint="Plans from your free times" value={prefs.claude ? "On" : "Off"} arrow onClick={() => go("ai")} />
+            <Row icon="why" label="AI plans" hint="Plans from your free times" value={prefs.claude ? "On" : "Off"} arrow onClick={() => go("ai")} />
           </Card>
         </Section>
       </motion.div>
@@ -100,8 +100,8 @@ export function SettingsScreen() {
       <motion.div {...fade(3)}>
         <Section label="Privacy and safety">
           <Card>
-            <Row icon="why" tone="safe" label="Privacy and terms" hint="What others see, your data" arrow onClick={() => go("privacy")} />
-            <Row icon="block" tone="safe" label="Blocked" value={<span className="tabular-nums">{blocked ? blocked : "No one"}</span>} arrow onClick={() => go("blocked")} />
+            <Row icon="shield" tone="safe" label="Privacy and terms" hint="What others see, your data" arrow onClick={() => go("privacy")} />
+            <Row icon="blocked" tone="safe" label="Blocked" value={<span className="tabular-nums">{blocked ? blocked : "No one"}</span>} arrow onClick={() => go("blocked")} />
             <Row icon="here" tone="safe" label="If something’s off" hint="Emergency lines and reporting" href="/app/safety" arrow />
           </Card>
         </Section>
@@ -110,7 +110,7 @@ export function SettingsScreen() {
         <Section label="Help" className="mt-s6">
           <Card>
             <Row icon="list" label="Guidelines" href="/safety" arrow />
-            <Row icon="talk" label="Write to us" href={WRITE_TO_US} external arrow />
+            <Row icon="mail" label="Write to us" href={WRITE_TO_US} external arrow />
           </Card>
         </Section>
       </motion.div>
@@ -118,7 +118,7 @@ export function SettingsScreen() {
         <Section className="mt-s6">
           <Card>
             <Row
-              icon="back"
+              icon="exit"
               label="Sign out"
               onClick={() => {
                 leaving.current = true;
@@ -126,7 +126,7 @@ export function SettingsScreen() {
                 router.replace("/");
               }}
             />
-            <Row icon="off" tone="danger" label="Delete my seat" hint="Removes your profile and pods for good" onClick={() => go("delete")} />
+            <Row icon="trash" tone="danger" label="Delete my seat" hint="Removes your profile and pods for good" onClick={() => go("delete")} />
           </Card>
         </Section>
       </motion.div>

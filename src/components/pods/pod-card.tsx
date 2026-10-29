@@ -171,7 +171,7 @@ export function PodRow({ t, minute, closed, unread }: { t: RoomTable; minute: nu
         <span className="block truncate text-[14px] text-ink-2">{sub}</span>
       </span>
       {st && <StatusChip {...st} className="max-sm:hidden" />}
-      {t.open && <Icon name="arrow" size={18} className="shrink-0 text-ink-3" />}
+      {t.open && <Icon name="arrow" size={16} stroke={2} className="shrink-0 text-ink-2" />}
     </>
   );
   const cls = "flex min-h-16 items-center gap-s3 px-s4 py-s2";

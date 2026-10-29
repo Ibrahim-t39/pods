@@ -2,11 +2,13 @@
 //   head      compact "Inbox" + how many are new + Mark all read, then All · Plans · Messages · Pods
 //   list      grouped Today · Yesterday · This week · Earlier. Each row: a meaningful mark (the pod, or the person with
 //             their pod's colour), one line, one preview, the time, a new-dot, and its one inline action
-//             (I'm in · vote · Reply · Check in · Run it back · Join pod)
+//             only in "Needs you" (I'm in · vote · Check in · Run it back · Join pod); every other row is quiet and
+//             opens on tap (messages open the chat to reply, polls open to vote)
 //   phone     tap the text to open the real thing; swipe a row left to mark it read
 //   laptop    master-detail: the list on the left, the real object on the right (the plan with its details and
 //             actions, the chat thread with a reply box, the poll, your pods)
-// Community pods stay discreet (D10): names are masked when "Hide community names" is on.
+// Community pods: in the app they keep their real name, like everywhere else. The lock-screen label ("Your community
+// pod") is for push previews only; the inbox masks names only when "Hide community names" (in-app masking) is on.
 "use client";
 
 import Link from "next/link";
@@ -81,12 +83,13 @@ export function InboxScreen() {
   const now = useClock();
   const wide = useMediaQuery("(min-width: 1024px)");
   const { prefs } = useDevicePrefs();
+  const discreet = prefs.discreet && prefs.maskInApp;
   const [seen, setSeen] = useState<Set<string> | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [chosen, setChosen] = useState<string | null>(null);
   useEffect(() => setSeen(readSeen()), []);
 
-  const items = useMemo(() => (seen ? buildActivity(db, now, seen, prefs.discreet) : []), [db, now, seen, prefs.discreet]);
+  const items = useMemo(() => (seen ? buildActivity(db, now, seen, discreet) : []), [db, now, seen, discreet]);
   const counts = useMemo(() => {
     const c: Record<Filter, number> = { all: 0, plans: 0, messages: 0, pods: 0 };
     for (const i of items) if (!i.read) (c.all++, c[i.kind]++);
@@ -179,7 +182,7 @@ export function InboxScreen() {
                           db={db}
                           now={now}
                           wide={wide}
-                          discreet={prefs.discreet}
+                          discreet={discreet}
                           selected={wide && pick?.id === n.id}
                           onOpen={() => open(n)}
                           onChoose={() => {
@@ -200,8 +203,8 @@ export function InboxScreen() {
           <aside className="inbx-pane" aria-label="Opened">
             {ready && pick ? (
               <AnimatePresence mode="wait" initial={false}>
-                <motion.div key={pick.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={GENTLE}>
-                  <Detail n={pick} db={db} now={now} discreet={prefs.discreet} onRead={() => void markRead([pick])} />
+                <motion.div key={pick.id} className="inbx-pane-in" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={GENTLE}>
+                  <Detail n={pick} db={db} now={now} discreet={discreet} onRead={() => void markRead([pick])} />
                 </motion.div>
               </AnimatePresence>
             ) : (
@@ -296,6 +299,7 @@ function Row({
   const x = useMotionValue(0);
   const reveal = useTransform(x, [-72, -8, 0], [1, 0, 0]);
   const label = `${n.read ? "" : "New. "}${n.title}. ${n.body}`;
+  const replyCount = n.act?.type === "reply" && !n.read ? n.act.count : 0;
   const text = (
     <>
       <span className="flex items-baseline gap-s2">
@@ -304,7 +308,16 @@ function Row({
           {stamp(n.created_at, now)}
         </span>
       </span>
-      {n.body && <span className="inbx-body">{n.body}</span>}
+      {(n.body || replyCount > 1) && (
+        <span className="flex items-center gap-s2">
+          <span className="inbx-body min-w-0 flex-1">{n.body}</span>
+          {replyCount > 1 && (
+            <span data-nc className="inbx-new tabular-nums" aria-label={`${replyCount} new messages`}>
+              {replyCount}
+            </span>
+          )}
+        </span>
+      )}
     </>
   );
   const end = (_: unknown, info: PanInfo) => {
@@ -335,7 +348,7 @@ function Row({
             {text}
           </a>
         )}
-        {n.act && <Actions n={n} act={n.act} db={db} now={now} onDone={onRead} compact />}
+        {n.act && (needsYou(n) ? <Actions n={n} act={n.act} db={db} now={now} onDone={onRead} compact /> : <Meta act={n.act} />)}
       </div>
     </div>
   );
@@ -400,9 +413,22 @@ function Actions({ n, act, onDone, compact }: { n: Activity; act: Act; db: DbSta
               >
                 I'm in
               </Button>
-              <span className="text-[14px] text-ink-2 tabular-nums">
-                {act.going} of {act.size} in
-              </span>
+              {compact && (
+                <span className="text-[14px] text-ink-2 tabular-nums">
+                  {act.going} of {act.size} in
+                </span>
+              )}
+              {!compact && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="inbx-btn"
+                  disabled={busy !== null || act.imOut}
+                  onClick={() => void run("out", () => repo.rsvp(act.targetId, "not_going"), "Got it. The pod will know you're out.").then((ok) => ok && onDone())}
+                >
+                  {act.imOut ? "You're out" : "Can't make it"}
+                </Button>
+              )}
             </>
           )}
         </div>
@@ -411,7 +437,7 @@ function Actions({ n, act, onDone, compact }: { n: Activity; act: Act; db: DbSta
     case "vote":
       return (
         <div className="inbx-opts" role="group" aria-label={n.body}>
-          {act.options.map((o) => {
+          {(compact ? act.options.slice(0, 2) : act.options).map((o) => {
             const on = act.mine === o.id;
             return (
               <button
@@ -429,6 +455,11 @@ function Actions({ n, act, onDone, compact }: { n: Activity; act: Act; db: DbSta
               </button>
             );
           })}
+          {compact && act.options.length > 2 && (
+            <Link href={hrefOf(n)} className="inbx-opt inbx-opt-more pressable" aria-label={`${act.options.length - 2} more options`}>
+              +{act.options.length - 2}
+            </Link>
+          )}
         </div>
       );
     case "reply":
@@ -496,7 +527,28 @@ function Actions({ n, act, onDone, compact }: { n: Activity; act: Act; db: DbSta
   }
 }
 
-function Composer({ podId, replyTo, onSent, onCancel, autoFocus = true }: { podId: ID; replyTo: ID | null; onSent: () => void; onCancel?: () => void; autoFocus?: boolean }) {
+/** A quiet one-line state for rows that don't need you: no buttons, the row itself opens the thing. */
+function Meta({ act }: { act: Act }) {
+  let text: string | null = null;
+  if (act.type === "poll" || act.type === "vote") {
+    const mine = act.options.find((o) => o.id === act.mine);
+    text = mine ? `You voted: ${mine.label}` : `${act.type === "poll" ? "Poll" : "Vote"} · ${act.options.length} options · ${act.total} voted`;
+  } else if (act.type === "rsvp" && act.imIn) text = `You're in · ${act.going} of ${act.size}`;
+  else if (act.type === "checkin" && act.done) text = "Checked in";
+  else if (act.type === "ballot" && act.mine) text = "Answered";
+  else if (act.type === "join" && act.status !== "new") text = act.status === "joined" ? "Joined" : "Skipped";
+  if (!text) return null;
+  const open = (act.type === "poll" || act.type === "vote") && !act.mine;
+  return (
+    <span className="inbx-meta" data-open={open || undefined}>
+      {!open && <Icon name="check" size={14} />}
+      <span className="truncate">{text}</span>
+      {open && <span className="inbx-meta-cta">Vote</span>}
+    </span>
+  );
+}
+
+function Composer({ podId, replyTo, onSent, onCancel, autoFocus = true, placeholder = "Write a reply" }: { podId: ID; replyTo: ID | null; onSent: () => void; onCancel?: () => void; autoFocus?: boolean; placeholder?: string }) {
   const repo = useRepo();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -524,8 +576,8 @@ function Composer({ podId, replyTo, onSent, onCancel, autoFocus = true }: { podI
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => e.key === "Escape" && onCancel?.()}
-        placeholder="Write a reply"
-        aria-label="Reply"
+        placeholder={placeholder}
+        aria-label={placeholder}
         className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-ink-3"
       />
       <button type="submit" aria-label="Send" disabled={!text.trim() || sending} className="inbx-send pressable">
@@ -540,7 +592,7 @@ function Composer({ podId, replyTo, onSent, onCancel, autoFocus = true }: { podI
 function Detail({ n, db, now, discreet, onRead }: { n: Activity; db: DbState; now: Date; discreet: boolean; onRead: () => void }) {
   const pod = n.podId ? db.pods[n.podId] : undefined;
   const head = (
-    <div className="flex items-center gap-s3">
+    <div className="inbx-detail-head">
       <Mark n={n} db={db} discreet={discreet} size={32} />
       <div className="min-w-0">
         <p className="truncate text-[15px] font-medium text-ink">{n.podName ?? (n.kind === "pods" ? "Your pods" : "Pods")}</p>
@@ -555,28 +607,27 @@ function Detail({ n, db, now, discreet, onRead }: { n: Activity; db: DbState; no
     </div>
   );
 
-  let body: ReactNode = null;
-  if (n.kind === "plans" && n.podId) body = <PlanPane n={n} db={db} now={now} discreet={discreet} onRead={onRead} />;
-  else if (n.kind === "messages" && n.podId) body = <ThreadPane n={n} db={db} now={now} discreet={discreet} onRead={onRead} />;
-  else if (n.kind === "pods" && n.act?.type !== "join" && !pod) body = <PodsPane db={db} discreet={discreet} />;
+  let view: { body: ReactNode; foot?: ReactNode };
+  if (n.kind === "plans" && n.podId) view = planPane({ n, db, now, discreet, onRead });
+  else if (n.kind === "messages" && n.podId) view = threadPane({ n, db, now, discreet, onRead });
+  else if (n.kind === "pods" && n.act?.type !== "join" && !pod) view = { body: <PodsPane db={db} discreet={discreet} /> };
   else
-    body = (
-      <>
-        <h2 className="inbx-pane-title">{n.title}</h2>
-        <p className="mt-s3 max-w-[56ch] text-[16px] leading-[1.5] text-ink-2">{n.body}</p>
-        {n.act && (
-          <div className="mt-s6">
-            <Actions n={n} act={n.act} db={db} now={now} onDone={onRead} />
-          </div>
-        )}
-      </>
-    );
+    view = {
+      body: (
+        <>
+          <h2 className="inbx-pane-title">{n.title}</h2>
+          <p className="mt-s3 max-w-[56ch] text-[16px] leading-[1.5] text-ink-2">{n.body}</p>
+        </>
+      ),
+      foot: n.act ? <Actions n={n} act={n.act} db={db} now={now} onDone={onRead} /> : undefined,
+    };
 
   return (
-    <div>
+    <>
       {head}
-      <div className="mt-s8">{body}</div>
-    </div>
+      <div className="inbx-detail-body">{view.body}</div>
+      {view.foot && <div className="inbx-detail-foot">{view.foot}</div>}
+    </>
   );
 }
 
@@ -589,22 +640,45 @@ function Fact({ k, children }: { k: string; children: ReactNode }) {
   );
 }
 
-function PlanPane({ n, db, now, discreet, onRead }: { n: Activity; db: DbState; now: Date; discreet: boolean; onRead: () => void }) {
+/** Seats: one dot per place in the plan. Filled = in (yours in your colour), hollow = still open. No letters to clip. */
+function Seats({ db, going, size }: { db: DbState; going: ID[]; size: number }) {
+  return (
+    <span className="inbx-seats" role="img" aria-label={`${going.length} of ${size} in`}>
+      {Array.from({ length: size }, (_, i) => {
+        const id = going[i];
+        return <i key={i} data-in={id ? "" : undefined} data-you={id && id === db.me ? "" : undefined} />;
+      })}
+    </span>
+  );
+}
+
+function names(db: DbState, ids: ID[]): string {
+  const list = ids.map((id) => (id === db.me ? "you" : (db.users[id]?.first_name ?? "Someone")));
+  if (list.length <= 1) return list.join("");
+  return `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
+}
+
+function planPane({ n, db, now, discreet, onRead }: { n: Activity; db: DbState; now: Date; discreet: boolean; onRead: () => void }): { body: ReactNode; foot?: ReactNode } {
   const podId = n.podId as ID;
   const pod = db.pods[podId];
   const v = cardView(db, podId, now.getTime());
   const h = v?.lastHangout && (n.act?.type === "checkin" || n.act?.type === "ballot" || v.locked) ? v.lastHangout : null;
   const s = (h ? db.suggestions[h.suggestion_id] : null) ?? v?.suggestion ?? null;
-  if (!v || !s) return <h2 className="inbx-pane-title">{n.title}</h2>;
+  if (!v || !s) return { body: <h2 className="inbx-pane-title">{n.title}</h2>, foot: n.act ? <Actions n={n} act={n.act} db={db} now={now} onDone={onRead} /> : undefined };
   const plan = s.plan_json;
   const venue = db.venues[plan.venue_id];
   const rain = plan.rain_venue_id ? db.venues[plan.rain_venue_id] : null;
-  const going = v.going.map((id) => ({ initial: (db.users[id]?.first_name ?? "?").slice(0, 1), seed: id, tone: (id === db.me ? "you" : "ember") as "you" | "ember", label: db.users[id]?.first_name }));
-  const open = Math.max(0, v.size - v.going.length);
-  return (
+  const status = `${v.going.length} of ${v.size} in${!v.locked && v.threshold > v.going.length ? ` · locks at ${v.threshold}` : v.locked ? " · locked" : ""}`;
+  const body = (
     <>
       <p className="text-[14px] font-medium text-ink-2">{v.locked ? "Locked" : v.phase === "vote" ? "Vote open" : v.imIn ? "You're in" : "Needs your answer"}</p>
       <h2 className="inbx-pane-title mt-s1">{maskText(s.summary, pod, discreet)}</h2>
+      {n.act?.type === "vote" && (
+        <div className="inbx-block mt-s4 border-t-0 pt-0">
+          <h3 className="inbx-h3">Pick the next one · {n.act.total} of {v.size} voted</h3>
+          <PollBars act={n.act} onDone={onRead} />
+        </div>
+      )}
       <dl className="inbx-facts">
         <Fact k="When">
           {formatInTimeZone(plan.starts_at, TZ, "EEEE, MMM d")} · {shortTime(plan.starts_at)}–{shortTime(plan.ends_at)}
@@ -614,17 +688,12 @@ function PlanPane({ n, db, now, discreet, onRead }: { n: Activity; db: DbState; 
       </dl>
 
       <div className="inbx-block">
-        <div className="flex flex-wrap items-center gap-s3">
-          <DiscStack people={[...going, ...Array.from({ length: Math.min(open, 6) }, () => ({ initial: "", tone: "open" as const }))]} size={30} max={10} />
-          <span className="text-[15px] text-ink tabular-nums">
-            <b className="font-semibold">{v.going.length} of {v.size}</b> in{!v.locked && v.threshold > v.going.length ? ` · locks at ${v.threshold}` : ""}
-          </span>
+        <h3 className="inbx-h3">Who&apos;s in</h3>
+        <div className="mt-s3 flex flex-wrap items-center gap-x-s4 gap-y-s2">
+          <Seats db={db} going={v.going} size={v.size} />
+          <span className="text-[15px] text-ink tabular-nums">{status}</span>
         </div>
-        {n.act && (
-          <div className="mt-s4">
-            <Actions n={n} act={n.act} db={db} now={now} onDone={onRead} />
-          </div>
-        )}
+        {v.going.length > 0 && <p className="mt-s2 text-[14px] text-ink-2">{names(db, v.going).replace(/^./, (c) => c.toUpperCase())}</p>}
       </div>
 
       {plan.bring.length > 0 && (
@@ -652,22 +721,30 @@ function PlanPane({ n, db, now, discreet, onRead }: { n: Activity; db: DbState; 
       )}
     </>
   );
+  const foot = n.act && n.act.type !== "vote" ? (
+    <div className="flex flex-wrap items-center justify-between gap-s3">
+      <span className="text-[14px] text-ink-2 tabular-nums">{status}</span>
+      <Actions n={n} act={n.act} db={db} now={now} onDone={onRead} />
+    </div>
+  ) : undefined;
+  return { body, foot };
 }
 
-function ThreadPane({ n, db, now, discreet, onRead }: { n: Activity; db: DbState; now: Date; discreet: boolean; onRead: () => void }) {
+function threadPane({ n, db, now, discreet, onRead }: { n: Activity; db: DbState; now: Date; discreet: boolean; onRead: () => void }): { body: ReactNode; foot: ReactNode } {
   const podId = n.podId as ID;
   const pod = db.pods[podId];
-  const lines = (db.messages[podId] ?? []).filter((m) => (m.kind === "text" || m.kind === "poll") && m.created_at <= now.toISOString()).slice(-7);
+  const lines = (db.messages[podId] ?? []).filter((m) => (m.kind === "text" || m.kind === "poll") && m.created_at <= now.toISOString()).slice(-8);
   const poll = n.act?.type === "poll" ? n.act : null;
-  return (
+  const body = (
     <>
       {poll && (
-        <div className="inbx-block mt-0 border-t-0 pt-0">
+        <div>
           <h2 className="inbx-pane-title">{n.body}</h2>
           <p className="mt-s1 text-[14px] text-ink-2 tabular-nums">
             {poll.total} voted · asked by {n.who?.name}
+            {poll.mine ? " · tap another to change" : ""}
           </p>
-          <PollBars act={poll} n={n} db={db} now={now} onDone={onRead} />
+          <PollBars act={poll} onDone={onRead} />
         </div>
       )}
       <div className={cn(poll && "inbx-block")}>
@@ -689,30 +766,40 @@ function ThreadPane({ n, db, now, discreet, onRead }: { n: Activity; db: DbState
             );
           })}
         </ol>
-        <div className="mt-s4">
-          <Composer podId={podId} replyTo={null} autoFocus={false} onSent={onRead} />
-        </div>
       </div>
     </>
   );
+  return { body, foot: <Composer podId={podId} replyTo={null} autoFocus={false} onSent={onRead} placeholder={`Message ${podLabel(pod, discreet)}`} /> };
 }
 
-function PollBars({ act, n, db, now, onDone }: { act: Extract<Act, { type: "poll" | "vote" }>; n: Activity; db: DbState; now: Date; onDone: () => void }) {
+/** The poll as tappable bars: tap an option to vote (or change your vote); the bar shows the count. */
+function PollBars({ act, onDone }: { act: Extract<Act, { type: "poll" | "vote" }>; onDone: () => void }) {
+  const repo = useRepo();
+  const { busy, run } = useRun();
   const max = Math.max(1, ...act.options.map((o) => o.count));
   return (
-    <div className="mt-s4">
-      <div className="inbx-bars">
-        {act.options.map((o) => (
-          <div key={o.id} className="inbx-bar" style={{ ["--w" as string]: `${(o.count / max) * 100}%` }} data-on={act.mine === o.id || undefined}>
+    <div className="inbx-bars mt-s4" role="group" aria-label="Vote">
+      {act.options.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          aria-pressed={act.mine === o.id}
+          disabled={busy !== null}
+          className="inbx-bar pressable"
+          style={{ ["--w" as string]: `${(o.count / max) * 100}%` }}
+          data-on={act.mine === o.id || undefined}
+          onClick={() =>
+            act.mine !== o.id &&
+            void run(o.id, () => (act.type === "poll" ? repo.votePoll(act.pollId, o.id) : repo.voteNextOption(act.voteId, o.id)), act.mine ? "Vote changed." : "Voted.").then((ok) => ok && onDone())
+          }
+        >
+          <span className="flex min-w-0 items-center gap-s2">
+            {act.mine === o.id && <Icon name="check" size={16} />}
             <span className="truncate">{o.label}</span>
-            <span className="tabular-nums">{o.count}</span>
-          </div>
-        ))}
-      </div>
-      <p className="mt-s4 text-[14px] text-ink-2">{act.mine ? "Change your vote:" : "Your vote:"}</p>
-      <div className="mt-s2">
-        <Actions n={n} act={act} db={db} now={now} onDone={onDone} />
-      </div>
+          </span>
+          <span className="tabular-nums">{o.count}</span>
+        </button>
+      ))}
     </div>
   );
 }

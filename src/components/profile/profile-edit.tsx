@@ -4,7 +4,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { Disc } from "@/components/brand/disc";
@@ -16,7 +15,7 @@ import { useHydrated, useMe, useRepo } from "@/lib/db/hooks";
 import { displayName } from "@/lib/utils";
 import { CommunityPicker, FreeGrid, LikesPicker, useToggleSlot } from "./seat-sheets";
 import { PillField } from "./kit";
-import { Card, Section, YouHead, YouPage } from "./you-kit";
+import { Card, Section, TextAction, YouHead, YouPage } from "./you-kit";
 
 export function ProfileEdit() {
   const me = useMe();
@@ -69,11 +68,7 @@ export function ProfileEdit() {
         backLabel="Your profile"
         title="Edit profile"
         sub="Changes save as you go."
-        actions={
-          <Button asChild size="sm">
-            <Link href="/app/profile">Done</Link>
-          </Button>
-        }
+        actions={<TextAction href="/app/profile">Done</TextAction>}
       />
       <div className="yo-wrap yo-body">
         <div className="yo-cols">
@@ -120,7 +115,7 @@ export function ProfileEdit() {
 
             <motion.div {...fade(1)} id="into">
               <Section label="What you’re into" className="mt-s6">
-                <Card className="yo-pad pt-s6">
+                <Card className="yo-pad pt-s6 lg:pt-s6">
                   <LikesPicker />
                 </Card>
               </Section>

@@ -330,6 +330,21 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
   useEffect(() => {
     if (open && typing && atBottom) toBottom(true);
   }, [open, typing, atBottom, toBottom]);
+  // late layout (poll and plan cards filling in, fonts, photos) grows the thread after open: while you are at the
+  // bottom, stay pinned there so the panel never opens mid-thread with a half line under the header
+  const stick = useRef(true);
+  useEffect(() => {
+    stick.current = atBottom;
+  }, [atBottom]);
+  useEffect(() => {
+    const box = scroller.current;
+    const log = box?.firstElementChild?.nextElementSibling;
+    if (!open || !box || !log || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => stick.current && toBottom());
+    ro.observe(log);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [open, toBottom]);
   useEffect(() => {
     if (focusKey) field.current?.focus();
   }, [focusKey]);
@@ -439,7 +454,7 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-[17px] leading-[1.2] font-semibold tracking-[-0.01em] text-ink">{podName}</span>
           <span className="truncate text-[13px] leading-[1.3] text-ink-2" aria-live="polite">
-            {typingName ? `${typingName} is typing…` : where === "sheet" ? `${people.length} members` : memberLine(people)}
+            {typingName ? `${typingName} is typing…` : where === "sheet" ? `${people.length} people` : memberLine(people)}
           </span>
         </span>
       </button>
@@ -500,8 +515,9 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
         if (bottom !== atBottom) setAtBottom(bottom);
         if (bottom && fresh) setFresh(0);
       }}
-      className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain bg-paper", where === "dock" ? "px-s6" : where === "page" ? "px-[max(var(--s6),calc((100%-760px)/2))]" : "px-s4 md:px-s6")}
+      className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain bg-paper", where === "dock" ? "px-s6" : where === "page" ? "px-[max(var(--s8),calc((100%-760px)/2))]" : "px-s4 md:px-s6")}
     >
+      <div aria-hidden className="pointer-events-none sticky top-0 z-[1] -mb-s6 h-s6" style={{ background: "linear-gradient(var(--paper), transparent)" }} />
       <div role="log" aria-live="polite" aria-label={`${podName} messages`} className="flex min-h-full flex-col justify-end pt-s6 pb-s4">
         {!rows.length && !generating && (
           <div className="flex flex-col items-center gap-s4 pb-s12 text-center">
@@ -624,7 +640,7 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
   // ── composer (R9) ──
   const locked = paused || !podOpen;
   const composer = polling ? (
-    <div className={cn("shrink-0 border-t border-line bg-lit pt-s3", where === "page" ? "px-[max(var(--s6),calc((100%-760px)/2))] pb-s6" : where === "dock" ? "px-s6 pb-s6" : "px-s4 pb-[calc(12px+env(safe-area-inset-bottom))] md:px-s6 md:pb-s6")}>
+    <div className={cn("shrink-0 border-t border-line bg-lit pt-s3", where === "page" ? "px-[max(var(--s8),calc((100%-760px)/2))] pb-s6" : where === "dock" ? "px-s6 pb-s6" : "px-s4 pb-[calc(12px+env(safe-area-inset-bottom))] md:px-s6 md:pb-s6")}>
       <PollComposer
         onCancel={() => setPolling(false)}
         onPost={async (q, opts) => {
@@ -635,7 +651,7 @@ export function TalkBody({ open, onOpenChange, podId, podName, hue, focusKey, on
       />
     </div>
   ) : (
-    <div className={cn("relative shrink-0 border-t border-line bg-lit pt-s2", where === "page" ? "px-[max(var(--s4),calc((100%-776px)/2))] pt-s3 pb-s4" : where === "dock" ? "px-s4 pb-s4" : "px-s3 pb-[calc(8px+env(safe-area-inset-bottom))] md:px-s4 md:pb-s4")}>
+    <div className={cn("relative shrink-0 border-t border-line bg-lit pt-s2", where === "page" ? "px-[max(var(--s8),calc((100%-760px)/2))] pt-s3 pb-s4" : where === "dock" ? "px-s4 pb-s4" : "px-s3 pb-[calc(8px+env(safe-area-inset-bottom))] md:px-s4 md:pb-s4")}>
       <AnimatePresence initial={false}>
         {replyTo && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.16 }} className="overflow-hidden">
@@ -1221,7 +1237,7 @@ function EventLine({ text, kind, replies, onReply }: { text: string; kind: Messa
 
 function CardShell({ eyebrow, children }: { eyebrow: ReactNode; children: ReactNode }) {
   return (
-    <div className="mx-auto my-s1 w-full max-w-[360px] rounded-[20px] bg-lit p-s4 shadow-[inset_0_0_0_1px_var(--line)]">
+    <div className="my-s1 ml-9 max-w-[360px] rounded-[20px] bg-lit p-s4 shadow-[inset_0_0_0_1px_var(--line)]">
       <p className="flex items-center gap-s2 text-[12px] font-semibold tracking-[0.04em] text-ink-2 uppercase">{eyebrow}</p>
       {children}
     </div>

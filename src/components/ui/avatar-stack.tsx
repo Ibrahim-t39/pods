@@ -35,7 +35,7 @@ export function AvatarStack({ people, max = 5, size = 28, of, label, openSeats =
   const extra = people.length - shown.length;
   const names = people.map((p) => (p.you ? "you" : p.name));
   const auto = `${of != null ? `${people.length} of ${of} are in` : `${people.length} ${people.length === 1 ? "person" : "people"}`}${names.length ? `: ${listNames(names)}` : ""}`;
-  const overlap = size >= 36 ? -10 : -8;
+  const overlap = size >= 36 ? -8 : -6;
 
   return (
     <div role="img" aria-label={label ?? auto} className={cn("flex items-center", className)}>
@@ -52,7 +52,7 @@ export function AvatarStack({ people, max = 5, size = 28, of, label, openSeats =
             style={{ marginLeft: i === 0 ? 0 : overlap, zIndex: shown.length - i }}
             className="relative inline-flex"
           >
-            <Avatar decorative name={p.name} seed={p.id} src={p.src} size={size} you={p.you} ring={!p.you} />
+            <Avatar decorative name={p.name} seed={p.id} src={p.src} size={size} you={p.you} ring className="shadow-[0_0_0_2px_var(--stack-ring,var(--lit))]!" />
           </motion.span>
         ))}
       </AnimatePresence>

@@ -14,10 +14,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { LockMoment } from "@/components/planner/table/lock-moment";
-import { GENTLE, InCount, Line, PlanHalo, Shared, Stage, TableRing, sharedName, tableBox, type PodHueKey, type Seat, type StageLight } from "@/components/brand";
+import { InCount, Line, Shared, sharedName, type PodHueKey, type Seat, type StageLight } from "@/components/brand";
 import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { HangoutCard } from "@/components/planner/hangout-card";
@@ -28,9 +27,10 @@ import { cardView, type CardView } from "@/lib/planner/card-state";
 import { useClock } from "@/lib/time/clock";
 import { BallotCard, CheckInCard, CheckInSheet } from "./check-in-card";
 import { RunItBackCard } from "./run-it-back-card";
+import { WhoIn } from "./who-in";
 import { RoundTwo } from "./round-two";
 import { dayWord, firstName, hoursTogether, shortTime } from "./model";
-import { usePodTable, zoomHandoff, type PodTableApi } from "./table-context";
+import { usePodTable, type PodTableApi } from "./table-context";
 
 export interface Stagecraft {
   light: StageLight;
@@ -165,35 +165,10 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
   const startsAt = view.hangout?.starts_at ?? s?.plan_json.starts_at ?? null;
   const live = view.phase === "happening_now";
 
-  const center = (
-    <span className="glass flex items-center gap-s2 rounded-full py-s2 pr-s4 pl-s3 text-[15px] font-semibold text-select">
-      <Icon name="talk" size={22} />
-      Talk
-      {table && table.unread > 0 && (
-        <span className="fig grid h-6 min-w-6 place-items-center rounded-full bg-select px-1.5 text-[13px] font-semibold text-on-select">{table.unread}</span>
-      )}
-    </span>
-  );
-
-  const object = (
-    <FitTable podId={podId}>
-      {(size) => (
-        <Shared name={sharedName.pod(podId)}>
-        <TableRing
-          size={size}
-          seats={seats}
-          n={n}
-          hue={hue}
-          fill={locked}
-          worn={worn}
-          dim={view.phase === "empty" || view.phase === "pending_review"}
-          center={center}
-          onClick={table?.openTalk}
-          label={table && table.unread ? `Talk, ${table.unread} new` : "Talk"}
-        />
-        </Shared>
-      )}
-    </FitTable>
+  const whoIn = (
+    <Shared name={sharedName.pod(podId)}>
+      <WhoIn seats={seats} hue={hue} count={count} need={need} locked={locked} onMembers={table?.openMembers} className="h-full" />
+    </Shared>
   );
 
   if (view.phase === "empty" || view.phase === "pending_review" || !s || !startsAt) {
@@ -201,22 +176,30 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
     return {
       light: "paper",
       head: (
-        <>
-          <p className="text-overline text-ink-2">{title}</p>
-          <Line className="mt-s2">{review ? "Almost planned." : "Nothing planned yet."}</Line>
-        </>
+        <PlanCard
+          top={
+            <div className="px-s5 pt-s5 pb-s4">
+              <span className="block text-overline text-ink-2">{title}</span>
+              <span className="mt-s2 block font-display text-[28px] leading-[1.1] font-semibold tracking-[-0.025em] text-ink">{review ? "Almost planned." : "Nothing planned yet."}</span>
+              <span className="mt-s2 block text-[15px] leading-[1.4] text-ink-2">
+                {review ? "The plan is being checked. We'll text you." : "The AI finds a time most of the pod is free and a place nearby."}
+              </span>
+            </div>
+          }
+          foot={
+            review ? null : (
+              <>
+                <span className="text-label text-ink-2">Takes a minute</span>
+                <Button size="md" onClick={() => void actions.planNow()}>
+                  Plan one
+                </Button>
+              </>
+            )
+          }
+        />
       ),
-      object,
-      foot: review ? (
-        <p className="text-label text-ink-2">We&apos;ll text you.</p>
-      ) : (
-        <>
-          <span className="text-label text-ink-2">Takes a minute</span>
-          <Button size="xl" onClick={() => void actions.planNow()}>
-            Plan one
-          </Button>
-        </>
-      ),
+      object: whoIn,
+      foot: true,
       title,
       view,
     };
@@ -227,75 +210,83 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
   const day = dayWord(startsAt, minute);
   const whyHref = `/app/pods/${podId}/plan/${s.id}`;
 
-  // Beat 4: the plan is a card at the top of the table, wearing the halo (logo hues, one lap, then a slow drift;
-  // still and blue once locked). The whole card is one target: it opens the plan (beat 5). Facts only:
+  // Beat 4: the plan is the first card on the page (flat; founder r3: gloss only as a rare accent). The top opens the
+  // plan (beat 5); the bottom row carries the in-count and the one action (beat 6). Facts only:
   // activity · day, time · place · cost. The AI is named once, on the card's last line.
   const activity = activityWord(s.plan_json.event || s.summary);
   const placeName = venue ? (venue.short_name ?? venue.name) : null;
   const cost = (s.plan_json.cost ?? "").trim();
-  const head = (
-    <Shared name={sharedName.plan(s.id)}>
-      <PlanHalo state={locked ? "locked" : "waiting"} radius={24} className="w-full max-w-[440px]">
-        <Link
-          href={whyHref}
-          aria-label={`${activity}, ${day} ${shortTime(startsAt)}${placeName ? `, ${placeName}` : ""}${cost ? `, ${cost}` : ""}. Open the plan.`}
-          className="pressable glass block rounded-[24px] px-s6 pt-s4 pb-s4 outline-offset-4"
-        >
-          <span className="block text-overline text-ink-2">{live ? `Hangout #${round} · now` : `Hangout #${round}`}</span>
-          <span className="mt-s2 block font-display text-[clamp(28px,8vw,34px)] leading-[1.05] font-semibold tracking-[-0.03em] text-ink tabular">
-            {day}, {shortTime(startsAt)}.
-          </span>
-          <span className="mt-s2 block text-[17px] leading-[1.35] font-semibold text-ink">{activity}</span>
-          <span className="block text-[17px] leading-[1.35] text-ink-2">
-            {[longPlace ? place : placeName, cost].filter(Boolean).join(" · ")}
-          </span>
-          <span className="mt-s3 flex items-center gap-s2 text-label text-ink-2">
-            <Icon name="why" size={18} className="text-select" />
-            <span className="flex-1">{sourceLine(s.source)}</span>
-            <Icon name="arrow" size={20} className="text-ink" />
-          </span>
-        </Link>
-      </PlanHalo>
-    </Shared>
-  );
 
-  let foot: ReactNode;
+  let tally: ReactNode;
+  let action: ReactNode;
   if (locked) {
-    foot = (
-      <>
-        <InCount n={count} of={view.size} locked className="text-[17px] whitespace-nowrap text-ink" />
-        <Button
-          variant={view.imIn ? "secondary" : "spark"}
-          size="xl"
-          onClick={() =>
-            view.imIn
-              ? downloadIcs({ id: view.hangout?.id ?? s.id, title: s.summary, starts_at: startsAt, ends_at: view.hangout?.ends_at ?? s.plan_json.ends_at, venue })
-              : void actions.rsvp(view.targetId!, "going", { when: startsAt })
-          }
-        >
-          {view.imIn ? "Add to calendar" : "I'm in"}
-        </Button>
-      </>
+    tally = <InCount n={count} of={view.size} locked className="text-[16px] whitespace-nowrap text-ink" />;
+    action = (
+      <Button
+        variant={view.imIn ? "secondary" : "spark"}
+        size="md"
+        onClick={() =>
+          view.imIn
+            ? downloadIcs({ id: view.hangout?.id ?? s.id, title: s.summary, starts_at: startsAt, ends_at: view.hangout?.ends_at ?? s.plan_json.ends_at, venue })
+            : void actions.rsvp(view.targetId!, "going", { when: startsAt })
+        }
+      >
+        {view.imIn ? "Add to calendar" : "I'm in"}
+      </Button>
     );
   } else if (view.imIn) {
-    foot = (
-      <>
-        <InCount n={count} of={view.size} className="text-[17px] whitespace-nowrap text-ink" />
-        <Button variant="secondary" size="xl" onClick={table?.openTalk}>
-          Talk
-        </Button>
-      </>
+    tally = <InCount n={count} of={view.size} className="text-[16px] whitespace-nowrap text-ink" />;
+    action = (
+      <Button variant="secondary" size="md" onClick={table?.openTalk} leadingIcon={<Icon name="talk" size={18} />}>
+        Talk
+      </Button>
     );
   } else {
-    foot = (
-      <>
-        {count === 0 ? <span className="text-[17px] text-ink">Be the first in</span> : <InCount n={count} of={view.size} className="text-[17px] whitespace-nowrap text-ink" />}
-        <Button size="xl" variant="spark" loading={actions.busy} onClick={() => view.targetId && void actions.rsvp(view.targetId, "going", { when: startsAt, silent: need <= 1 })}>
-          I&apos;m in
-        </Button>
-      </>
+    tally = count === 0 ? <span className="text-[16px] font-semibold text-ink">Be the first in</span> : <InCount n={count} of={view.size} className="text-[16px] whitespace-nowrap text-ink" />;
+    action = (
+      <Button size="md" variant="spark" loading={actions.busy} onClick={() => view.targetId && void actions.rsvp(view.targetId, "going", { when: startsAt, silent: need <= 1 })}>
+        I&apos;m in
+      </Button>
     );
   }
+
+  const head = (
+    <Shared name={sharedName.plan(s.id)}>
+      <PlanCard
+        top={
+          <Link
+            href={whyHref}
+            aria-label={`${activity}, ${day} ${shortTime(startsAt)}${placeName ? `, ${placeName}` : ""}${cost ? `, ${cost}` : ""}. Open the plan.`}
+            className="pressable block px-s5 pt-s5 pb-s4 outline-offset-[-2px] hover:bg-[color-mix(in_srgb,var(--ink)_2%,transparent)] active:scale-100!"
+          >
+            <span className="flex items-center justify-between gap-s3">
+              <span className="text-overline text-ink-2">{live ? `Hangout #${round} · now` : `Hangout #${round}`}</span>
+              <span className="inline-flex items-center gap-0.5 text-[14px] font-semibold text-select">
+                Details <Icon name="arrow" size={16} stroke={2} />
+              </span>
+            </span>
+            <span className="mt-s2 block font-display text-[30px] leading-[1.05] font-semibold tracking-[-0.03em] text-ink tabular lg:text-[34px]">
+              {day}, {shortTime(startsAt)}.
+            </span>
+            <span className="mt-s2 block text-[17px] leading-[1.35] font-semibold text-ink">{activity}</span>
+            <span className="block text-[16px] leading-[1.35] text-ink-2">{[longPlace ? place : placeName, cost].filter(Boolean).join(" · ")}</span>
+            <span className="mt-s3 flex items-center gap-s2 text-[14px] text-ink-2">
+              <Icon name="why" size={16} className="text-select" />
+              {sourceLine(s.source)}
+            </span>
+          </Link>
+        }
+        foot={
+          <>
+            {tally}
+            {action}
+          </>
+        }
+      />
+    </Shared>
+  );
+  const foot = true;
+  const object = whoIn;
 
   const overlay = moment ? (
     <LockMoment
@@ -312,42 +303,12 @@ export function useTableStage(podId: string, name: string, hue: PodHueKey, api?:
   return { light: locked || live ? "clear" : "dawn", head, object, foot, overlay, title, view };
 }
 
-/** Sizes the table to the space the page gives the object (phone and laptop are two layouts). */
-function FitTable({ podId, children }: { podId: string; children: (size: number) => ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState(0);
-  const reduce = useReducedMotion();
-  // grown from the Room: keep growing, then settle
-  const [fromRoom] = useState(() => zoomHandoff.podId === podId);
-  useEffect(() => {
-    if (zoomHandoff.podId === podId) zoomHandoff.podId = null;
-  }, [podId]);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([e]) => {
-      const { width, height } = e.contentRect;
-      // box = 1.34 × size + 40, plus your waiting disc below (0.17 × size + 10) and its name chip (~26)
-      const byH = (height - 80) / 1.51;
-      const byW = (width - 40) / 1.34;
-      setSize(Math.round(Math.max(140, Math.min(width >= 600 ? 400 : 260, byH, byW))));
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+/** The plan as a flat card: a top that opens the plan and a bottom row with the in-count and the one action. */
+function PlanCard({ top, foot }: { top: ReactNode; foot: ReactNode }) {
   return (
-    <div ref={ref} className="grid h-full min-h-[300px] w-full place-items-center">
-      {size > 0 && (
-        <motion.div
-          style={{ width: tableBox(size) }}
-          initial={fromRoom && !reduce ? { scale: 1.35, opacity: 0.4 } : false}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={GENTLE}
-        >
-          {children(size)}
-        </motion.div>
-      )}
+    <div className="pods-card overflow-hidden">
+      {top}
+      {foot && <div className="flex min-h-[68px] items-center justify-between gap-s3 border-t border-line px-s5 py-s3">{foot}</div>}
     </div>
   );
 }
-

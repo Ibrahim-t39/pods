@@ -14,7 +14,9 @@ import { notify } from "@/components/ui/toast";
 import { Icon } from "@/components/icons";
 import { BlockSheet, ReportSheet } from "@/components/safety";
 import { DateBlock } from "@/components/platform/page-head";
-import { shortDay, shortTime } from "@/components/pods/model";
+import { roomTables, shortDay, shortTime } from "@/components/pods/model";
+import { PodOrb } from "@/components/pods/pod-orb";
+import type { PodHueKey } from "@/components/brand/disc";
 import { cn } from "@/lib/cn";
 import { useDb, useRepo } from "@/lib/db/hooks";
 import { isBlockedByMe } from "@/lib/safety/selectors";
@@ -33,7 +35,11 @@ const PROMPT: Record<ProfilePrompt["key"], string> = {
 
 export interface PersonView {
   member: ReturnType<typeof toPublicMember>;
-  pods: { id: string; name: string }[];
+  pods: { id: string; name: string; hue: PodHueKey; size: number; going: number }[];
+  /** joined one of your shared pods in the last 7 days */
+  isNew: boolean;
+  /** when they joined your first shared pod */
+  since: string | null;
   common: string[];
   other: string[];
   next: { id: string; title: string; starts_at: string; podName: string; venue: string | null } | null;
@@ -63,9 +69,20 @@ export function personView(db: DbState, userId: string): PersonView | null {
       db.rsvps.some((r) => r.hangout_id === h.id && r.user_id === userId && r.status === "going") &&
       db.rsvps.some((r) => r.hangout_id === h.id && r.user_id === db.me && r.status === "going"),
   ).length;
+  const tables = new Map(roomTables(db, Date.parse(now)).map((t) => [t.row.pod.id, t]));
+  const joins = db.memberships
+    .filter((m) => m.user_id === userId && !m.left_at && podIds.has(m.pod_id) && m.joined_at)
+    .map((m) => m.joined_at as string)
+    .sort();
+  const latest = joins[joins.length - 1];
   return {
     member: toPublicMember(u, now),
-    pods: pods.map((p) => ({ id: p.id, name: podLabel(db, p) })),
+    pods: pods.map((p) => {
+      const t = tables.get(p.id);
+      return { id: p.id, name: podLabel(db, p), hue: (t?.hue ?? "signal") as PodHueKey, size: t?.row.size ?? 0, going: t?.row.plan?.going.length ?? 0 };
+    }),
+    isNew: !!latest && Date.parse(now) - Date.parse(latest) < 7 * 864e5,
+    since: joins[0] ?? null,
     common: theirs.filter((i) => myLikes.has(i.id)).map((i) => i.label),
     other: theirs.filter((i) => !myLikes.has(i.id)).map((i) => i.label),
     next: upcoming
@@ -78,6 +95,10 @@ export function personView(db: DbState, userId: string): PersonView | null {
 
 export function usePersonView(userId: string | null) {
   return useDb(useCallback((db: DbState) => (userId ? personView(db, userId) : null), [userId]));
+}
+
+function shortMonthDay(iso: string) {
+  return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", timeZone: "America/Chicago" });
 }
 
 function when(iso: string) {
@@ -101,7 +122,7 @@ export function PersonCard({ view, className, wide }: { view: PersonView; classN
             <span className="tabular font-normal text-ink-2">, {m.age}</span>
           </h2>
           <p className="truncate text-[14px] text-ink-2">
-            {[m.pronouns, m.verified ? "Verified" : null, view.together ? `${view.together} hangout${view.together === 1 ? "" : "s"} together` : "New to your pod"].filter(Boolean).join(" · ")}
+            {[m.pronouns, m.verified ? "Verified" : null, view.isNew ? "New to your pod" : view.together ? `${view.together} hangout${view.together === 1 ? "" : "s"} together` : view.since ? `In ${pod.name} since ${shortMonthDay(view.since)}` : null].filter(Boolean).join(" · ")}
           </p>
         </div>
       </header>
@@ -169,7 +190,8 @@ export function PersonCard({ view, className, wide }: { view: PersonView; classN
               <ul className="mt-s2 flex flex-wrap gap-s2">
                 {view.pods.map((p) => (
                   <li key={p.id}>
-                    <Link href={`/app/pods/${p.id}`} className={cn(chip, "pressable font-medium text-ink shadow-[inset_0_0_0_1px_var(--line-2)] hover:bg-[color-mix(in_srgb,var(--ink)_5%,transparent)]")}>
+                    <Link href={`/app/pods/${p.id}`} className={cn(chip, "pressable gap-s2 pl-0.5 font-medium text-ink shadow-[inset_0_0_0_1px_var(--line-2)] hover:bg-[color-mix(in_srgb,var(--ink)_5%,transparent)]")}>
+                      <PodOrb hue={p.hue} people={Math.max(1, p.size)} inCount={p.going} size={28} />
                       {p.name}
                     </Link>
                   </li>
@@ -190,7 +212,7 @@ export function PersonCard({ view, className, wide }: { view: PersonView; classN
                     {view.next.venue ? ` · ${view.next.venue}` : ""} · {view.next.podName}
                   </span>
                 </span>
-                <Icon name="arrow" size={18} className="shrink-0 text-ink-3" />
+                <Icon name="arrow" size={16} stroke={2} className="shrink-0 text-ink-2" />
               </Link>
             </section>
           )}

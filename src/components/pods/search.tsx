@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { Disc } from "@/components/brand";
-import { POD_SOLID } from "@/components/brand/disc";
+import type { PodHueKey } from "@/components/brand/disc";
 import { Icon } from "@/components/icons";
 import { SearchGlyph } from "@/components/shell/nav-glyphs";
 import { ListPage, SectionLabel, DateBlock } from "@/components/platform/page-head";
@@ -22,6 +22,10 @@ import { myPeople, myPlans, podLabel, searchAll, type SearchHit } from "@/lib/pl
 import { useClock } from "@/lib/time/clock";
 import { toChicagoISO } from "@/lib/time/tz";
 import { roomTables, shortDay, shortTime } from "./model";
+import { PodOrb } from "./pod-orb";
+
+/** A pod as the mark draws it: its hue, everyone in it, how many said yes to the next plan, and whether you are in. */
+type Mark = { hue: PodHueKey; size: number; going: number; mine: boolean };
 
 type Kind = SearchHit["kind"];
 const KINDS: [Kind | "all", string][] = [
@@ -40,7 +44,17 @@ export function Search() {
   const nowMs = useClock(60_000).getTime();
   const iso = toChicagoISO(nowMs);
   const hits = useDb(useCallback((db) => searchAll(db, q, iso, 40), [q, iso]));
-  const hues = useDb(useCallback((db) => Object.fromEntries(roomTables(db, nowMs).map((t) => [t.row.pod.id, t.hue])), [nowMs]));
+  const marks = useDb(
+    useCallback(
+      (db) => {
+        const out: Record<string, Mark> = {};
+        for (const p of Object.values(db.pods)) out[p.id] = { hue: "signal", size: db.memberships.filter((m) => m.pod_id === p.id && !m.left_at).length, going: 0, mine: false };
+        for (const t of roomTables(db, nowMs)) out[t.row.pod.id] = { hue: t.hue as PodHueKey, size: t.row.size, going: t.row.plan?.going.length ?? 0, mine: true };
+        return out;
+      },
+      [nowMs],
+    ),
+  );
   const typed = q.trim().length > 0;
   const personPods = useDb(
     useCallback((db) => Object.fromEntries(myPeople(db, iso).map((p) => [p.member.id, p.sharedPodIds.map((id) => (db.pods[id] ? podLabel(db, db.pods[id]) : "")).filter(Boolean).join(" · ")])), [iso]),
@@ -98,7 +112,7 @@ export function Search() {
           </div>
         )}
 
-        {!typed && <Suggestions now={nowMs} hues={hues} onPick={setQ} />}
+        {!typed && <Suggestions now={nowMs} marks={marks} onPick={setQ} />}
 
         {typed && !shown.length && (
           <div className="mt-s8 rounded-2xl px-s4 py-s8 text-center shadow-[inset_0_0_0_1px_var(--line)]">
@@ -117,7 +131,7 @@ export function Search() {
               {g.items.map((h) => (
                 <li key={`${h.kind}:${h.id}`}>
                   <Link href={h.href} className="pressable -mx-s3 flex min-h-[56px] items-center gap-s3 rounded-xl px-s3 py-s2 outline-offset-[-2px] hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)]">
-                    <Lead hit={h} hue={hues[h.id]} />
+                    <Lead hit={h} mark={marks[h.id]} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[16px] leading-[1.3] text-ink">
                         <Mark text={h.label} q={q} />
@@ -126,7 +140,7 @@ export function Search() {
                         {h.kind === "plan" ? `${shortDay(h.starts_at, nowMs)} ${shortTime(h.starts_at)} · ${h.sub}` : h.kind === "interest" ? "See pods with open seats" : h.kind === "person" ? personPods[h.id] || h.sub : h.sub}
                       </span>
                     </span>
-                    <Icon name="arrow" size={18} className="shrink-0 text-ink-3" />
+                    <Icon name="arrow" size={16} stroke={2} className="shrink-0 text-ink-2" />
                   </Link>
                 </li>
               ))}
@@ -138,11 +152,17 @@ export function Search() {
   );
 }
 
-function Lead({ hit, hue }: { hit: SearchHit; hue?: string }) {
-  if (hit.kind === "plan") return <DateBlock iso={hit.starts_at} size={36} />;
-  if (hit.kind === "person") return <Disc initial={hit.label.slice(0, 1)} seed={hit.label} tone="ember" size={36} />;
-  if (hit.kind === "pod") return <span aria-hidden className="block size-9 shrink-0 rounded-full" style={{ backgroundColor: POD_SOLID[(hue as "ember") ?? "ember"] }} />;
-  return <span aria-hidden className="block size-9 shrink-0 rounded-full border-[1.5px] border-dashed border-line-2" />;
+function Lead({ hit, mark }: { hit: SearchHit; mark?: Mark }) {
+  if (hit.kind === "plan") return <DateBlock iso={hit.starts_at} size={40} />;
+  if (hit.kind === "person") return <Disc initial={hit.label.slice(0, 1)} seed={hit.label} tone="ember" size={40} />;
+  if (hit.kind === "pod") return <PodMark mark={mark} />;
+  return <span aria-hidden className="block size-10 shrink-0 rounded-full border-[1.5px] border-dashed border-line-2" />;
+}
+
+/** The shared pod mark at list size: solid hue, one white dot per person, the ones in lit. */
+function PodMark({ mark }: { mark?: Mark }) {
+  const m = mark ?? { hue: "signal" as const, size: 6, going: 0, mine: false };
+  return <PodOrb hue={m.hue} people={Math.max(1, m.size)} inCount={m.mine ? m.going : m.size} you={m.mine} size={40} />;
 }
 
 /** Bold the matched part of a label. */
@@ -160,7 +180,7 @@ function Mark({ text, q }: { text: string; q: string }): ReactNode {
 }
 
 /** Before you type: what's coming up, your pods and people, and interests to browse. Each one tap away. */
-function Suggestions({ now, hues, onPick }: { now: number; hues: Record<string, string>; onPick: (q: string) => void }) {
+function Suggestions({ now, marks, onPick }: { now: number; marks: Record<string, Mark>; onPick: (q: string) => void }) {
   const iso = toChicagoISO(now);
   const data = useDb(
     useCallback(
@@ -192,12 +212,12 @@ function Suggestions({ now, hues, onPick }: { now: number; hues: Record<string, 
             {data.next.map((p) => (
               <li key={p.id}>
                 <Link href={`/app/plans/${p.id}`} className="pressable -mx-s3 flex min-h-[56px] items-center gap-s3 rounded-xl px-s3 py-s2 hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)]">
-                  <DateBlock iso={p.starts_at} size={36} />
+                  <DateBlock iso={p.starts_at} size={40} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-semibold text-ink">{p.title}</span>
                     <span className="tabular block truncate text-[13px] text-ink-2">
                       {p.podName} · {shortDay(p.starts_at, now)} {shortTime(p.starts_at)}
-                      {p.locked ? " · Locked" : ` · ${p.going} in`}
+                      {p.locked ? " · Locked" : marks[p.podId]?.size ? ` · ${p.going} of ${marks[p.podId].size} in` : ` · ${p.going} in`}
                     </span>
                   </span>
                 </Link>
@@ -213,7 +233,7 @@ function Suggestions({ now, hues, onPick }: { now: number; hues: Record<string, 
             {data.pods.map((p) => (
               <li key={p.id}>
                 <Link href={`/app/pods/${p.id}`} className="pressable -mx-s3 flex min-h-[56px] items-center gap-s3 rounded-xl px-s3 py-s2 hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)]">
-                  <span aria-hidden className="block size-9 shrink-0 rounded-full" style={{ backgroundColor: POD_SOLID[(hues[p.id] as "ember") ?? "ember"] }} />
+                  <PodMark mark={marks[p.id]} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-semibold text-ink">{p.label}</span>
                     <span className="tabular block truncate text-[13px] text-ink-2">{p.sub}</span>

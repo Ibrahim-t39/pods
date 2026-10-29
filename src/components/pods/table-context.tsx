@@ -11,6 +11,8 @@ export interface PodTableApi {
   podId: string;
   openTalk: () => void;
   openMenu: () => void;
+  /** the members sheet (Who's in) */
+  openMembers?: () => void;
   unread: number;
 }
 
