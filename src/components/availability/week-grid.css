@@ -1,12 +1,12 @@
 /* The week grid (sign-up "Your usual week" and Your seat): Mon-Sun by Morning / Afternoon / Evening.
-   Flat and quiet; the select fill is the only colour. Drag paints, so touch-action is off on the grid alone. */
+   Flat and quiet; the select fill is the only colour. Drag paints across a row; vertical swipes still scroll the page (short phones must reach Next), and column headers fill a column. */
 .pods-ob-grid {
   display: grid;
   grid-template-columns: auto repeat(3, minmax(0, 1fr));
   gap: 6px;
   align-items: center;
   width: min(100%, 420px);
-  touch-action: none;
+  touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
 }
