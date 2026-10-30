@@ -106,7 +106,7 @@ export const SHORT: Record<string, string> = {
 };
 
 export const FREE: { id: "weeknights" | "saturdays" | "sundays"; label: string; slots: Slot[] }[] = [
-  { id: "weeknights", label: "Weeknights", slots: ["weekday-evening"] },
+  { id: "weeknights", label: "Weeknights", slots: ["wednesday-evening"] },
   { id: "saturdays", label: "Saturdays", slots: ["saturday-morning", "saturday-afternoon"] },
   { id: "sundays", label: "Sundays", slots: ["sunday-morning", "sunday-afternoon"] },
 ];

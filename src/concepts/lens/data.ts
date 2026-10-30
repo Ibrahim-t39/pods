@@ -47,7 +47,7 @@ export function alreadyIn(): Person[] {
 
 /** The seven buckets, in week order. Labels are what a sheet column says, nothing more. */
 export const SLOT_ORDER: { slot: Slot; label: string }[] = [
-  { slot: "weekday-evening", label: "weeknights" },
+  { slot: "wednesday-evening", label: "weeknights" },
   { slot: "saturday-morning", label: "sat am" },
   { slot: "saturday-afternoon", label: "sat pm" },
   { slot: "saturday-evening", label: "sat eve" },

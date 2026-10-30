@@ -63,7 +63,7 @@ export function people(db: DbState, podId: ID): Person[] {
 
 /** Which slot words the week sweep shows, in week order. */
 export const WEEK: { slot: Slot; day: string; part: string }[] = [
-  { slot: "weekday-evening", day: "wk", part: "eve" },
+  { slot: "wednesday-evening", day: "wk", part: "eve" },
   { slot: "saturday-morning", day: "sat", part: "am" },
   { slot: "saturday-afternoon", day: "sat", part: "pm" },
   { slot: "saturday-evening", day: "sat", part: "eve" },
@@ -86,7 +86,7 @@ export function slotOf(iso: string): Slot {
   const part = h < 12 ? "morning" : h < 16 ? "afternoon" : "evening";
   if (day === "Sat") return `saturday-${part}` as Slot;
   if (day === "Sun") return `sunday-${part}` as Slot;
-  return "weekday-evening";
+  return "wednesday-evening";
 }
 
 const fmt = (iso: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", ...o }).format(new Date(iso));

@@ -85,7 +85,7 @@ export const INTEREST_WORDS: Record<string, string> = {
 };
 
 export const SLOT_WORDS: { id: Slot; w: string }[] = [
-  { id: "weekday-evening", w: "weeknights" },
+  { id: "wednesday-evening", w: "weeknights" },
   { id: "saturday-morning", w: "sat mornings" },
   { id: "saturday-afternoon", w: "sat afternoons" },
   { id: "saturday-evening", w: "sat nights" },

@@ -22,7 +22,7 @@ const ORDER: ClauseId[] = ["name", "age", "into", "free", "roots", "faith", "pho
 
 const INTEREST_WORDS = INTERESTS.filter((i) => i.active).map((i) => ({ id: i.id, w: i.label.split(" & ")[0].toLowerCase() }));
 const SLOT_WORDS: { id: Slot; w: string }[] = [
-  { id: "weekday-evening", w: "weeknights" },
+  { id: "wednesday-evening", w: "weeknights" },
   { id: "saturday-morning", w: "saturday mornings" },
   { id: "saturday-afternoon", w: "saturday afternoons" },
   { id: "saturday-evening", w: "saturday nights" },

@@ -151,8 +151,8 @@ function FreeStep() {
       </div>
       <button
         className="pth-stone"
-        aria-pressed={slots.includes("weekday-evening")}
-        onClick={() => toggle("weekday-evening")}
+        aria-pressed={slots.includes("wednesday-evening")}
+        onClick={() => toggle("wednesday-evening")}
         style={{ marginTop: "var(--s2)", marginLeft: -6 }}
       >
         weeknights
