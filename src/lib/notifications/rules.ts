@@ -1,6 +1,6 @@
 // [U8] Notification rules (ARCHITECTURE §3 / edge case 32), pure and testable.
 //  - Chat notifications are batched: at most one per pod per 30 minutes; a muted pod produces none.
-//  - Quiet hours 10 PM-8 AM (Chicago) hold everything except safety.
+//  - Quiet hours 10 PM-8 AM (Seattle) hold everything except safety.
 //  - Discreet mode (D10): community pods are only ever "Your community pod" in notification text.
 import type { AppNotification, DbState, ID, Pod } from "@/lib/types";
 import { formatInTimeZone } from "date-fns-tz";
@@ -175,7 +175,7 @@ export function activityName(text: string): string {
 /**
  * Reminders for every plan you said "I'm in" to (locked hangouts, and suggested plans not locked yet):
  *  d:r24:<id> "Tomorrow 10am · Pickup basketball" from start-24h, until the 2-hour one takes over;
- *  d:r2:<id>  "In 2 hours · Brahan Spring Park" (Directions) from start-2h until it starts.
+ *  d:r2:<id>  "In 2 hours · Miller Playfield" (Directions) from start-2h until it starts.
  */
 export function reminders(db: DbState, nowISO: string, seen: Set<string>, discreet: boolean): InboxItem[] {
   const me = db.me;

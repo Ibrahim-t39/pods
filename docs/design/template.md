@@ -42,7 +42,7 @@ phone 390x844                                  laptop 1440x900
 Wireframes D02-D16, E01-E06.
 
 - Chrome: the mark on the left, the menu on the right.
-- Head: the overline `Hoopers #1 · closes Thu`, then the plan line, one phrase per row ("Sunday. / 1pm. / Brahan Spring."). Under it sits the provenance line: `◐ Claude · everyone's free · 12 min ⟶`, which opens the S01 sheet.
+- Head: the overline `Hoopers #1 · closes Thu`, then the plan line, one phrase per row ("Sunday. / 1pm. / Miller."). Under it sits the provenance line: `◐ Claude · everyone's free · 12 min ⟶`, which opens the S01 sheet.
 - Object: `<TableRing>` with 4 seats until it locks.
   - Your seat is at 6 o'clock and your disc waits outside it.
   - The centre holds the Talk cue (`talk` glyph and unread count), and the whole table opens Talk.
@@ -73,7 +73,7 @@ Wireframes D05, E06.
 - The overline `It's on.` sits top-left in serif 32.
 - The table sits in the lamp pool with names showing.
 - The day word (`<Line size="xxl" crop>`) runs off the right edge.
-- Foot: `1pm · Brahan Spring` on the left and `See you there` (glass pill) on the right. It stays until tapped.
+- Foot: `1pm · Miller` on the left and `See you there` (glass pill) on the right. It stays until tapped.
 
 ### F. Content (legal, Your seat, settings)
 Wireframes L01-L03, Y01.

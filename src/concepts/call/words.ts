@@ -3,8 +3,8 @@ import { formatInTimeZone } from "date-fns-tz";
 import { TZ } from "@/lib/time/tz";
 import type { DbState, ID, PlannerStep, Pod, Slot, Venue } from "@/lib/types";
 
-const CITY = /\b(Huntsville|Rocket City|Madison|Decatur|Alabama|AAMU|AL)\b,?/g;
-export const noCity = (s: string) => s.replace(/\s*·\s*Huntsville/gi, "").replace(CITY, "").replace(/\s{2,}/g, " ").replace(/\s+,/g, ",").trim();
+const CITY = /\b(Seattle|Emerald City|Bellevue|Shoreline|Washington|UW|WA)\b,?/g;
+export const noCity = (s: string) => s.replace(/\s*·\s*Seattle/gi, "").replace(CITY, "").replace(/\s{2,}/g, " ").replace(/\s+,/g, ",").trim();
 
 const TOPIC_WORD: Record<string, string> = {
   basketball: "Hoops", guitar: "Strings", pickleball: "Pickleball", running: "Runs", hiking: "Trails", climbing: "Climbing",

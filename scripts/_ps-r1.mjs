@@ -14,7 +14,7 @@ const VPS = {
 const browser = await chromium.launch({ executablePath: CHROME });
 for (const [vn, vp] of Object.entries(VPS)) {
   if (only && only !== vn) continue;
-  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Chicago" });
+  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Los_Angeles" });
   const page = await ctx.newPage();
   page.setDefaultTimeout(15000);
   const errs = [];

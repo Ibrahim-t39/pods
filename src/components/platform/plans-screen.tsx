@@ -28,7 +28,7 @@ import { directionsUrl } from "@/lib/platform/directions";
 import { downloadIcs, icsFilename, icsForPlan } from "@/lib/platform/ics";
 import { myPlans, type PlanItem } from "@/lib/platform/selectors";
 import { nowISO, useClock } from "@/lib/time/clock";
-import { TZ, toChicagoISO } from "@/lib/time/tz";
+import { TZ, toSeattleISO } from "@/lib/time/tz";
 import type { DbState } from "@/lib/types";
 import { formatInTimeZone } from "date-fns-tz";
 import {
@@ -400,8 +400,8 @@ function DateBlock({
   muted?: boolean;
 }) {
   const today =
-    toChicagoISO(now).slice(0, 10) ===
-    toChicagoISO(Date.parse(iso)).slice(0, 10);
+    toSeattleISO(now).slice(0, 10) ===
+    toSeattleISO(Date.parse(iso)).slice(0, 10);
   return (
     <span
       aria-hidden

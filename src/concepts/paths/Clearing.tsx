@@ -20,7 +20,7 @@ import { ME, aheadOfYou, usePaths, usePathsReady, type Rec, type Snap } from "./
 import { dateLong, dayLong, span } from "./time";
 
 const LOCK = 4;
-const NOW_FOR_ROUND: Record<number, string> = { 1: DEMO.anchor, 2: "2026-11-12T09:00:00-06:00" };
+const NOW_FOR_ROUND: Record<number, string> = { 1: DEMO.anchor, 2: "2026-11-12T09:00:00-08:00" };
 
 /** Planner rows as Pods says them: no model names, no internal notes (zero-disclaimer rule). */
 const BEAT: Record<string, string> = {
@@ -45,7 +45,7 @@ function beats(steps: TraceStep[]) {
 }
 
 function toSnap(plan: Plan, venue: PlannerVenue, forecast: Forecast | null): Snap {
-  const fix = (s: string) => (/[+-]\d\d:\d\d$|Z$/.test(s) ? s : `${s}-06:00`);
+  const fix = (s: string) => (/[+-]\d\d:\d\d$|Z$/.test(s) ? s : `${s}-08:00`);
   return {
     summary: plan.summary,
     startsAt: fix(plan.starts_at),

@@ -23,7 +23,7 @@ import { podHue, podOnDeck } from "@/components/profile/hue";
 import { opensAfter, roomTables, shortTime } from "@/components/pods/model";
 import { useDb, useHydrated, useRepo } from "@/lib/db/hooks";
 import { useClock } from "@/lib/time/clock";
-import { chicagoDaysBetween } from "@/lib/time/tz";
+import { seattleDaysBetween } from "@/lib/time/tz";
 import { formatInTimeZone } from "date-fns-tz";
 import { TZ } from "@/lib/time/tz";
 import { cardView } from "@/lib/planner/card-state";
@@ -56,7 +56,7 @@ function writeSeen(s: Set<string>) {
 const hrefOf = (n: Activity) => (n.href.startsWith("/app/settings/safety") ? "/app/safety" : n.href);
 
 function stamp(iso: string, now: Date): string {
-  const d = chicagoDaysBetween(iso, now);
+  const d = seattleDaysBetween(iso, now);
   if (d <= 0) {
     const min = Math.floor((now.getTime() - Date.parse(iso)) / 60_000);
     return min < 1 ? "now" : min < 60 ? `${min}m` : formatInTimeZone(iso, TZ, "h:mmaaa");

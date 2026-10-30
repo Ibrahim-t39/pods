@@ -29,11 +29,11 @@ export function podActivity(db: DbState, podId: ID): PlannerInput["pod"] {
   const size = podMembers(db, podId).length;
   if (pod.type === "community") {
     const a = COMMUNITY_ACTIVITY[pod.topic_key] ?? { templateKey: "coffee", fitKey: "any", activity: "coffee meetup" };
-    return { kind: "community", ...a, size, city: "Huntsville" };
+    return { kind: "community", ...a, size, city: "Seattle" };
   }
   const key = TOPICS[pod.topic_key] ? pod.topic_key : "generic";
   const label = db.interests[pod.topic_key]?.label?.toLowerCase() ?? pod.topic;
-  return { kind: "interest", templateKey: key, fitKey: pod.topic_key, activity: label.slice(0, 40), size, city: "Huntsville" };
+  return { kind: "interest", templateKey: key, fitKey: pod.topic_key, activity: label.slice(0, 40), size, city: "Seattle" };
 }
 
 /** Per-slot counts of members who shared times. A member's kept-free days just remove those slots (never labelled). */
@@ -75,7 +75,7 @@ export function roundContext(db: DbState, hangoutId: ID): RoundContext {
     checkedIn: db.rsvps.filter((r) => r.hangout_id === hangoutId && r.checked_in).length,
     runItBackYes: answers.filter((a) => a === "yes").length,
     answered: answers.length,
-    themes: h ? chatThemes(db, h.pod_id, addDays(dateOf(h.starts_at), -10) + "T00:00:00-06:00") : [],
+    themes: h ? chatThemes(db, h.pod_id, addDays(dateOf(h.starts_at), -10) + "T00:00:00-08:00") : [],
   };
 }
 
@@ -166,6 +166,6 @@ export function whyFitsInput(db: DbState, podId: ID, nowISO: string): import("./
     size: act.size,
     topSlot: top ? { label: top.slot.replace("-", " ").replace(/^(\w)/, (c) => c.toUpperCase()) + "s", free: top.free } : null,
     ageBand: ages.length ? [Math.min(...ages), Math.max(...ages)] : [pod?.age_min ?? 18, pod?.age_max ?? 29],
-    metro: "Huntsville",
+    metro: "Seattle",
   };
 }

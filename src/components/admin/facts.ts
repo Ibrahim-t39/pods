@@ -35,7 +35,7 @@ export function age(iso: string, now: number): string {
   return d < 14 ? `${d}d` : `${Math.round(d / 7)}w`;
 }
 
-export const weekday = (iso: string) => formatInTimeZone(iso, "America/Chicago", "EEE");
+export const weekday = (iso: string) => formatInTimeZone(iso, "America/Los_Angeles", "EEE");
 
 export const seated = (db: DbState, podId: string) => db.memberships.filter((m) => m.pod_id === podId && !m.left_at).length;
 

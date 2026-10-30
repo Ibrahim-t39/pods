@@ -37,7 +37,7 @@ async function audit(page, tag, mobile) {
 }
 async function run(vp, mode) {
   const mobile = vp === "m"; const tagBase = `${mode}-${vp}`;
-  const ctx = await browser.newContext({ ...VP[vp], locale: "en-US", timezoneId: "America/Chicago" });
+  const ctx = await browser.newContext({ ...VP[vp], locale: "en-US", timezoneId: "America/Los_Angeles" });
   const page = await ctx.newPage(); page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => issues.push(`${tagBase}: pageerror ${e.message}`));
   page.on("console", (m) => { if (m.type() === "error" && !/favicon|DevTools|HMR/.test(m.text())) issues.push(`${tagBase}: console ${m.text().slice(0, 150)}`); });
@@ -76,7 +76,7 @@ async function run(vp, mode) {
   await safe("free", async () => { for (const d of ["Saturday", "Sunday", "Wednesday"]) await page.getByRole("button", { name: d }).first().click(); await snap("free-filled"); });
   await btn(/^Next$/).click(); await page.waitForURL(/account/); await wait(600); await snap("seat-empty");
   await safe("seat", async () => {
-    await page.getByPlaceholder(/555/).fill("2565550142"); await btn(/^Send code$/).click(); await page.locator("input[autocomplete='one-time-code']").waitFor(); await wait(400); await snap("seat-code");
+    await page.getByPlaceholder(/555/).fill("2065550142"); await btn(/^Send code$/).click(); await page.locator("input[autocomplete='one-time-code']").waitFor(); await wait(400); await snap("seat-code");
     await page.locator("input[autocomplete='one-time-code']").fill("000000"); await wait(1200); await snap("seat-wrong-code");
     await page.locator("input[autocomplete='one-time-code']").fill("123456");
   });

@@ -2,8 +2,8 @@
 //   title  "Pickup basketball" / "Picnic": the activity from the plan's event line, never the day (the time says that)
 //   when   "Sat 10am" within the next 7 days ("Today 10am", "Tomorrow 10am"), otherwise "Sun, Nov 15 · 1pm"
 //   span   "10am–12pm", "1–3pm", "11:30am–1pm"   (lowercase am/pm, no ":00", no trailing period)
-//   place  "Brahan Spring Park" (the venue's short name; "A public place" when none)
-// Pure functions, Chicago time. Import from "@/components/planner/plan-display".
+//   place  "Miller Playfield" (the venue's short name; "A public place" when none)
+// Pure functions, Seattle time. Import from "@/components/planner/plan-display".
 import { formatInTimeZone } from "date-fns-tz";
 import { TZ } from "@/lib/time/tz";
 
@@ -53,7 +53,7 @@ export const planWeekday = (iso: Iso) => f(iso, "EEEE");
 
 const WEEKDAY = /^(sun|mon|tues|wednes|thurs|fri|satur)day('s)?\s+/i;
 
-/** The activity as a short noun: "Saturday pickup at Brahan Spring Park" → "pickup",
+/** The activity as a short noun: "Saturday pickup at Miller Playfield" → "pickup",
  *  "Picnic and a slow loop around the park" → "picnic", "Pickup basketball, rotating 5-on-5" → "pickup basketball". */
 export function planNoun(text: string): string {
   const n = text
@@ -64,7 +64,7 @@ export function planNoun(text: string): string {
     .replace(/\s+(and|then|with|or)\s+.*$/i, "")
     .trim();
   const words = n.split(/\s+/).filter(Boolean).slice(0, 3).join(" ");
-  // lowercase a sentence-case noun ("Picnic" → "picnic") but keep names ("High Point") as written
+  // lowercase a sentence-case noun ("Picnic" → "picnic") but keep names ("Vertical World") as written
   return /^[A-Z][a-z]/.test(words) && !/\s[A-Z]/.test(words)
     ? words.toLowerCase()
     : words;
@@ -72,7 +72,7 @@ export function planNoun(text: string): string {
 
 /** "Pickup basketball", "Picnic and a slow loop around the park": the activity, never the day (sweep 10-29 decision 3).
  *  Pass the plan's event line when there is one ("Pickup basketball, rotating 5-on-5"); a summary
- *  ("Saturday pickup at Brahan Spring Park") loses its weekday and its place. `startISO` is kept for callers, unused. */
+ *  ("Saturday pickup at Miller Playfield") loses its weekday and its place. `startISO` is kept for callers, unused. */
 export function planTitle(
   text: string | null | undefined,
   _startISO?: Iso | null,
@@ -92,7 +92,7 @@ export function planTitle(
   return title.charAt(0).toUpperCase() + title.slice(1);
 }
 
-/** "Brahan Spring Park" */
+/** "Miller Playfield" */
 export function planPlace(
   v: { name: string; short_name?: string | null } | null | undefined,
 ): string {

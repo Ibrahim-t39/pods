@@ -3,7 +3,7 @@ const CHROME = `${process.env.HOME}/Library/Caches/ms-playwright/chromium-1248/c
 const b = await chromium.launch({ executablePath: CHROME });
 const tag=process.argv[2]||"m";
 const vp=tag==="m"?{viewport:{width:390,height:844},isMobile:true,hasTouch:true}:{viewport:{width:1440,height:900}};
-const ctx=await b.newContext({...vp,timezoneId:"America/Chicago"}); const p=await ctx.newPage();
+const ctx=await b.newContext({...vp,timezoneId:"America/Los_Angeles"}); const p=await ctx.newPage();
 const errs=[]; p.on("pageerror",e=>errs.push(e.message));
 const D="/Users/ibrahimtraore/Documents/PROPEL/PODS/v3/audit/r1/";
 let i=0;
@@ -18,6 +18,6 @@ await p.getByText("Community pods",{exact:true}).first().click(); await snap("co
 const sel=async(t)=>{await p.getByText(t,{exact:false}).first().click().catch(e=>console.log("noclick",t))};
 await sel("Zambian"); await sel("Seventh"); await snap("comm-sel");
 await p.getByRole("button",{name:/Next|Done/}).and(p.locator(":visible")).first().click().catch(()=>console.log("no next")); await snap("after-comm");
-for(let k=0;k<8;k++){ const nb=p.getByRole("button",{name:/^(Next|Done|Continue|Send code|Place me|Take your seat|Keep|Skip|I promise|Yes)/}).and(p.locator(":visible")).first(); if(!(await nb.count()))break; if(p.url().includes("account")){await p.locator("input:visible").first().fill("2565550123").catch(()=>{});} await snap("pre"+k); await nb.click().catch(()=>console.log("fail click")); await p.waitForTimeout(1500); if(/\/app$|pods|placing/.test(p.url())) {await snap("end"+k);break;} }
+for(let k=0;k<8;k++){ const nb=p.getByRole("button",{name:/^(Next|Done|Continue|Send code|Place me|Take your seat|Keep|Skip|I promise|Yes)/}).and(p.locator(":visible")).first(); if(!(await nb.count()))break; if(p.url().includes("account")){await p.locator("input:visible").first().fill("2065550123").catch(()=>{});} await snap("pre"+k); await nb.click().catch(()=>console.log("fail click")); await p.waitForTimeout(1500); if(/\/app$|pods|placing/.test(p.url())) {await snap("end"+k);break;} }
 console.log("ERR",errs);
 await b.close();

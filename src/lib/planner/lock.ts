@@ -68,7 +68,7 @@ export function clampLock(n: number, size: number): number {
 
 /**
  * The rule-based choice. `text` (event/summary) spots a class booking; `format` (a title someone typed, e.g. "5v5 at
- * Brahan") spots a team format the pod may be too small for. Template copy is never parsed for a format.
+ * Miller") spots a team format the pod may be too small for. Template copy is never parsed for a format.
  */
 export function lockRule(o: { key: string; size: number; text?: string; format?: string; venue?: { type: string; costPerPerson?: number } | null; fallback?: number }): LockRule {
   const size = Math.max(1, o.size);

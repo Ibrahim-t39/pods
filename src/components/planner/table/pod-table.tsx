@@ -397,7 +397,7 @@ export function usePlanStage(podId: string, opts: PlanStageOpts = {}): PlanStage
   const over = (t: string) => (inline ? null : <p className="pt-over">{t}</p>);
   const lineSize = (place: string) => (desktop ? (place.length > 16 ? 64 : 80) : place.length > 16 ? 44 : 56);
 
-  // the plan line: Sunday. / 1pm. / Brahan Spring. (the place word opens S02)
+  // the plan line: Sunday. / 1pm. / Miller. (the place word opens S02)
   const planLine = (iso: string, today = false) => {
     const place = placeWord(m.venue);
     return (

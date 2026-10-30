@@ -93,7 +93,7 @@ export function usePersonView(userId: string | null) {
 }
 
 function shortMonthDay(iso: string) {
-  return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", timeZone: "America/Chicago" });
+  return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", timeZone: "America/Los_Angeles" });
 }
 
 function when(iso: string) {

@@ -1,5 +1,5 @@
 // People (PLATFORM_SPEC §F7), round 1029: "non-intuitive, overwhelming" -> grouped the way people think, by pod.
-//   group   the pod's glossy sphere · pod name · when you next see that table ("Sat 10am · Brahan Spring Park")
+//   group   the pod's glossy sphere · pod name · when you next see that table ("Sat 10am · Miller Playfield")
 //   row     person disc · first name · one short line of what you share (never a truncated bio) · "In" when they
 //           said yes to the pod's next hangout · chevron. 64px rows, one line of meta.
 //   laptop  master-detail: the list left (400px), the selected person right, sticky
@@ -21,7 +21,7 @@ import { cn } from "@/lib/cn";
 import { useDb } from "@/lib/db/hooks";
 import { myPeople, podLabel } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
-import { toChicagoISO } from "@/lib/time/tz";
+import { toSeattleISO } from "@/lib/time/tz";
 import { roomTables, shortDay, shortTime } from "./model";
 import { PodOrb } from "./pod-orb";
 import type { PodHueKey } from "@/components/brand/disc";
@@ -40,7 +40,7 @@ interface Row {
 
 export function People() {
   const nowMs = useClock(60_000).getTime();
-  const iso = toChicagoISO(nowMs);
+  const iso = toSeattleISO(nowMs);
   const wide = useMediaQuery("(min-width: 1024px)");
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<string | null>(null);

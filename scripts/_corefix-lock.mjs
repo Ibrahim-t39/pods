@@ -4,7 +4,7 @@ import { mkdirSync } from "node:fs";
 const CHROME = `${process.env.HOME}/Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
 const dir = "shots/corefix/lock"; mkdirSync(dir, { recursive: true });
 const browser = await chromium.launch({ executablePath: CHROME });
-const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "en-US", timezoneId: "America/Chicago" });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "en-US", timezoneId: "America/Los_Angeles" });
 const page = await ctx.newPage();
 await page.goto("http://localhost:3000/app?director=1&fast=1", { waitUntil: "networkidle" });
 await page.waitForTimeout(800);

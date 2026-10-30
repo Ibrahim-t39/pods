@@ -3,7 +3,7 @@
 //
 //   ◐ Planned by AI                           #1
 //   Saturday pickup run                         (the activity + the day, display 700)
-//   10am · Brahan Spring Park · Free            (time, a public place, the cost)
+//   10am · Miller Playfield · Free            (time, a public place, the cost)
 //   ● ● ● ○ │ ○ ○ ○ ○        3 of 8 in          (8 seats; the first 4 are the lock arc, it closes blue)
 //   [ I'm in ]                                  (spark; after the lock: the blue "Locked" pill, Add to calendar)
 //

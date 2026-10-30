@@ -31,7 +31,7 @@ for (const [k, vp] of Object.entries(VP)) {
   await page.waitForTimeout(600);
   await page.screenshot({ path: `${out}/safety-open.${k}.png` });
   await page.goto('http://localhost:3000/waitlist', { waitUntil: 'networkidle' });
-  await page.fill('.wl-field input', '2565550100');
+  await page.fill('.wl-field input', '2065550100');
   await page.click('.wl-pill');
   await page.waitForTimeout(1200);
   await page.screenshot({ path: `${out}/waitlist-done.${k}.png` });

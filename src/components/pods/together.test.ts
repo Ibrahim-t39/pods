@@ -6,8 +6,8 @@ function db(checkedIn: boolean, otherCheckedIn = true): DbState {
   return {
     me: "me",
     hangouts: {
-      h1: { id: "h1", pod_id: "hoopers", starts_at: "2026-11-07T10:00:00-06:00", ends_at: "2026-11-07T12:00:00-06:00", status: "done" },
-      h2: { id: "h2", pod_id: "other", starts_at: "2026-11-08T10:00:00-06:00", ends_at: "2026-11-08T13:00:00-06:00", status: "done" },
+      h1: { id: "h1", pod_id: "hoopers", starts_at: "2026-11-07T10:00:00-08:00", ends_at: "2026-11-07T12:00:00-08:00", status: "done" },
+      h2: { id: "h2", pod_id: "other", starts_at: "2026-11-08T10:00:00-08:00", ends_at: "2026-11-08T13:00:00-08:00", status: "done" },
     },
     rsvps: [
       { hangout_id: "h1", user_id: "me", status: "going", checked_in: checkedIn },

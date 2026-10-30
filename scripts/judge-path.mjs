@@ -51,7 +51,7 @@ async function run(vpName, vp, mode) {
   const dir = `shots/path/${mode}-${vpName}`;
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
-  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Chicago" });
+  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Los_Angeles" });
   const page = await ctx.newPage();
   page.setDefaultTimeout(60_000);
   page.setDefaultNavigationTimeout(180_000);
@@ -184,7 +184,7 @@ async function run(vpName, vp, mode) {
     await step("seat", async () => {
       await btn(/^Next$/).click();
       await page.waitForURL(/onboarding\/account/);
-      await page.getByPlaceholder(/555/).fill("2565550142");
+      await page.getByPlaceholder(/555/).fill("2065550142");
       await btn(/^Send code$/).click();
       await page.locator("input[autocomplete='one-time-code']").waitFor();
       await wait(500);
@@ -287,14 +287,14 @@ async function run(vpName, vp, mode) {
     // beat 4: Hoopers opens with its first hangout planned, the card on top
     await step("hoopers", async () => {
       await page.goto(`${base}/app/pods/pod_hoopers`, { waitUntil: "load" });
-      await text(/Brahan Spring Park/).waitFor({ timeout: 120_000 });
+      await text(/Miller Playfield/).waitFor({ timeout: 120_000 });
       await text(/Free/).waitFor();
       await inCount(3).waitFor();
       await wait(2500);
     });
     // beat 5: the details: the plan, what to bring, the rain backup
     await step("plan-details", async () => {
-      const open = page.getByRole("link", { name: /details|Brahan Spring|Open the plan/i }).or(page.getByRole("button", { name: /details|Open the plan|Why this plan/i })).and(vis).first();
+      const open = page.getByRole("link", { name: /details|Miller|Open the plan/i }).or(page.getByRole("button", { name: /details|Open the plan|Why this plan/i })).and(vis).first();
       await open.click();
       await text(/rain/i).waitFor({ timeout: 120_000 });
       await wait(1500);

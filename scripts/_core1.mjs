@@ -8,7 +8,7 @@ const browser = await chromium.launch({ executablePath: CHROME });
 const B = "http://localhost:3000";
 for (const [vn, vp] of Object.entries({ m: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, d: { viewport: { width: 1440, height: 900 } } })) {
   if (only && only !== vn) continue;
-  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Chicago" });
+  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Los_Angeles" });
   const page = await ctx.newPage();
   const errs = []; page.on("pageerror", (e) => errs.push(e.message));
   const openDir = async () => {

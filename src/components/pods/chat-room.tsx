@@ -131,7 +131,7 @@ function PodAside({ podId, minute }: { podId: string; minute: number }) {
   );
 }
 
-/** "If rain is likely, Pods moves it to Brahan Spring Rec Center and tells everyone." -> "Moves to Brahan Spring Rec Center" */
+/** "If rain is likely, Pods moves it to Miller Community Center and tells everyone." -> "Moves to Miller Community Center" */
 function rainShort(t: string) {
   const to = t.match(/moves? (?:it |everyone )?to ([^,.]+?)(?: and\b|[,.]|$)/i);
   if (to) return `Moves to ${to[1].trim()}`;

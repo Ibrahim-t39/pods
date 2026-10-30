@@ -28,7 +28,7 @@ import { Card, Row, Section, YouHead, YouPage } from "./you-kit";
 type SettingsSheet = "reminders" | "ai" | "privacy" | "blocked" | "delete";
 const SHEETS: SettingsSheet[] = ["reminders", "ai", "privacy", "blocked", "delete"];
 
-/** "(256) 555-0142" for US numbers, else as saved. */
+/** "(206) 555-0142" for US numbers, else as saved. */
 function prettyPhone(p: string) {
   const d = p.replace(/\D/g, "");
   const us = d.length === 11 && d.startsWith("1") ? d.slice(1) : d.length === 10 ? d : null;

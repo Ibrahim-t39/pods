@@ -116,7 +116,7 @@ export function useResetWatcher(onReset?: () => void) {
  * A birth date that keeps `age` true for the next six months: `age` years and six months before today's date.
  * Pods asks the age, not the birthday (B01); the ID check confirms it. The old "day after today, age + 1 years ago"
  * turned 22 into 23 the moment the demo clock moved a day forward (the Director's jump), so the profile disagreed
- * with what was typed. Reads the calendar date straight off the ISO string (the clock is Chicago local time), so no
+ * with what was typed. Reads the calendar date straight off the ISO string (the clock is Seattle local time), so no
  * UTC shift can move it by a day either.
  */
 export function dobForAge(age: number, nowISO: string): string {

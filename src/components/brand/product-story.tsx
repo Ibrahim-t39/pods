@@ -114,7 +114,7 @@ function PlanCard({ n, locked }: { n: number; locked?: boolean }) {
       </p>
       <p className="ps-card-when ps-in tabular" style={{ ["--i" as string]: 1 }}>Saturday, 10am</p>
       <p className="ps-card-what ps-in" style={{ ["--i" as string]: 2 }}>Pickup basketball</p>
-      <p className="ps-card-where ps-in" style={{ ["--i" as string]: 3 }}>Brahan Spring Park · Free</p>
+      <p className="ps-card-where ps-in" style={{ ["--i" as string]: 3 }}>Miller Playfield · Free</p>
       <div className="ps-card-foot ps-in" style={{ ["--i" as string]: 4 }}>
         <span className="ps-seats" aria-hidden>
           {[0, 1, 2, 3].map((s) => (

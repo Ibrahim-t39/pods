@@ -11,7 +11,7 @@ const b=await chromium.launch({executablePath:CHROME});
 for(const [vn,vp] of Object.entries(VPS)){
  for(const state of ["demo","live"]){
   if(state==="live"&&process.env.NOLIVE) continue;
-  const ctx=await b.newContext({...vp,locale:"en-US",timezoneId:"America/Chicago",reducedMotion:"reduce"});
+  const ctx=await b.newContext({...vp,locale:"en-US",timezoneId:"America/Los_Angeles",reducedMotion:"reduce"});
   const page=await ctx.newPage(); page.setDefaultTimeout(30000);
   const wait=ms=>page.waitForTimeout(ms);
   const btn=(re)=>page.getByRole("button",{name:re}).filter({visible:true}).first();
@@ -27,7 +27,7 @@ for(const [vn,vp] of Object.entries(VPS)){
     await btn(/^Next$/).click(); await page.waitForURL(/onboarding\/availability/); await wait(600);
     for(const d of ["Saturday","Sunday"]) await page.getByRole("button",{name:d}).first().click();
     await btn(/^Next$/).click(); await page.waitForURL(/onboarding\/account/);
-    await page.getByPlaceholder(/555/).fill("2565550142"); await btn(/^Send code$/).click();
+    await page.getByPlaceholder(/555/).fill("2065550142"); await btn(/^Send code$/).click();
     await page.locator("input[autocomplete='one-time-code']").fill("123456");
     await page.waitForURL(/onboarding\/pledge/,{timeout:60000}); await btn(/^I promise$/).click();
     await page.waitForURL(/\/app\/verify/,{timeout:60000}); await wait(500);

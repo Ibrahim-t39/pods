@@ -89,7 +89,7 @@ export interface PlannerInput {
 
 /** Spec: event, starts_at, ends_at, venue_id, cost, bring, schedule, rain_plan, icebreaker, reason. */
 export const PlanSchema = z.object({
-  summary: z.string().describe("One line for the pinned card, at most 70 characters, e.g. 'Sunday pickup run at Brahan Spring'"),
+  summary: z.string().describe("One line for the pinned card, at most 70 characters, e.g. 'Sunday pickup run at Miller'"),
   event: z.string().describe("What the hangout is, e.g. 'Pickup basketball, rotating 5-on-5 games'"),
   starts_at: z.string().describe("Local ISO datetime without offset, e.g. 2026-11-08T13:00:00"),
   ends_at: z.string().describe("Local ISO datetime without offset"),

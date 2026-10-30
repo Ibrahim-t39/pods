@@ -23,7 +23,7 @@ import { cn } from "@/lib/cn";
 import { useDb, useRepo } from "@/lib/db/hooks";
 import { discoverPods, myPeople, type DiscoverRow } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
-import { toChicagoISO } from "@/lib/time/tz";
+import { toSeattleISO } from "@/lib/time/tz";
 import { displayName } from "@/lib/utils";
 import { opensAfter, roomTables, shortDay, shortTime } from "./model";
 import { PodOrb } from "./pod-orb";
@@ -60,7 +60,7 @@ interface Enriched extends DiscoverRow {
 export function Discover() {
   const now = useClock(60_000);
   const nowMs = now.getTime();
-  const iso = toChicagoISO(nowMs);
+  const iso = toSeattleISO(nowMs);
   const params = useSearchParams();
   const router = useRouter();
   const interest = params.get("i") ?? undefined;

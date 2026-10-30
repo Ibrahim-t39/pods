@@ -84,7 +84,7 @@ export function Dashboard() {
   ];
 
   return (
-    <AdminPage title="Overview" sub={formatInTimeZone(now, "America/Chicago", "EEEE, MMM d")}>
+    <AdminPage title="Overview" sub={formatInTimeZone(now, "America/Los_Angeles", "EEEE, MMM d")}>
       <section aria-labelledby="ov-needs">
         <h2 id="ov-needs" className="flex items-baseline justify-between pt-s3 text-[15px] font-semibold text-ink">
           Needs you

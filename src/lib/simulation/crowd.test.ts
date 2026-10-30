@@ -26,14 +26,14 @@ describe("crowdRsvpNeed", () => {
   it("ignores your own tap, and the last bot locks the plan", () => {
     let { db, me, bots, s } = withPlan();
     expect(lockMinFor(db, s)).toBe(4);
-    db = produce(db, (d) => void applyRsvp(d, s.id, me, "going", "2026-11-04T09:00:00-06:00"));
+    db = produce(db, (d) => void applyRsvp(d, s.id, me, "going", "2026-11-04T09:00:00-08:00"));
     expect(crowdRsvpNeed(db, s.id)).toBe(3);
-    for (const b of bots.slice(0, 3)) db = produce(db, (d) => void applyRsvp(d, s.id, b, "going", "2026-11-04T09:01:00-06:00"));
+    for (const b of bots.slice(0, 3)) db = produce(db, (d) => void applyRsvp(d, s.id, b, "going", "2026-11-04T09:01:00-08:00"));
     expect(db.suggestions.sug_X1.status).toBe("accepted");
   });
   it("without your tap, bots stop one short", () => {
     let { db, bots, s } = withPlan();
-    for (const b of bots.slice(0, crowdRsvpNeed(db, s.id))) db = produce(db, (d) => void applyRsvp(d, s.id, b, "going", "2026-11-04T09:01:00-06:00"));
+    for (const b of bots.slice(0, crowdRsvpNeed(db, s.id))) db = produce(db, (d) => void applyRsvp(d, s.id, b, "going", "2026-11-04T09:01:00-08:00"));
     expect(db.suggestions.sug_X1.status).toBe("suggested");
     expect(crowdRsvpNeed(db, s.id)).toBe(0);
   });

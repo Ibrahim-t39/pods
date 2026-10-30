@@ -5,7 +5,7 @@ const vpn = process.argv[2] || "m";
 const VP = { m:{viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true}, d:{viewport:{width:1440,height:900}}}[vpn];
 const out="/Users/ibrahimtraore/Documents/PROPEL/PODS/v3/audit/r2/k"+vpn; mkdirSync(out,{recursive:true});
 const b = await chromium.launch({executablePath:CHROME});
-const ctx = await b.newContext({...VP, locale:"en-US", timezoneId:"America/Chicago"});
+const ctx = await b.newContext({...VP, locale:"en-US", timezoneId:"America/Los_Angeles"});
 const page = await ctx.newPage(); page.setDefaultTimeout(6000);
 let n=0;
 const shot=async(name,w=900)=>{n++;await page.waitForTimeout(w);await page.screenshot({path:`${out}/${String(n).padStart(2,"0")}-${name}.png`});
@@ -26,7 +26,7 @@ const days=await page.$$("button:visible"); let c=0; for(const d of days){const 
 await shot("availability-set",500);
 await next();
 await shot("step",1500);
-try{await page.getByLabel(/phone|number/i).fill("2565550123")}catch{}
+try{await page.getByLabel(/phone|number/i).fill("2065550123")}catch{}
 await next(/Send code/i); await shot("code",800);
 await page.keyboard.type("123456",{delay:120}); await page.waitForTimeout(2000); await shot("after-code",500);
 for(let i=0;i<4;i++){ if(/placing|\/pods|home/.test(page.url()))break; await next(/^(Next|Done|Keep|Promise|Place|Finish|Continue|I promise|Yes|Skip|Not now|Later|I'm|Get|Take)/i); await shot("step"+i,1500);}

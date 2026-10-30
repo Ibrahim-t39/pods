@@ -487,7 +487,7 @@ function PodCall({ pod, desk }: { pod: Pod; desk: boolean }) {
   );
 }
 
-/** The venue as it sits in the call: its name without the generic suffix ("Brahan Spring"). Full name in the sheet. */
+/** The venue as it sits in the call: its name without the generic suffix ("Miller"). Full name in the sheet. */
 function callVenue(v: Venue): string {
   const n = venueWord(v).replace(/\s+(Rec Center|Recreation Center|Community Center|Public Library|Library|Courts?)$/i, "");
   return n || venueWord(v);

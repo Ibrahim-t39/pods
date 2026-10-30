@@ -1,5 +1,5 @@
 // [U1] Countdown: "In 4 days" → "Tomorrow" → "Today · in 3h" → "Happening now" → "Done".
-// Driven by the app clock (useClock), Chicago calendar days. Deterministic before hydration.
+// Driven by the app clock (useClock), Seattle calendar days. Deterministic before hydration.
 "use client";
 
 import { formatInTimeZone } from "date-fns-tz";

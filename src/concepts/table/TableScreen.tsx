@@ -27,7 +27,7 @@ const BEAT: Record<PlannerStep["id"], string> = {
   validate: "Checking the rules",
   retry: "Checking the rules",
 };
-const CITY_WORD = /\b(Huntsville|Alabama|Madison|Decatur|AAMU|Rocket City)\b/i;
+const CITY_WORD = /\b(Seattle|Washington|Bellevue|Shoreline|UW|Emerald City)\b/i;
 const SLOT_ANGLES = [270, 180, 0, 225, 315, 135, 45];
 const seen = new Set<string>(); // plans already laid in front of you this session
 

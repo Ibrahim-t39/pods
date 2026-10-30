@@ -8,7 +8,7 @@ import type { DemoConfig } from "@/config/demo";
 
 export type { PlacementConfig, PlannerConfig, FeatureFlags, DemoConfig };
 
-export type ISODateTime = string; // "2026-11-08T13:00:00-06:00"
+export type ISODateTime = string; // "2026-11-08T13:00:00-08:00"
 export type ISODate = string; // "2026-11-08"
 export type ID = string;
 
@@ -88,7 +88,7 @@ export interface User {
   is_demo_bot: boolean; // + simulated member
   notification_prefs: NotificationPrefs;
 }
-export type MetroCity = "Huntsville" | "Madison" | "Decatur"; // one metro (spec: Distance)
+export type MetroCity = "Seattle" | "Bellevue" | "Shoreline"; // one metro (spec: Distance)
 export type OnboardingStep =
   | "welcome"
   | "account"
@@ -164,7 +164,7 @@ export interface Pod {
   community_kind: "heritage" | "faith" | null;
   topic: string; // "basketball" | "Southern African" | "Seventh-day Adventist"
   topic_key: string; // + interest_id or taxonomy code; placement joins on this
-  city: "Huntsville metro";
+  city: "Seattle metro";
   age_min: number;
   age_max: number;
   widened_from: { kind: "age" | "group"; from: string; to: string } | null;
@@ -392,7 +392,7 @@ export interface BannedFingerprint {
 export interface Venue {
   id: ID;
   name: string;
-  short_name?: string; // + card copy, e.g. "Brahan Spring Rec Center"
+  short_name?: string; // + card copy, e.g. "Miller Community Center"
   address: string;
   type:
     | "park"

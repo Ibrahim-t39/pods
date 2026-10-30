@@ -1,5 +1,5 @@
 // Paths concept: display helpers in the pod's timezone. Pure; never reads Date.now().
-const TZ = "America/Chicago";
+const TZ = "America/Los_Angeles";
 const f = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-US", { timeZone: TZ, ...o });
 const wkS = f({ weekday: "short" });
 const wkL = f({ weekday: "long" });

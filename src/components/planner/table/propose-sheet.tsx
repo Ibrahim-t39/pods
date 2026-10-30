@@ -11,7 +11,7 @@ import { ResponsiveSheet } from "@/components/ui/sheet";
 import { notify } from "@/components/ui/toast";
 import { useRepo } from "@/lib/db/hooks";
 import { useStore } from "@/lib/db/store";
-import { nowMs, toChicagoISO } from "@/lib/time/clock";
+import { nowMs, toSeattleISO } from "@/lib/time/clock";
 import { placeWord, type TableModel } from "./model";
 
 const TIMES = [
@@ -21,14 +21,14 @@ const TIMES = [
   { h: 19, label: "7pm" },
 ];
 
-/** The next 7 days from the app clock, as Chicago dates ("2026-11-07") with a short label ("Sat 7"). */
+/** The next 7 days from the app clock, as Seattle dates ("2026-11-07") with a short label ("Sat 7"). */
 function nextDays(fromMs: number) {
   return Array.from({ length: 7 }, (_, i) => {
-    const iso = toChicagoISO(fromMs + (i + 1) * 86_400_000);
+    const iso = toSeattleISO(fromMs + (i + 1) * 86_400_000);
     const date = iso.slice(0, 10);
-    const offset = iso.slice(19).replace(/^\.\d+/, "") || "-06:00";
+    const offset = iso.slice(19).replace(/^\.\d+/, "") || "-08:00";
     const d = new Date(`${date}T12:00:00${offset}`);
-    return { date, offset, label: `${d.toLocaleDateString("en-US", { weekday: "short", timeZone: "America/Chicago" })} ${d.toLocaleDateString("en-US", { day: "numeric", timeZone: "America/Chicago" })}` };
+    return { date, offset, label: `${d.toLocaleDateString("en-US", { weekday: "short", timeZone: "America/Los_Angeles" })} ${d.toLocaleDateString("en-US", { day: "numeric", timeZone: "America/Los_Angeles" })}` };
   });
 }
 

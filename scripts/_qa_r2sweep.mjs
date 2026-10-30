@@ -8,7 +8,7 @@ const b=await chromium.launch({executablePath:CHROME});
 const res=[];
 for(const [vn,vp] of Object.entries(VPS)){
  for(const state of ["new","demo"]){
-  const ctx=await b.newContext({...vp,locale:"en-US",timezoneId:"America/Chicago"});
+  const ctx=await b.newContext({...vp,locale:"en-US",timezoneId:"America/Los_Angeles"});
   const page=await ctx.newPage(); page.setDefaultTimeout(15000);
   const errs=[]; page.on("pageerror",e=>errs.push(e.message.slice(0,120))); page.on("console",m=>m.type()==="error"&&errs.push(m.text().slice(0,120)));
   for(const r of routes){

@@ -113,7 +113,7 @@ export function Begin({ start = "landing" }: { start?: Phase }) {
     if (!r2.ok) return fail("that number can't join");
     const dob = `${2026 - (age ?? 22)}-01-15`;
     // City is functional (placement is metro-bound); it is never shown as copy.
-    const r3 = await repo.updateAbout({ first_name: name.trim(), nickname: null, date_of_birth: dob, city: "Huntsville" });
+    const r3 = await repo.updateAbout({ first_name: name.trim(), nickname: null, date_of_birth: dob, city: "Seattle" });
     if (!r3.ok) return fail("check your age");
     await repo.setInterests(into);
     const h = roots && roots !== "skip" ? { level: "country" as const, code: roots } : null;

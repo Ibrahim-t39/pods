@@ -1,6 +1,6 @@
-// [U3] Chicago-time formatting. Copy is plain and sentence case. Everything displays in America/Chicago.
+// [U3] Seattle-time formatting. Copy is plain and sentence case. Everything displays in America/Los_Angeles.
 import { formatInTimeZone } from "date-fns-tz";
-import { chicagoDayKey, chicagoDaysBetween, TZ, type TimeInput } from "./tz";
+import { seattleDayKey, seattleDaysBetween, TZ, type TimeInput } from "./tz";
 
 const f = (t: TimeInput, pattern: string) => formatInTimeZone(t, TZ, pattern);
 
@@ -38,13 +38,13 @@ export function formatWeekday(t: TimeInput): string {
 
 /** Pod cards: "Sun 1:00 PM" within the next 6 days, otherwise "Sun, Nov 15 · 1:00 PM". */
 export function formatCardWhen(t: TimeInput, now: Date): string {
-  const days = chicagoDaysBetween(now, t);
+  const days = seattleDaysBetween(now, t);
   return days >= 0 && days <= 6 ? `${f(t, "EEE")} ${f(t, "h:mm a")}` : formatWhen(t);
 }
 
 /** Chat day divider: "Today", "Yesterday", "Sunday, Nov 1" (with the year when it is not this year). */
 export function formatDayDivider(t: TimeInput, now: Date): string {
-  const diff = chicagoDaysBetween(t, now);
+  const diff = seattleDaysBetween(t, now);
   if (diff === 0) return "Today";
   if (diff === 1) return "Yesterday";
   return f(t, f(t, "yyyy") === f(now, "yyyy") ? "EEEE, MMM d" : "EEEE, MMM d, yyyy");
@@ -56,7 +56,7 @@ export function formatRelative(t: TimeInput, now: Date): string {
   if (ms < 60_000) return "Just now";
   const min = Math.floor(ms / 60_000);
   if (min < 60) return `${min} min ago`;
-  const days = chicagoDaysBetween(t, now);
+  const days = seattleDaysBetween(t, now);
   if (days === 0) return `${Math.floor(min / 60)} h ago`;
   if (days === 1) return "Yesterday";
   if (days < 7) return f(t, "EEEE");
@@ -78,12 +78,12 @@ export function formatDuration(minutes: number): string {
   return `${h} h ${r} min`;
 }
 
-/** "In 4 days" / "Tomorrow" / "Today" / "Happening now" / "Done", by Chicago calendar days. */
+/** "In 4 days" / "Tomorrow" / "Today" / "Happening now" / "Done", by Seattle calendar days. */
 export function countdown(startISO: string, endISO: string, now: Date): string {
   const t = now.getTime();
   if (t >= Date.parse(endISO)) return "Done";
   if (t >= Date.parse(startISO)) return "Happening now";
-  const days = chicagoDaysBetween(now, startISO);
+  const days = seattleDaysBetween(now, startISO);
   if (days <= 0) return "Today";
   if (days === 1) return "Tomorrow";
   return `In ${days} days`;
@@ -93,6 +93,6 @@ export function countdown(startISO: string, endISO: string, now: Date): string {
 export function startsIn(startISO: string, now: Date): string {
   const min = Math.ceil((Date.parse(startISO) - now.getTime()) / 60_000);
   if (min <= 0) return "";
-  if (chicagoDayKey(startISO) !== chicagoDayKey(now)) return countdown(startISO, startISO, now);
+  if (seattleDayKey(startISO) !== seattleDayKey(now)) return countdown(startISO, startISO, now);
   return `Starts in ${formatDuration(min)}`;
 }

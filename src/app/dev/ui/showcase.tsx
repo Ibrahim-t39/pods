@@ -451,8 +451,8 @@ function TypeSection() {
     ["text-display-xl", "display-xl · reveal", "You're in 4 pods."],
     ["text-display-lg", "display-lg · onboarding", "What do you like doing?"],
     ["text-heading-xl", "heading-xl · screen title", "Pods"],
-    ["text-heading-md", "heading-md · plan card", "Sunday pickup run at Brahan Spring"],
-    ["text-heading-sm", "heading-sm · names", "Huntsville Hoopers"],
+    ["text-heading-md", "heading-md · plan card", "Sunday pickup run at Miller"],
+    ["text-heading-sm", "heading-sm · names", "Hoopers"],
     ["text-body", "body 16", "Pods puts people who just moved into small local friend groups."],
     ["text-body-sm text-fg-muted", "body-sm / caption", "Sun, Nov 8 · 1:00 PM · 3 of 8 in"],
     ["text-overline text-fg-muted", "overline", "First hangout · planned by Pods"],
@@ -578,7 +578,7 @@ function ButtonsSection() {
 function InputsSection() {
   const [name, setName] = useState("Chanda");
   const [bio, setBio] = useState("Just moved from Lusaka for work. Looking for a Sunday run and people to try the food spots with.");
-  const [phone, setPhone] = useState("2565550142");
+  const [phone, setPhone] = useState("2065550142");
   const [otp, setOtp] = useState("4821");
   const [bad, setBad] = useState("381");
   return (
@@ -588,7 +588,7 @@ function InputsSection() {
           <Input label="First name" value={name} onChange={(e) => setName(e.target.value)} helper="Shown to your pods." />
           <Input label="Nickname" optional placeholder="What friends call you" />
           <Input label="Email" value="chanda@" onChange={() => {}} error="That email looks incomplete." />
-          <Input label="City" value="Huntsville, AL" onChange={() => {}} success="We're opening here." leading={<MapPin strokeWidth={1.75} />} />
+          <Input label="City" value="Seattle, WA" onChange={() => {}} success="We're opening here." leading={<MapPin strokeWidth={1.75} />} />
           <Input label="Disabled" value="Locked after verification" disabled onChange={() => {}} />
           <Textarea label="About you" value={bio} onChange={(e) => setBio(e.target.value)} maxLength={120} counter />
           <Select
@@ -822,7 +822,7 @@ function PeopleSection() {
                   AI
                 </Badge>
               </div>
-              <h3 className="mt-2 text-heading-md">Sunday pickup run at Brahan Spring</h3>
+              <h3 className="mt-2 text-heading-md">Sunday pickup run at Miller</h3>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge tone="neutral" size="md" icon={<Clock strokeWidth={1.75} />}>
                   Sun, Nov 8 · 1:00 PM
@@ -898,7 +898,7 @@ function CoversSection() {
         <Specimen label="PodHue · interest = Ember, community = Grove" bodyClassName="flex flex-col gap-3">
           {(
             [
-              ["ember", "pod_hoopers", "Huntsville Hoopers", "Interest pod · 8 members", "Needs your RSVP", "warning"],
+              ["ember", "pod_hoopers", "Hoopers", "Interest pod · 8 members", "Needs your RSVP", "warning"],
               ["grove", "pod_southern_african", "Community pod", "Community pod · 7 members · Sun, Nov 15", "2 of 7 in", "success"],
             ] as const
           ).map(([hue, seed, name, sub, status, tone]) => (
@@ -1023,7 +1023,7 @@ function OverlaysSection() {
               </Button>
             </DropdownTrigger>
             <DropdownContent align="start">
-              <DropdownLabel>Huntsville Hoopers</DropdownLabel>
+              <DropdownLabel>Hoopers</DropdownLabel>
               <DropdownItem icon={<Pin strokeWidth={1.75} />}>Pin plan</DropdownItem>
               <DropdownItem icon={<BellOff strokeWidth={1.75} />} shortcut="⌘M">
                 Mute for 8 hours
@@ -1042,7 +1042,7 @@ function OverlaysSection() {
             </PopoverTrigger>
             <PopoverContent arrow>
               <p className="text-heading-sm">Why this plan</p>
-              <p className="mt-1 text-fg-muted">7 of 8 of you are free Sunday afternoons, and Brahan Spring is indoors, so rain won&apos;t cancel it.</p>
+              <p className="mt-1 text-fg-muted">7 of 8 of you are free Sunday afternoons, and Miller is indoors, so rain won&apos;t cancel it.</p>
             </PopoverContent>
           </Popover>
           <Tooltip content="Directions" shortcut="D">
@@ -1103,12 +1103,12 @@ function OverlaysSection() {
           open={alert}
           onOpenChange={setAlert}
           icon={<LogOut strokeWidth={1.75} />}
-          title="Leave Huntsville Hoopers?"
+          title="Leave Hoopers?"
           description="You'll stop getting plans and messages from this pod. Nobody is told why."
           destructive
           confirmLabel="Leave pod"
           onConfirm={() => {
-            notify("You left Huntsville Hoopers");
+            notify("You left Hoopers");
           }}
         />
       </Specimen>
@@ -1154,10 +1154,10 @@ function ProgressSection() {
         </Specimen>
         <Specimen label="Countdown (demo clock) · Stat" bodyClassName="flex flex-col gap-4">
           <Row>
-            <Countdown pill start="2026-11-08T13:00:00-06:00" end="2026-11-08T15:00:00-06:00" />
-            <Countdown pill start="2026-11-04T12:00:00-06:00" end="2026-11-04T14:00:00-06:00" />
-            <Countdown pill start="2026-11-04T08:30:00-06:00" end="2026-11-04T10:30:00-06:00" />
-            <Countdown start="2026-11-05T13:00:00-06:00" />
+            <Countdown pill start="2026-11-08T13:00:00-08:00" end="2026-11-08T15:00:00-08:00" />
+            <Countdown pill start="2026-11-04T12:00:00-08:00" end="2026-11-04T14:00:00-08:00" />
+            <Countdown pill start="2026-11-04T08:30:00-08:00" end="2026-11-04T10:30:00-08:00" />
+            <Countdown start="2026-11-05T13:00:00-08:00" />
           </Row>
           <div className="grid grid-cols-2 gap-4 border-t border-border pt-4">
             <Stat label="Hours together" value={6} suffix="h" caption="Sample data" icon={<Clock strokeWidth={1.75} />} />
@@ -1214,7 +1214,7 @@ function ListsSection() {
             <ListRow interactive tone="danger" icon={<Trash2 strokeWidth={1.75} />} title="Delete my data" tabIndex={0} />
           </ListGroup>
           <div className="mt-2">
-            <MapTile name="Brahan Spring Recreation Center" address="3770 Ivy Ave SW, Huntsville, AL" />
+            <MapTile name="Miller Community Center" address="330 19th Ave E, Seattle, WA" />
           </div>
         </Specimen>
         <Specimen label="Tabs · underline (desktop) / segmented (mobile) · Kbd" bodyClassName="flex flex-col gap-6">

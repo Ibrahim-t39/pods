@@ -72,7 +72,7 @@ export function StatusChip({ word, tone, className }: { word: string; tone: Tone
   );
 }
 
-/** "Sat 10am · Pickup basketball" and "Brahan Spring Park · Free". */
+/** "Sat 10am · Pickup basketball" and "Miller Playfield · Free". */
 export function planLines(t: RoomTable, minute: number): { when: string; what: string; where: string } | null {
   const p = t.row.plan;
   if (!p || p.s.status === "pending_review") return null;

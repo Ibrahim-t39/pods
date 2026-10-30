@@ -33,8 +33,8 @@ function mkUser(id: string, age: number, over: Partial<User> = {}): User {
     prompts: [],
     photo_urls: [],
     date_of_birth: `${year}-01-15`,
-    city: "Huntsville",
-    phone: "+12565550100",
+    city: "Seattle",
+    phone: "+12065550100",
     verified: true,
     verified_at: NOW,
     availability: [],
@@ -105,7 +105,7 @@ function addPod(db: DbState, p: Partial<Pod> & { id: string; topic_key: string; 
     photo_url: "",
     community_kind: null,
     topic: p.topic_key,
-    city: "Huntsville metro",
+    city: "Seattle metro",
     age_min: 19,
     age_max: 25,
     widened_from: null,
@@ -217,7 +217,7 @@ describe("Chanda scenario", () => {
     const body = widenTemplateBody(f);
     expect(body).toBe("Your pod brings together 7 people with roots across Southern Africa. We'll offer you a Zambian pod as soon as 6 people join.");
     expect(body.length).toBeLessThanOrEqual(160);
-    const list = placingChecklist({ results: out.results }, { city: "Huntsville", age: 22 }, db.config.placement);
+    const list = placingChecklist({ results: out.results }, { city: "Seattle", age: 22 }, db.config.placement);
     expect(list.map((i) => i.id)).toEqual(["interests", "nearby", "ages", "communities", "widen", "plan"]);
     expect(list[2].label).toBe("Checking ages 19-25");
   });
@@ -246,7 +246,7 @@ describe("eligibility gates", () => {
   it("out of metro, underage, over age", () => {
     const { db } = chandaDb();
     const cfg = db.config.placement;
-    expect(placeDetailed(mkUser("x", 22, { city: "Madison" }), undefined, [], db, { ...cfg, metro: ["Huntsville"] })).toEqual({ ok: false, code: "OUT_OF_METRO" });
+    expect(placeDetailed(mkUser("x", 22, { city: "Bellevue" }), undefined, [], db, { ...cfg, metro: ["Seattle"] })).toEqual({ ok: false, code: "OUT_OF_METRO" });
     expect(placeDetailed(mkUser("y", 17), undefined, [], db, cfg)).toEqual({ ok: false, code: "UNDERAGE" });
     expect(placeDetailed(mkUser("z", 31), undefined, [], db, cfg)).toEqual({ ok: false, code: "OVER_AGE" });
     expect(placeDetailed(mkUser("b", 22, { status: "banned" }), undefined, [], db, cfg)).toEqual({ ok: false, code: "NOT_ACTIVE" });
@@ -393,13 +393,13 @@ describe("safety rules", () => {
       mkUser("b1", 22, { status: "banned" }),
       mkUser("b2", 22, { status: "suspended" }),
       mkUser("b3", 22, { verified: false }),
-      mkUser("b4", 22, { city: "Madison" }),
+      mkUser("b4", 22, { city: "Bellevue" }),
     ];
     bad.forEach((b) => addUser(db, b, ["chess"]));
     ["g1", "g2", "g3", "g4"].forEach((id) => addUser(db, mkUser(id, 22), ["chess"]));
     const u = mkUser("me", 22);
     addUser(db, u, ["chess"]);
-    const cfg = { ...db.config.placement, metro: ["Huntsville" as const] };
+    const cfg = { ...db.config.placement, metro: ["Seattle" as const] };
     const [r] = place(u, undefined, ["chess"], db, cfg);
     expect(r.outcome).toBe("waitlisted"); // 4 good people + me = 5 < 6; had the bad ones counted it would create
   });

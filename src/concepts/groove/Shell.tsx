@@ -80,7 +80,7 @@ function Director() {
             <button aria-label="Close" onClick={() => setOpen(false)} style={{ background: "none", border: 0, color: "inherit", cursor: "pointer" }}><IClose size={18} /></button>
           </div>
           <button style={btn} onClick={() => jumpTo(DEMO.directorJump.at)}>Jump: after the hangout</button>
-          <button style={btn} onClick={() => jumpTo("2026-11-08T12:40:00-06:00")}>Jump: hangout day</button>
+          <button style={btn} onClick={() => jumpTo("2026-11-08T12:40:00-08:00")}>Jump: hangout day</button>
           <button
             style={btn}
             onClick={() => {

@@ -21,7 +21,7 @@ export interface Person {
 }
 
 const CITY =
-  /\s*·\s*Huntsville\b|\bHuntsville\s+|\s+Huntsville\b|\bRocket City\s+/g;
+  /\s*·\s*Seattle\b|\bSeattle\s+|\s+Seattle\b|\bEmerald City\s+/g;
 /** Pod names never carry the city (product rule 5). */
 export const podName = (p: Pod) => p.name.replace(CITY, "").trim() || p.topic;
 
@@ -60,11 +60,11 @@ export function peopleOf(db: DbState, podId: ID): Person[] {
     });
 }
 
-/** "Brahan Spring" from "Brahan Spring Recreation Center". */
+/** "Miller" from "Miller Community Center". */
 export function placeWord(v: Venue | null | undefined): string {
   if (!v) return "A public place";
   const n = (v.short_name || v.name)
-    .replace(/\s*(Recreation|Rec)\s+Center$/i, "")
+    .replace(/\s*(Recreation|Rec|Community)\s+Center$/i, "")
     .replace(/^Dr\.\s+/, "")
     .trim();
   return n || v.name;
@@ -84,7 +84,7 @@ export function rainWord(v: Venue | null | undefined): string {
   return t[v.type] ?? "indoors";
 }
 
-/** "10am" / "10:30am" in Chicago time (plan-display, one style app-wide). */
+/** "10am" / "10:30am" in Seattle time (plan-display, one style app-wide). */
 export const hm = (iso: string) => planTime(iso);
 export const weekday = (iso: string) => planWeekday(iso);
 export const wd3 = (iso: string) => formatInTimeZone(iso, TZ, "EEE");

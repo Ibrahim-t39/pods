@@ -5,7 +5,7 @@
 //   inLine      "Malik, Ama and Tobi are in" (the text label for an avatar stack)
 import { formatInTimeZone } from "date-fns-tz";
 import type { CalItem } from "@/lib/platform/calendar";
-import { chicagoDaysBetween, TZ } from "@/lib/time/tz";
+import { seattleDaysBetween, TZ } from "@/lib/time/tz";
 import type { PodStatus, RoomTable } from "./model";
 
 const DAY = 86_400_000;
@@ -45,9 +45,9 @@ export function upNext(tables: RoomTable[], nowMs: number, fallbackId?: string |
   return { lead, rest: open.filter((t) => t !== lead && tableNeedsYou(t)) };
 }
 
-/** "Today", "Tomorrow", "Sat" within the next 6 days, else "Sun, Nov 15". Chicago calendar days. */
+/** "Today", "Tomorrow", "Sat" within the next 6 days, else "Sun, Nov 15". Seattle calendar days. */
 export function planDay(iso: string, nowMs: number): string {
-  const days = chicagoDaysBetween(nowMs, iso);
+  const days = seattleDaysBetween(nowMs, iso);
   if (days === 0) return "Today";
   if (days === 1) return "Tomorrow";
   if (days > 1 && days <= 6) return formatInTimeZone(iso, TZ, "EEE");
@@ -57,7 +57,7 @@ export function planDay(iso: string, nowMs: number): string {
 /** "Sat 10am", "Today 7pm", "Tomorrow 10am"; further out "Sun, Nov 15 · 1pm". */
 export function planWhen(iso: string, nowMs: number): string {
   const time = formatInTimeZone(iso, TZ, "h:mmaaa").replace(":00", "");
-  const days = chicagoDaysBetween(nowMs, iso);
+  const days = seattleDaysBetween(nowMs, iso);
   return `${planDay(iso, nowMs)}${days >= 0 && days <= 6 ? " " : " · "}${time}`;
 }
 

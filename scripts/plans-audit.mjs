@@ -67,7 +67,7 @@ for (const [k, vp] of Object.entries(VPS)) {
     await btn(/^Next$/).click(); await page.waitForURL(/availability/); await page.waitForTimeout(600);
     for (const d of ["Saturday", "Sunday", "Wednesday"]) await page.getByRole("button", { name: d }).first().click();
     await btn(/^Next$/).click(); await page.waitForURL(/account/);
-    await page.getByPlaceholder(/555/).fill("2565550142"); await btn(/^Send code$/).click();
+    await page.getByPlaceholder(/555/).fill("2065550142"); await btn(/^Send code$/).click();
     await page.locator("input[autocomplete='one-time-code']").fill("123456");
     await page.waitForURL(/pledge/); await btn(/^I promise$/).click(); await page.waitForURL(/verify/);
     await page.waitForTimeout(1500); const w = btn(/^Without the camera$/); if (await w.isVisible().catch(() => false)) await w.click(); else await btn(/^Start$/).click();

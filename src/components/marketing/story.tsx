@@ -18,14 +18,14 @@ import { DEMO, demoDefaults } from "@/config/demo";
 import { cn } from "@/lib/cn";
 import "./story.css";
 
-// The seeded Hoopers plan, in pod time (America/Chicago), e.g. "Sunday, 1pm" and "Sun 1pm".
+// The seeded Hoopers plan, in pod time (America/Los_Angeles), e.g. "Sunday, 1pm" and "Sun 1pm".
 const AT = DEMO.hoopers.starts_at;
-const WHEN = formatInTimeZone(AT, "America/Chicago", "EEEE, haaa");
-const WHEN_SHORT = formatInTimeZone(AT, "America/Chicago", "EEE haaa");
+const WHEN = formatInTimeZone(AT, "America/Los_Angeles", "EEEE, haaa");
+const WHEN_SHORT = formatInTimeZone(AT, "America/Los_Angeles", "EEE haaa");
 const PARK = demoDefaults.venueVariant === "park_courts";
 export const PLAN_FACTS = {
   when: WHEN,
-  place: PARK ? "Brahan Spring Park" : "Brahan Spring Rec Center",
+  place: PARK ? "Miller Playfield" : "Miller Community Center",
   placeLine: PARK ? "Public park · Free" : "Public rec center",
   rain: PARK ? "Rec Center, indoors" : "Indoors already",
 };

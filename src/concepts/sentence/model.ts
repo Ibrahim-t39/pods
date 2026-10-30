@@ -7,8 +7,8 @@ import type { DbState, ID, Pod, PlannerStep } from "@/lib/types";
 export function podWord(pod: Pod | undefined | null): string {
   if (!pod) return "";
   const cleaned = pod.name
-    .replace(/\s*·\s*Huntsville/gi, "")
-    .replace(/\b(Huntsville|Rocket City|Madison|Decatur|Alabama|AAMU)\b/gi, "")
+    .replace(/\s*·\s*Seattle/gi, "")
+    .replace(/\b(Seattle|Emerald City|Bellevue|Shoreline|Washington|UW)\b/gi, "")
     .replace(/\s{2,}/g, " ")
     .trim();
   const w = cleaned || pod.topic;

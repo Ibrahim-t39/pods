@@ -66,7 +66,7 @@ function blankUser(id: string, phone: string, now: string): User {
     prompts: [],
     photo_urls: [],
     date_of_birth: "2000-01-01",
-    city: "Huntsville",
+    city: "Seattle",
     phone,
     verified: false,
     verified_at: null,
@@ -129,7 +129,7 @@ export function authRepo(ctx: RepoCtx): RepoPart<"startPhoneAuth" | "verifyPhone
         return err({ code: "VALIDATION", field: "code", message: "That code isn't right. Try again." });
       }
       attempts.delete(challengeId);
-      const digits = challengeId.split("|")[1] ?? "2565550142";
+      const digits = challengeId.split("|")[1] ?? "2065550142";
       const phone = digits.length === 10 ? `+1${digits}` : `+${digits}`;
       const r = signIn(phone);
       if ("code" in r) return err({ code: r.code });
@@ -138,7 +138,7 @@ export function authRepo(ctx: RepoCtx): RepoPart<"startPhoneAuth" | "verifyPhone
     async signInWithProvider(p) {
       await ctx.latency();
       // Simulated provider: a stable placeholder number per provider (never shown to other members).
-      const r = signIn(p === "apple" ? "+12565550142" : "+12565550143");
+      const r = signIn(p === "apple" ? "+12065550142" : "+12065550143");
       if ("code" in r) return err({ code: r.code });
       return ok(r.user);
     },

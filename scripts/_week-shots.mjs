@@ -71,7 +71,7 @@ for (const [vp, opts] of [["m", { viewport: { width: 390, height: 844 }, deviceS
   await page.getByRole("button", { name: "Weekends" }).click();
   await page.getByRole("button", { name: /^Next$/ }).click();
   await page.waitForURL(/account/);
-  await page.getByPlaceholder(/555/).fill("2565550142");
+  await page.getByPlaceholder(/555/).fill("2065550142");
   await page.getByRole("button", { name: /^Send code$/ }).click();
   await page.locator("input[autocomplete='one-time-code']").waitFor();
   await page.locator("input[autocomplete='one-time-code']").fill("123456");

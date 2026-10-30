@@ -30,5 +30,5 @@ export const APP = {
   title: "Pods",
   tagline: "Find your people. Then keep them.",
   description: "Small friend groups that meet again.",
-  timeZone: "America/Chicago",
+  timeZone: "America/Los_Angeles",
 } as const;

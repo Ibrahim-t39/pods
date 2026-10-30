@@ -6,7 +6,7 @@ import type { PlannerInput } from "@/lib/planner/types";
 import { plannerDefaults } from "@/config/planner";
 
 const TINY: PlannerInput = {
-  pod: { kind: "interest", activity: "basketball", templateKey: "basketball", fitKey: "basketball", size: 6, city: "Huntsville" },
+  pod: { kind: "interest", activity: "basketball", templateKey: "basketball", fitKey: "basketball", size: 6, city: "Seattle" },
   availability: [{ slot: "sunday-afternoon", free: 5 }, { slot: "thursday-evening", free: 3 }],
   sharers: 6,
   venues: [

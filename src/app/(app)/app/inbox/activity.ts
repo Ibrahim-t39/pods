@@ -3,7 +3,7 @@
 // Pure over DbState + the clock so Demo and Live behave the same. Ids are stable ("d:<kind>:<ref>") so read state sticks.
 import { buildInbox, COMMUNITY_LABEL, maskText, podLabel, type InboxItem } from "@/lib/notifications/rules";
 import { cardView, optionLabel } from "@/lib/planner/card-state";
-import { chicagoDaysBetween } from "@/lib/time/tz";
+import { seattleDaysBetween } from "@/lib/time/tz";
 import type { DbState, ID } from "@/lib/types";
 import { shortDay, shortTime } from "@/components/pods/model";
 import { listFormat } from "@/lib/platform/needs-you";
@@ -56,7 +56,7 @@ export function counted(n: Activity): boolean {
 export type Section = "Needs you" | "Today" | "Yesterday" | "This week" | "Earlier";
 
 export function sectionOf(iso: string, now: Date): Section {
-  const d = chicagoDaysBetween(iso, now);
+  const d = seattleDaysBetween(iso, now);
   return d <= 0 ? "Today" : d === 1 ? "Yesterday" : d < 7 ? "This week" : "Earlier";
 }
 

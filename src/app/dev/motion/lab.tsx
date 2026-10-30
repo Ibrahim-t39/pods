@@ -25,7 +25,7 @@ export function MotionLab() {
             <div className="rounded-[24px] bg-white p-s6 shadow-[var(--shadow-float)]">
               <p className="text-label text-ink-2">Pickup</p>
               <p className="mt-s1 text-[28px] font-semibold tracking-[-0.02em]">Saturday, <span className="tabular">10am</span></p>
-              <p className="mt-s1 text-ink-2">Brahan Spring Park · Free</p>
+              <p className="mt-s1 text-ink-2">Miller Playfield · Free</p>
               <div className="mt-s4"><InCount n={n + 0} of={8} locked={n >= 4} /></div>
             </div>
           </PlanHalo>

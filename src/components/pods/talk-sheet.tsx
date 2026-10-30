@@ -45,7 +45,7 @@ import { TZ } from "@/lib/time/tz";
 
 const RUN_MS = 5 * 60_000;
 /** The city lives in the pitch, not the product: host lines that name it lose that sentence (product rule 5). */
-const CITY = /\b(Huntsville|Alabama|Madison|Decatur|AAMU|Rocket City)\b/i;
+const CITY = /\b(Seattle|Washington|Bellevue|Shoreline|UW|Emerald City)\b/i;
 const OPEN_PHASES = new Set(["proposed", "in", "vote", "pending_review"]);
 
 // ── glyphs: reactions keep the circle-and-dot language; everything else is a word (R12) ─────────────────

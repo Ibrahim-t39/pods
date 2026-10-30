@@ -22,7 +22,7 @@ await shot("step3");
 for(const d of ["Saturday","Wednesday","Sunday"]){await page.getByRole("button",{name:d}).click().catch(e=>console.log("dayfail",d,e.message.slice(0,80)));await page.waitForTimeout(300);}
 await shot("days");
 await btn(/^Next/); await shot("step4");
-for(let i=0;i<4;i++){ if(/placing|\/app\/(home|pods)/.test(page.url()))break; try{await page.locator('input[type=tel],input[type=text]').first().fill("2565550123",{timeout:500})}catch{} await btn(/^(Next|Done|Keep|I promise|Promise|Find|Continue|Send|Skip)/i); await shot("s"+i);}
+for(let i=0;i<4;i++){ if(/placing|\/app\/(home|pods)/.test(page.url()))break; try{await page.locator('input[type=tel],input[type=text]').first().fill("2065550123",{timeout:500})}catch{} await btn(/^(Next|Done|Keep|I promise|Promise|Find|Continue|Send|Skip)/i); await shot("s"+i);}
 await page.waitForTimeout(6000); await shot("placing-or-after");
 await page.waitForTimeout(6000); await shot("after");
 await b.close();

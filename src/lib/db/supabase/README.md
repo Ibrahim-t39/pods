@@ -26,7 +26,7 @@ create table public.users (
   id uuid primary key default gen_random_uuid(),
   first_name text not null, nickname text, pronouns text, bio text check (char_length(bio) <= 150),
   prompts jsonb not null default '[]', photo_urls text[] not null default '{}',
-  date_of_birth date not null, city text not null check (city in ('Huntsville','Madison','Decatur')),
+  date_of_birth date not null, city text not null check (city in ('Seattle','Bellevue','Shoreline')),
   phone text not null unique, verified boolean not null default false, verified_at timestamptz,
   availability text[] not null default '{}', blocked_days text[] not null default '{}',
   status text not null default 'onboarding', created_at timestamptz not null default now()
