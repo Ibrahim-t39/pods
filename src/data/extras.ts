@@ -41,7 +41,7 @@ export function buildExtras(users: User[]): Extras {
 
   const adminActions: AdminAction[] = [
     { id: "aa_001", admin: "ops", target_user_id: null, report_id: null, action: "venue_edit",
-      note: "Miller Playfield outdoor courts set inactive until a phone check confirms them. Indoor Rec Center stays the default.", created_at: at("2026-10-27", "14:00") },
+      note: "Brahan Spring Park outdoor courts set inactive until a phone check confirms them. Indoor Rec Center stays the default.", created_at: at("2026-10-27", "14:00") },
     { id: "aa_002", admin: "ops", target_user_id: botId("Wesley"), report_id: "report_003", action: "warn", note: "Asked to update the profile photo before the next hangout.", created_at: at("2026-10-25", "15:30") },
     { id: "aa_003", admin: "ops", target_user_id: botId("Camila"), report_id: "report_004", action: "dismiss", note: "Left early for a personal reason, no safety concern.", created_at: at("2026-10-18", "17:10") },
     { id: "aa_004", admin: "ops", target_user_id: null, report_id: null, action: "hangout_edit", note: "Hiking plan moved off a full trailhead lot to the earlier slot.", created_at: at("2026-10-14", "09:30") },

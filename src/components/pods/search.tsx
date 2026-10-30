@@ -20,7 +20,7 @@ import { cn } from "@/lib/cn";
 import { useDb } from "@/lib/db/hooks";
 import { myPeople, myPlans, planHref, podLabel, searchAll, type SearchHit } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
-import { toSeattleISO } from "@/lib/time/tz";
+import { toChicagoISO } from "@/lib/time/tz";
 import { roomTables, shortDay, shortTime } from "./model";
 import { PodOrb } from "./pod-orb";
 
@@ -42,7 +42,7 @@ export function Search() {
   const [q, setQ] = useState(initial);
   const [kind, setKind] = useState<Kind | "all">("all");
   const nowMs = useClock(60_000).getTime();
-  const iso = toSeattleISO(nowMs);
+  const iso = toChicagoISO(nowMs);
   const hits = useDb(useCallback((db) => searchAll(db, q, iso, 40), [q, iso]));
   const marks = useDb(
     useCallback(
@@ -181,7 +181,7 @@ function Mark({ text, q }: { text: string; q: string }): ReactNode {
 
 /** Before you type: what's coming up, your pods and people, and interests to browse. Each one tap away. */
 function Suggestions({ now, marks, onPick }: { now: number; marks: Record<string, Mark>; onPick: (q: string) => void }) {
-  const iso = toSeattleISO(now);
+  const iso = toChicagoISO(now);
   const data = useDb(
     useCallback(
       (db) => {

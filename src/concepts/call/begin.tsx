@@ -115,7 +115,7 @@ export function Begin() {
     };
     const dob = `${2026 - (age ?? 22)}-01-15`;
     // City is functional (placement is metro-bound); it is never shown as copy.
-    const r1 = await repo.updateAbout({ first_name: name.trim(), nickname: null, date_of_birth: dob, city: "Seattle" });
+    const r1 = await repo.updateAbout({ first_name: name.trim(), nickname: null, date_of_birth: dob, city: "Huntsville" });
     if (!r1.ok) return fail("check your age", "me");
     await repo.setInterests(into);
     await repo.setIdentity({

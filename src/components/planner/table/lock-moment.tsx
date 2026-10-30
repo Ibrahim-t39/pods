@@ -15,7 +15,7 @@ export interface LockMomentProps {
   /** 1 = "It's on.", 2+ = "#2 is on." */
   round?: number;
   day: string;
-  /** time and the full place, e.g. "10am · Miller Playfield" */
+  /** time and the full place, e.g. "10am · Brahan Spring Park" */
   when: string;
   seats: (Seat | null)[];
   /** ring segments; default max(4, seats) */

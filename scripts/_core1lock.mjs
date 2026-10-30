@@ -5,7 +5,7 @@ const tag = process.argv[2] || "lock"; const dir = `shots/core1/${tag}`; mkdirSy
 const browser = await chromium.launch({ executablePath: CHROME });
 const B = "http://localhost:3000";
 for (const [vn, vp] of Object.entries({ m: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, d: { viewport: { width: 1440, height: 900 } } })) {
-  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Los_Angeles" });
+  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Chicago" });
   const page = await ctx.newPage();
   await page.goto(`${B}/app?director=1&fast=1`, { waitUntil: "networkidle" }); await page.waitForTimeout(800);
   const o = page.getByRole("button", { name: "Open director panel" });

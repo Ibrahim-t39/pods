@@ -42,7 +42,7 @@ for (const X of dirs) {
   const out = `shots/color/bubbles/${X}`; mkdirSync(out, { recursive: true });
   for (const [vn, vp] of Object.entries(VPS)) {
     if (onlyV && onlyV !== vn) continue;
-    const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Los_Angeles" });
+    const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Chicago" });
     await ctx.addInitScript((c) => {
       const add = () => { const s = document.createElement("style"); s.id = "dir"; s.textContent = c; document.head.appendChild(s); };
       if (document.head) add(); else document.addEventListener("DOMContentLoaded", add);

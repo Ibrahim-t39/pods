@@ -272,7 +272,7 @@ export function waitlistNote(n: number): string {
 function processCandidate(ctx: Ctx, c: Candidate): Processed {
   const { cfg, user } = ctx;
   const steps: PlacementStep[] = [
-    { rule: "metro", detail: `Near ${user.city}, Washington`, pool_size: ctx.metroCount },
+    { rule: "metro", detail: `Near ${user.city}, Alabama`, pool_size: ctx.metroCount },
   ];
   if (ctx.blockedCount > 0) {
     steps.push({ rule: "blocks", detail: "Kept apart from people who are blocked either way", pool_size: ctx.blockedCount });
@@ -348,7 +348,7 @@ function processCandidate(ctx: Ctx, c: Candidate): Processed {
         community_kind: c.community_kind,
         topic,
         topic_key: g.key,
-        city: "Seattle metro",
+        city: "Huntsville metro",
         age_min: Math.min(...ages),
         age_max: Math.max(...ages),
         widened_from:

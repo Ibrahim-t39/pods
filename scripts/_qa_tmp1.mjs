@@ -5,7 +5,7 @@ const vpn = process.argv[2] || "m";
 const VP = { m:{viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true}, d:{viewport:{width:1440,height:900},deviceScaleFactor:1}}[vpn];
 const out="/private/tmp/claude-501/-Users-ibrahimtraore-Documents-PROPEL/192ac6d2-3129-48a3-9409-2f4587345c61/scratchpad/qa/j"+vpn; mkdirSync(out,{recursive:true});
 const b = await chromium.launch({executablePath:CHROME});
-const ctx = await b.newContext({...VP, locale:"en-US", timezoneId:"America/Los_Angeles"});
+const ctx = await b.newContext({...VP, locale:"en-US", timezoneId:"America/Chicago"});
 const page = await ctx.newPage(); page.setDefaultTimeout(8000);
 const errs=[]; page.on("pageerror",e=>errs.push(e.message.slice(0,140)));
 let n=0;

@@ -10,7 +10,7 @@ export const HUE_VAR: Record<Hue, string> = { ember: "var(--tb-ember)", signal: 
 const DISC = ["var(--tb-ember)", "var(--tb-signal)", "var(--tb-grove)", "var(--tb-ember-deep)", "var(--tb-signal-deep)", "var(--tb-grove-deep)"];
 export const discColor = (id: ID) => DISC[hash32(`table:${id}`) % DISC.length];
 
-const CITY = /\s*·\s*Seattle\b|\bSeattle\s+|\s+Seattle\b|\bEmerald City\s+/g;
+const CITY = /\s*·\s*Huntsville\b|\bHuntsville\s+|\s+Huntsville\b|\bRocket City\s+/g;
 /** Table names never carry the city (product rule 5). */
 export function tableName(p: Pod): string {
   return p.name.replace(CITY, "").trim() || p.topic;

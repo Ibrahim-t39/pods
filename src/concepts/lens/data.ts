@@ -87,7 +87,7 @@ export function initials(name: string) {
   return name.slice(0, 1).toUpperCase();
 }
 
-/** "2026-11-08T13:00:00" → { day: "Sun", date: "Nov 8", time: "1", span: "1–3" } in Seattle wall time (string math only). */
+/** "2026-11-08T13:00:00" → { day: "Sun", date: "Nov 8", time: "1", span: "1–3" } in Chicago wall time (string math only). */
 export function wallTime(startISO: string, endISO?: string) {
   const d = new Date(startISO.slice(0, 10) + "T12:00:00Z");
   const day = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()];

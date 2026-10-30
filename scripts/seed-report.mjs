@@ -62,15 +62,15 @@ try {
   const satFree = hoopers.filter((u) => u.availability.includes("saturday-morning")).length;
   check(satFree === 7 && DEMO.hoopers.reason.startsWith("7 of 8"), `7 Hoopers free Saturday mornings, the plan's "7 of 8" (got ${satFree})`);
   const hs = db.suggestions[DEMO.hoopers.suggestionId];
-  check(hs && hs.starts_at === DEMO.hoopers.starts_at && hs.starts_at.startsWith("2026-11-07T10:00") && hs.venue_id === "venue_brahan_spring_park", "Hoopers plan: Saturday Nov 7, 10am at Miller Playfield (free)");
-  check(hs?.plan_json.rain_venue_id === "venue_brahan_rec", "Hoopers rain plan: Miller Community Center");
+  check(hs && hs.starts_at === DEMO.hoopers.starts_at && hs.starts_at.startsWith("2026-11-07T10:00") && hs.venue_id === "venue_brahan_spring_park", "Hoopers plan: Saturday Nov 7, 10am at Brahan Spring Park (free)");
+  check(hs?.plan_json.rain_venue_id === "venue_brahan_rec", "Hoopers rain plan: Brahan Spring Rec Center");
   check(hs?.summary === DEMO.hoopers.title, `Hoopers title matches the video script ("${DEMO.hoopers.title}")`);
   check(hs.plan_json.reason.includes(DEMO.hoopers.reason), "Hoopers reason line matches BLUEPRINT §0");
   const going = db.rsvps.filter((r) => r.hangout_id === hs.id && r.status === "going").length;
   const lockAt = hs.min_to_lock ?? db.config.planner.lockThreshold;
   check(going === 3 && lockAt === 4 && going + 1 >= lockAt, `3 going before Chanda -> 4 locks (plan locks at ${lockAt})`);
   const ss = Object.values(db.suggestions).find((s) => s.pod_id === sa);
-  check(ss && ss.starts_at === DEMO.southernAfrican.starts_at && ss.venue_id === "venue_big_spring_park", "Southern African: Sun Nov 15 1:00 PM at Gas Works Park");
+  check(ss && ss.starts_at === DEMO.southernAfrican.starts_at && ss.venue_id === "venue_big_spring_park", "Southern African: Sun Nov 15 1:00 PM at Big Spring Park");
   check(!Object.values(db.suggestions).some((x) => ["pod_rocket_city_strings", "pod_adventist_young_adults"].includes(x.pod_id)), "Strings + Adventist are on deck: plan held in plannerCache, no live suggestion");
   check(db.pods[sa].widened_from?.to === "Southern African", "Southern African pod is a widened group pod");
   const zam = Object.values(db.identities).filter((i) => i.heritage?.code === "ZM").length;

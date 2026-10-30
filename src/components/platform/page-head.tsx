@@ -63,7 +63,7 @@ export function SectionLabel({ children, count, right, className }: { children: 
 }
 
 /** Date block (Apple Music "This Week", Luma): the day is the visual for a plan, not an avatar. */
-export function DateBlock({ iso, size = 44, tz = "America/Los_Angeles" }: { iso: string; size?: number; tz?: string }) {
+export function DateBlock({ iso, size = 44, tz = "America/Chicago" }: { iso: string; size?: number; tz?: string }) {
   const d = new Date(iso);
   const mon = d.toLocaleString("en-US", { month: "short", timeZone: tz }).toUpperCase();
   const day = d.toLocaleString("en-US", { day: "numeric", timeZone: tz });

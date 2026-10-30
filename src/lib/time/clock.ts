@@ -1,6 +1,6 @@
 // [U3] Demo-aware clock (ARCHITECTURE §11, BLUEPRINT J5).
 // now = db.clock.virtual_at + (Date.now() - db.clock.real_at); the store re-stamps real_at at boot, so a fresh load
-// always starts at the stored virtual time (the anchor Wed Nov 4, 09:00 PT, or the last Director jump).
+// always starts at the stored virtual time (the anchor Wed Nov 4, 09:00 CT, or the last Director jump).
 // Server / prerender / before hydration: returns the virtual time exactly (no Date.now()), so renders are deterministic.
 "use client";
 
@@ -8,9 +8,9 @@ import { useEffect, useState } from "react";
 import { useStore } from "@/lib/db/store";
 import type { ISODateTime } from "@/lib/types";
 import { jumpedClock, virtualNowMs } from "./clock-core";
-import { TZ, toSeattleISO } from "./tz";
+import { TZ, toChicagoISO } from "./tz";
 
-export { TZ, toSeattleISO };
+export { TZ, toChicagoISO };
 
 /** Epoch ms of the demo "now". */
 export function nowMs(): number {
@@ -23,7 +23,7 @@ export function now(): Date {
 }
 
 export function nowISO(): ISODateTime {
-  return toSeattleISO(nowMs());
+  return toChicagoISO(nowMs());
 }
 
 /** Director: move the demo clock to `iso` (e.g. DEMO.directorJump.at). Syncs to other tabs via the store. */
@@ -36,7 +36,7 @@ export function jumpTo(iso: ISODateTime) {
 
 /** Move the demo clock forward (or back) by `ms` from the current demo now. */
 export function jumpBy(ms: number) {
-  jumpTo(toSeattleISO(nowMs() + ms));
+  jumpTo(toChicagoISO(nowMs() + ms));
 }
 
 /**

@@ -13,7 +13,7 @@ export const DemoConfigSchema = z.object({
 export type DemoConfig = z.infer<typeof DemoConfigSchema>;
 
 export const demoDefaults: DemoConfig = DemoConfigSchema.parse({
-  anchor: "2026-11-04T09:00:00-08:00",
+  anchor: "2026-11-04T09:00:00-06:00",
   venueVariant: "park_courts",
   noAI: false,
   crowd: true,
@@ -22,26 +22,26 @@ export const demoDefaults: DemoConfig = DemoConfigSchema.parse({
 
 /** Fixed demo facts (BLUEPRINT §0 table). */
 export const DEMO = {
-  anchor: "2026-11-04T09:00:00-08:00",
+  anchor: "2026-11-04T09:00:00-06:00",
   hoopers: {
     podId: "pod_hoopers",
     suggestionId: "sug_hoopers_1",
-    title: "Saturday pickup at Miller Playfield",
-    starts_at: "2026-11-07T10:00:00-08:00",
-    ends_at: "2026-11-07T12:00:00-08:00",
+    title: "Saturday pickup at Brahan Spring Park",
+    starts_at: "2026-11-07T10:00:00-06:00",
+    ends_at: "2026-11-07T12:00:00-06:00",
     reason: "7 of 8 of you are free Saturday mornings",
     goingBeforeYou: 3,
   },
-  directorJump: { label: "Jump to after hangout (Sat 12:15 PM)", at: "2026-11-07T12:15:00-08:00" },
+  directorJump: { label: "Jump to after hangout (Sat 12:15 PM)", at: "2026-11-07T12:15:00-06:00" },
   southernAfrican: {
     podId: "pod_southern_african",
-    starts_at: "2026-11-15T13:00:00-08:00",
-    ends_at: "2026-11-15T15:00:00-08:00",
-    venue: "Gas Works Park",
+    starts_at: "2026-11-15T13:00:00-06:00",
+    ends_at: "2026-11-15T15:00:00-06:00",
+    venue: "Big Spring Park",
   },
   hangout2Options: [
-    { label: "Same time in 2 weeks", starts_at: "2026-11-21T10:00:00-08:00", venue: "Miller Playfield", isDefault: true },
-    { label: "Weeknight run", starts_at: "2026-11-19T18:30:00-08:00", venue: "Miller Community Center", isDefault: false },
+    { label: "Same time in 2 weeks", starts_at: "2026-11-21T10:00:00-06:00", venue: "Brahan Spring Park", isDefault: true },
+    { label: "Weeknight run", starts_at: "2026-11-19T18:30:00-06:00", venue: "Brahan Spring Recreation Center", isDefault: false },
   ],
   podsAtStart: 2,
   zambiansInMetro: 3,

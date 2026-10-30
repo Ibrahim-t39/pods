@@ -18,12 +18,12 @@ import type { AppMode } from "@/lib/types";
 const repo = () => localRepo();
 const db = () => useStore.getState().db;
 
-async function onboard(phone = "(206) 555-0142", interests = ["basketball", "guitar"]) {
+async function onboard(phone = "(256) 555-0142", interests = ["basketball", "guitar"]) {
   const r = repo();
   const ch = await r.startPhoneAuth(phone);
   if (!ch.ok) throw new Error("no challenge");
   await r.verifyPhoneCode(ch.data.challengeId, "123456");
-  await r.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-14", city: "Seattle" });
+  await r.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-14", city: "Huntsville" });
   await r.setInterests(interests);
   await r.setIdentity({ heritage: { level: "country", code: "ZM" }, faith: { level: "denomination", code: "sda" }, consent: true });
   await r.setAvailability(["weekday-evening", "sunday-afternoon"], []);
@@ -53,7 +53,7 @@ describe("mode helpers", () => {
 describe("Live world", () => {
   it("keeps people, pods and venues; drops every scripted moment", () => {
     const demo = freshDb("demo");
-    const live = buildLiveSeed("2026-10-28T12:00:00-07:00");
+    const live = buildLiveSeed("2026-10-28T12:00:00-05:00");
     expect(Object.keys(live.users)).toEqual(Object.keys(demo.users));
     expect(Object.keys(live.pods)).toEqual(Object.keys(demo.pods));
     expect(Object.keys(live.venues).length).toBeGreaterThan(0);
@@ -62,7 +62,7 @@ describe("Live world", () => {
     expect(live.rsvps).toEqual([]);
     expect(live.reports).toEqual({});
     expect(Object.values(live.messages).every((l) => l.length === 0)).toBe(true);
-    expect(live.clock.virtual_at).toBe("2026-10-28T12:00:00-07:00");
+    expect(live.clock.virtual_at).toBe("2026-10-28T12:00:00-05:00");
     expect(live.config.demo.anchor).toBeNull();
   });
 
@@ -161,8 +161,8 @@ describe("plans: proposals, calendar, share, .ics", () => {
   it("a member proposal joins the open round as an option; bad input is refused", async () => {
     const venue = db().suggestions[DEMO.hoopers.suggestionId].venue_id;
     expect((await repo().proposeHangout(pod, { title: "Run", starts_at: nowISO(), venue_id: venue })).ok).toBe(false); // too soon
-    expect((await repo().proposeHangout(pod, { title: "Run", starts_at: "2026-11-10T18:00:00-08:00", venue_id: "venue_nope" })).ok).toBe(false);
-    const r = await repo().proposeHangout(pod, { title: "Tuesday shootaround", starts_at: "2026-11-10T18:00:00-08:00", venue_id: venue });
+    expect((await repo().proposeHangout(pod, { title: "Run", starts_at: "2026-11-10T18:00:00-06:00", venue_id: "venue_nope" })).ok).toBe(false);
+    const r = await repo().proposeHangout(pod, { title: "Tuesday shootaround", starts_at: "2026-11-10T18:00:00-06:00", venue_id: venue });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.data.source).toBe("member");
@@ -184,7 +184,7 @@ describe("plans: proposals, calendar, share, .ics", () => {
     const text = planShareText(h, "Sun 1 PM", "3 PM");
     expect(text).toContain(h.venue!.address);
     expect(text).not.toMatch(/Malik|Ama|Tobi/);
-    expect(smsHref("+12065550100", "a b")).toBe("sms:+12065550100?&body=a%20b");
+    expect(smsHref("+12565550100", "a b")).toBe("sms:+12565550100?&body=a%20b");
   });
 
   it(".ics is valid RFC 5545", () => {
@@ -192,7 +192,7 @@ describe("plans: proposals, calendar, share, .ics", () => {
     const ics = icsForPlan(s, db().venues[s.venue_id], nowISO(), "https://pods.example");
     expect(ics.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
     expect(ics).toContain(`DTSTART:${icsDate(s.starts_at)}`);
-    expect(icsDate("2026-11-08T13:00:00-08:00")).toBe("20261108T210000Z");
+    expect(icsDate("2026-11-08T13:00:00-06:00")).toBe("20261108T190000Z");
     expect(ics.split("\r\n").every((l) => new TextEncoder().encode(l).length <= 75)).toBe(true);
     expect(icsEscape("a,b;c\nd")).toBe("a\\,b\;c\\nd");
     expect(icsFold("x".repeat(160)).split("\r\n ")).toHaveLength(3);
@@ -236,7 +236,7 @@ describe("discover, invites, safety, inbox, search", () => {
     expect(isInviteCode(a.data.code)).toBe(true);
     expect(inviteUrl("https://pods.example/", a.data.code)).toBe(`https://pods.example/i/${a.data.code}`);
     // a friend signs up on this device
-    await onboard("(206) 555-0199", ["books"]);
+    await onboard("(256) 555-0199", ["books"]);
     expect(db().me).not.toBe(me);
     const r = await repo().redeemInvite(a.data.code);
     expect(r.ok).toBe(true);
@@ -246,8 +246,8 @@ describe("discover, invites, safety, inbox, search", () => {
 
   it("trusted contact validates and clears", async () => {
     expect((await repo().setTrustedContact({ name: "Mom", phone: "123" })).ok).toBe(false);
-    const r = await repo().setTrustedContact({ name: "Mom", phone: "(206) 555-0100" });
-    expect(r.ok && r.data?.phone).toBe("+12065550100");
+    const r = await repo().setTrustedContact({ name: "Mom", phone: "(256) 555-0100" });
+    expect(r.ok && r.data?.phone).toBe("+12565550100");
     await repo().setTrustedContact(null);
     expect(db().trustedContacts[db().me!]).toBeUndefined();
   });

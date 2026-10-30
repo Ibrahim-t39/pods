@@ -25,7 +25,7 @@ const NAMES: Record<string, string> = {
 export function podName(id: string): string {
   if (NAMES[id]) return NAMES[id];
   const raw = seed().pods[id]?.name ?? id;
-  return raw.replace(/\s*·\s*Seattle/i, "").replace(/^(Seattle|Emerald City)\s+/i, "").replace(/\s+Seattle$/i, "");
+  return raw.replace(/\s*·\s*Huntsville/i, "").replace(/^(Huntsville|Rocket City)\s+/i, "").replace(/\s+Huntsville$/i, "");
 }
 
 /** Label colour per record. Interest pods alternate orange/blue so the crate reads; community pods are green. */

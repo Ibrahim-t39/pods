@@ -4,7 +4,7 @@ const CHROME = `${process.env.HOME}/Library/Caches/ms-playwright/chromium-1248/c
 const vpn=process.argv[2];
 const VP={mobile:{viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true},desktop:{viewport:{width:1440,height:900}}}[vpn];
 const b=await chromium.launch({executablePath:CHROME});
-const ctx=await b.newContext({...VP,locale:"en-US",timezoneId:"America/Los_Angeles"});const page=await ctx.newPage();page.setDefaultTimeout(6000);page.setDefaultNavigationTimeout(90000);
+const ctx=await b.newContext({...VP,locale:"en-US",timezoneId:"America/Chicago"});const page=await ctx.newPage();page.setDefaultTimeout(6000);page.setDefaultNavigationTimeout(90000);
 const out=`/tmp/qa3/${vpn}`;fs.mkdirSync(out,{recursive:true});
 let n=0;
 const shot=async(name)=>{n++;await page.waitForTimeout(1100);await page.screenshot({path:`${out}/f${String(n).padStart(2,"0")}-${name}.png`});

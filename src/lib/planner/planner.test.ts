@@ -21,10 +21,10 @@ async function collect(gen: AsyncGenerator<PlannerEvent>) {
 
 async function placeChanda() {
   const repo = localRepo();
-  const ch = await repo.startPhoneAuth("(206) 555-0142");
+  const ch = await repo.startPhoneAuth("(256) 555-0142");
   if (!ch.ok) throw new Error("auth");
   await repo.verifyPhoneCode(ch.data.challengeId, "123456");
-  await repo.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-14", city: "Seattle" });
+  await repo.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-14", city: "Huntsville" });
   await repo.setInterests(["basketball", "guitar"]);
   await repo.setIdentity({ heritage: { level: "country", code: "ZM" }, faith: { level: "denomination", code: "sda" }, consent: true });
   await repo.setAvailability(["weekday-evening", "sunday-afternoon"], ["saturday"]);
@@ -130,7 +130,7 @@ describe("validation + fallback quality", () => {
     expect(template("nope").event.length).toBeGreaterThan(5);
   });
   it("line templates stay within caps", () => {
-    expect(fallbackWhyFits({ activity: "basketball", kind: "interest", size: 8, topSlot: { label: "Sunday afternoons", free: 7 }, ageBand: [19, 25], metro: "Seattle" }).line.length).toBeLessThanOrEqual(90);
+    expect(fallbackWhyFits({ activity: "basketball", kind: "interest", size: 8, topSlot: { label: "Sunday afternoons", free: 7 }, ageBand: [19, 25], metro: "Huntsville" }).line.length).toBeLessThanOrEqual(90);
     expect(fallbackWiden({ steps: [{ label: "Zambians", nearby: 3 }, { label: "Southern African", nearby: 7 }], minSize: 6 }).body).toContain("3");
   });
 });

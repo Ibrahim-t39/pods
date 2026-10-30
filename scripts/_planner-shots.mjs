@@ -17,7 +17,7 @@ for (const [vn, vp] of Object.entries(VPS)) {
   if (only && only !== vn) continue;
   const errs = [];
   const fresh = async () => {
-    const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Los_Angeles" });
+    const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Chicago" });
     const page = await ctx.newPage();
     page.setDefaultTimeout(30000);
     page.on("pageerror", (e) => errs.push(e.message));

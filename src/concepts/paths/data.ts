@@ -14,7 +14,7 @@ export type Hue = "ember" | "signal" | "grove";
 export const HOOPERS = DEMO.hoopers.podId;
 
 /** Pod names without any city words (no-city rule). */
-const CITY = /\s*·\s*Seattle|^(Seattle|Emerald City|Gas Works|Discovery)\s+|\s+Seattle$/gi;
+const CITY = /\s*·\s*Huntsville|^(Huntsville|Rocket City|Big Spring|Monte Sano)\s+|\s+Huntsville$/gi;
 const NAMES: Record<string, string> = {
   pod_hoopers: "Hoopers",
   pod_rocket_city_strings: "Strings",

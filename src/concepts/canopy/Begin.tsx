@@ -94,7 +94,7 @@ export function Begin() {
       setWhisper(m);
       setStep(s);
     };
-    const r1 = await repo.updateAbout({ first_name: name.trim(), nickname: null, date_of_birth: `${2026 - age}-01-15`, city: "Seattle" });
+    const r1 = await repo.updateAbout({ first_name: name.trim(), nickname: null, date_of_birth: `${2026 - age}-01-15`, city: "Huntsville" });
     if (!r1.ok) return back("Check your age.", "age");
     await repo.setInterests(into);
     await repo.setIdentity({ heritage: roots ? { level: "country", code: roots } : null, faith: null, consent: !!roots });

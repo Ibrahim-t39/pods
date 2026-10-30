@@ -13,7 +13,7 @@ const runs = [
   ["dark", { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, colorScheme: "dark" }],
 ];
 for (const [vn, vp] of runs) {
-  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Los_Angeles" });
+  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Chicago" });
   const page = await ctx.newPage();
   const errs = [];
   page.on("pageerror", (e) => errs.push(e.message));

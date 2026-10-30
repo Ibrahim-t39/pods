@@ -1,7 +1,7 @@
 # Pods app contracts (U0 cheat-sheet)
 
 Read BLUEPRINT §J + §0 first; they override everything. This file is the "how do I plug in" page for every unit.
-Contract files (U0, change only via the lead in the 12:00 / 18:00 PT windows): `src/lib/types.ts`, `src/lib/db/repo.ts`,
+Contract files (U0, change only via the lead in the 12:00 / 18:00 CT windows): `src/lib/types.ts`, `src/lib/db/repo.ts`,
 `src/lib/db/store.ts`, `src/lib/db/hooks.ts`, `src/lib/db/local/{index,context}.ts`, `src/config/*` (except `interests.ts`, U2),
 `src/app/{layout,providers,globals.css}`, `src/styles/*`, `package.json`, `next.config.ts`, `vitest.config.ts`.
 
@@ -88,7 +88,7 @@ U0 wrote working minimal versions of every module so the app runs; owners extend
 ```ts
 import { now, nowISO, nowMs, useClock, jumpTo, toChicagoISO, TZ } from "@/lib/time/clock";
 const t = useClock();          // Date; re-renders every 30 s and immediately on a Director jump
-repo code: ctx.now()           // ISO with Chicago offset, e.g. "2026-11-04T09:00:00-08:00"
+repo code: ctx.now()           // ISO with Chicago offset, e.g. "2026-11-04T09:00:00-06:00"
 jumpTo(DEMO.directorJump.at)   // Director "Jump to after hangout (Sun 3:15 PM)"
 ```
 `now = db.clock.virtual_at + (Date.now() − db.clock.real_at)`; `real_at` is re-stamped at boot (pinned clock, J5).
@@ -98,7 +98,7 @@ Store every timestamp as ISO **with offset**; display in `America/Chicago`.
 
 ## 5. Config
 `import { DEMO, APP, defaultConfig, AppConfigSchema } from "@/config"`; runtime values (admin-editable) are `db.config.{placement,planner,flags,demo}` via `useDb((db) => db.config.planner.lockThreshold)`.
-Canon (BLUEPRINT §0): anchor `2026-11-04T09:00:00-08:00`, Hoopers starter Sun Nov 8 1:00-3:00 PM PT, Southern African Sun Nov 15 1:00 PM Gas Works Park, `podsAtStart = 2`, 14 interests, `claudeBudgetMs = 8000`, `verificationMode = "simulated"`, `lockThreshold = 4`, run-it-back reveal only at ≥ 4 Yes.
+Canon (BLUEPRINT §0): anchor `2026-11-04T09:00:00-06:00`, Hoopers starter Sun Nov 8 1:00-3:00 PM CT, Southern African Sun Nov 15 1:00 PM Big Spring Park, `podsAtStart = 2`, 14 interests, `claudeBudgetMs = 8000`, `verificationMode = "simulated"`, `lockThreshold = 4`, run-it-back reveal only at ≥ 4 Yes.
 
 ## 6. Types: v1.1 additions to ARCHITECTURE §4
 - `SLOTS` += `saturday-evening`, `sunday-morning`, `sunday-afternoon`, `sunday-evening` (D3); `User.blocked_days: ("saturday"|"sunday")[]` (never sent to the planner).

@@ -4,7 +4,7 @@
 // FAIL (exit 1):
 //   rule 4  any disclaimer: demo, sample, simulated, pilot, prototype, synthetic, placeholder, launching, opening in...
 //           (one exception: the bare word "Demo" on the Mode row / Mode screen, gates.config.mjs MODE_OK)
-//   rule 5  a city word (Seattle, Washington, Bellevue, Shoreline, UW...) outside [data-allow-city]
+//   rule 5  a city word (Huntsville, Alabama, Madison, Decatur, AAMU...) outside [data-allow-city]
 //   proof   an invented count, testimonial, press line or star rating
 //   copy    an em dash in visible copy
 //   hidden  the Director visible without one of its triggers (?director=1, Ctrl/Cmd + ., 700 ms press on the mark);
@@ -46,7 +46,7 @@ const words = (s) => s.split(/\s+/).filter((w) => /[A-Za-z]/.test(w) && !/^\[.*\
 for (const [vpName, vp] of Object.entries(VIEWPORTS)) {
   if (only && only !== vpName) continue;
   for (const auth of ["none", "me"]) {
-    const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Los_Angeles" });
+    const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Chicago" });
     const page = await ctx.newPage();
     page.setDefaultNavigationTimeout(180_000);
     let ids = { me: null, member: null };

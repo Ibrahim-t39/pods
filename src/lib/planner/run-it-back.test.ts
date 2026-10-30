@@ -30,17 +30,17 @@ describe("revealRunItBack transaction", () => {
     const podId = Object.keys(base.pods)[0];
     return produce(base, (d: Draft<DbState>) => {
       d.hangouts.h1 = {
-        id: "h1", pod_id: podId, title: "Pickup basketball", starts_at: "2026-11-07T10:00:00-08:00", ends_at: "2026-11-07T12:00:00-08:00",
+        id: "h1", pod_id: podId, title: "Pickup basketball", starts_at: "2026-11-07T10:00:00-06:00", ends_at: "2026-11-07T12:00:00-06:00",
         venue_id: Object.keys(d.venues)[0], plan_text: "", is_starter: true, suggestion_id: "s1", status: "done", sequence: 1,
       };
-      for (const u of Object.keys(answers)) d.rsvps.push({ hangout_id: "h1", user_id: u, status: "going", checked_in: true, checked_in_at: "2026-11-07T12:10:00-08:00" });
+      for (const u of Object.keys(answers)) d.rsvps.push({ hangout_id: "h1", user_id: u, status: "going", checked_in: true, checked_in_at: "2026-11-07T12:10:00-06:00" });
       d.runItBack.h1 = { hangout_id: "h1", responses: {}, revealed_at: null };
       for (const [u, a] of Object.entries(answers)) d.runItBack.h1.responses[u] = a;
     });
   }
   it("a 4-person hangout with 3 yes and 1 not sure reveals 3 of 4", () => {
     const next = produce(withHangout({ a: "yes", b: "yes", c: "yes", d: "not_sure" }), (d) => {
-      expect(revealRunItBack(d, "h1", "2026-11-07T12:30:00-08:00")).toBe(true);
+      expect(revealRunItBack(d, "h1", "2026-11-07T12:30:00-06:00")).toBe(true);
     });
     expect(next.runItBack.h1.revealed_at).not.toBeNull();
     const pod = next.hangouts.h1.pod_id;
@@ -48,7 +48,7 @@ describe("revealRunItBack transaction", () => {
   });
   it("2 yes of 4 reveals as not this round, with no number", () => {
     const next = produce(withHangout({ a: "yes", b: "yes", c: "no", d: "not_sure" }), (d) => {
-      expect(revealRunItBack(d, "h1", "2026-11-07T12:30:00-08:00")).toBe(true);
+      expect(revealRunItBack(d, "h1", "2026-11-07T12:30:00-06:00")).toBe(true);
     });
     const pod = next.hangouts.h1.pod_id;
     expect(next.messages[pod].at(-1)?.text).toBe("Not this round. The pod stays.");

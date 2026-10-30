@@ -25,7 +25,7 @@ import { downloadIcs, icsFilename, icsForPlan } from "@/lib/platform/ics";
 import { DAY_PARTS, PART_LABEL, exceptionAt, isFree } from "@/lib/availability/exceptions";
 import { setException } from "@/lib/availability/write";
 import { useClock } from "@/lib/time/clock";
-import { seattleDayKey } from "@/lib/time/tz";
+import { chicagoDayKey } from "@/lib/time/tz";
 import { cn } from "@/lib/cn";
 import "@/components/pods/pods.css";
 import "./calendar.css";
@@ -53,7 +53,7 @@ function useCalendar() {
   const hues = useDb(
     useCallback((db) => Object.fromEntries(roomTables(db, minute).map((t) => [t.row.pod.id, t.hue])) as Record<string, PodHueKey>, [minute]),
   );
-  const today = seattleDayKey(now);
+  const today = chicagoDayKey(now);
   const byDay = useMemo(() => {
     const m: Record<string, CalItem[]> = {};
     for (const i of items) (m[i.day] ??= []).push(i);

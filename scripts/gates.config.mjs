@@ -83,7 +83,7 @@ export const MODE_OK = "[data-allow-mode], [role='radiogroup'][aria-label='Mode'
 export const MODE_WORD = /^Demo$/;
 
 /** Rule 5 (no city in the product). Allowed only inside [data-allow-city] (a venue address, the one city picker). */
-export const CITY = /\b(Seattle|Washington|Bellevue|Shoreline|UW|Emerald City)\b/;
+export const CITY = /\b(Huntsville|Alabama|Madison|Decatur|AAMU|A&M|Rocket City)\b/;
 
 /** Invented proof: counts, testimonials, press. */
 export const INVENTED = [

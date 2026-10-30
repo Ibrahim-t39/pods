@@ -14,10 +14,10 @@ const podSize = (podId: string) => db().memberships.filter((m) => m.pod_id === p
 
 async function onboard(interests = ["basketball", "guitar"]) {
   const r = localRepo();
-  const ch = await r.startPhoneAuth("(206) 555-0142");
+  const ch = await r.startPhoneAuth("(256) 555-0142");
   if (!ch.ok) throw new Error("no challenge");
   await r.verifyPhoneCode(ch.data.challengeId, "123456");
-  await r.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-14", city: "Seattle" });
+  await r.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-14", city: "Huntsville" });
   await r.setInterests(interests);
   await r.setIdentity({ heritage: { level: "country", code: "ZM" }, faith: { level: "denomination", code: "sda" }, consent: true });
   await r.setAvailability(["weekday-evening", "saturday-morning", "sunday-afternoon"], []);
@@ -91,10 +91,10 @@ for (const mode of ["demo", "live"] as AppMode[]) {
 
     it("before sign-up finishes, likes and communities propose nothing", async () => {
       const repo = localRepo();
-      const ch = await repo.startPhoneAuth("(206) 555-0142");
+      const ch = await repo.startPhoneAuth("(256) 555-0142");
       if (!ch.ok) throw new Error("no challenge");
       await repo.verifyPhoneCode(ch.data.challengeId, "123456");
-      await repo.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-14", city: "Seattle" });
+      await repo.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-14", city: "Huntsville" });
       await repo.setInterests(["basketball"]);
       await repo.addInterest("running");
       await repo.setIdentity({ heritage: { level: "country", code: "ZM" }, faith: null, consent: true });

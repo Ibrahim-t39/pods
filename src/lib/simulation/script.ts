@@ -25,7 +25,7 @@ const WELCOME_BY_KEY: Record<string, readonly string[]> = {
   sda: ["Welcome. Potlucks and walks are usually on the table.", "Happy to meet you. Take your time."],
 };
 const WELCOME_GENERIC = [
-  "What brought you to Seattle?",
+  "What brought you to Huntsville?",
   "Say hi whenever you're ready. We're all fairly new at this too.",
   "Anything you're hoping to try first?",
 ] as const;

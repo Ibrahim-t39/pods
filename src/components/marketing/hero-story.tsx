@@ -18,7 +18,7 @@ import { PLAN_FACTS } from "./story";
 import { Orbs } from "./orbs";
 import "./hero-story.css";
 
-const TIME = formatInTimeZone(DEMO.hoopers.starts_at, "America/Los_Angeles", "haaa").toLowerCase();
+const TIME = formatInTimeZone(DEMO.hoopers.starts_at, "America/Chicago", "haaa").toLowerCase();
 
 const STEPS = [
   { k: "Fit", line: "Three people, new in town." },

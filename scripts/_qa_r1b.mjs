@@ -5,7 +5,7 @@ const vpn = process.argv[2] || "mobile";
 const VP = { mobile:{viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true}, desktop:{viewport:{width:1440,height:900},deviceScaleFactor:1}}[vpn];
 const out = `/tmp/qa/b-${vpn}`; mkdirSync(out,{recursive:true});
 const b = await chromium.launch({executablePath:CHROME});
-const ctx = await b.newContext({...VP, locale:"en-US", timezoneId:"America/Los_Angeles"});
+const ctx = await b.newContext({...VP, locale:"en-US", timezoneId:"America/Chicago"});
 const page = await ctx.newPage(); page.setDefaultTimeout(20000);
 let n=0; const shot=async(name,w=1200)=>{n++;await page.waitForTimeout(w);await page.screenshot({path:`${out}/${String(n).padStart(2,"0")}-${name}.png`});};
 const ctl=async()=>console.log("  >",page.url().replace("http://localhost:3000",""),"|",(await page.evaluate(()=>[...document.querySelectorAll("button,a,input")].filter(e=>e.getBoundingClientRect().width>0).map(e=>{const r=e.getBoundingClientRect();return `${(e.innerText||e.value||e.getAttribute("aria-label")||"").replace(/\s+/g," ").slice(0,20)}[${Math.round(r.width)}x${Math.round(r.height)}]`}).join(";"))).slice(0,500));

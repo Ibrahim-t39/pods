@@ -89,7 +89,7 @@ function inspect() {
 for (const [vpName, vp] of Object.entries(VIEWPORTS)) {
   if (only && only !== vpName) continue;
   for (const auth of ["none", "me"]) {
-    const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Los_Angeles" });
+    const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Chicago" });
     const page = await ctx.newPage();
     page.setDefaultNavigationTimeout(180_000);
     const errors = [];

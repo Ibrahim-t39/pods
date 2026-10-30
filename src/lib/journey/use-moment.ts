@@ -6,7 +6,7 @@ import { useCallback } from "react";
 import { useDb } from "@/lib/db/hooks";
 import { useClock } from "@/lib/time/clock";
 import { podRows } from "@/components/pods/model";
-import { toSeattleISO } from "@/lib/time/tz";
+import { toChicagoISO } from "@/lib/time/tz";
 import { momentOf, type MomentOut } from "./moment";
 
 export function useMoment(): MomentOut {
@@ -19,7 +19,7 @@ export function useMoment(): MomentOut {
         const held = Object.values(db.hangouts).filter(
           (h) => h.status !== "cancelled" && Date.parse(h.ends_at) <= minute && rows.some((r) => r.pod.id === h.pod_id),
         ).length;
-        const hour = Number(toSeattleISO(minute).slice(11, 13));
+        const hour = Number(toChicagoISO(minute).slice(11, 13));
         return momentOf({ statuses: rows.map((r) => r.status), podIds: rows.map((r) => r.pod.id), held, hour });
       },
       [minute],

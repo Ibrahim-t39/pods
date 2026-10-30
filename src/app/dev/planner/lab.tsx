@@ -19,10 +19,10 @@ const POD = DEMO.hoopers.podId;
 async function ensurePlaced() {
   const repo = localRepo();
   if (useStore.getState().db.me) return repo;
-  const ch = await repo.startPhoneAuth("(206) 555-0142");
+  const ch = await repo.startPhoneAuth("(256) 555-0142");
   if (!ch.ok) return repo;
   await repo.verifyPhoneCode(ch.data.challengeId, "123456");
-  await repo.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-14", city: "Seattle" });
+  await repo.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-14", city: "Huntsville" });
   await repo.setInterests(["basketball", "guitar"]);
   await repo.setIdentity({ heritage: { level: "country", code: "ZM" }, faith: { level: "denomination", code: "sda" }, consent: true });
   await repo.setAvailability(["tuesday-evening", "thursday-evening", "sunday-afternoon"], ["saturday"]);

@@ -6,16 +6,16 @@ import type { DbState } from "@/lib/types";
 describe("threadOrder", () => {
   it("keeps insertion order on a timestamp tie (the @AI question stays after the earlier line)", () => {
     const rows = [
-      { at: "2026-11-04T20:00:00-08:00", k: "tobi" },
-      { at: "2026-11-04T20:00:00-08:00", k: "me" },
-      { at: "2026-11-04T20:00:00-08:00", k: "ai" },
+      { at: "2026-11-04T20:00:00-06:00", k: "tobi" },
+      { at: "2026-11-04T20:00:00-06:00", k: "me" },
+      { at: "2026-11-04T20:00:00-06:00", k: "ai" },
     ];
     expect(threadOrder(rows).map((r) => r.k)).toEqual(["tobi", "me", "ai"]);
   });
   it("orders by instant across DST offsets, not by string", () => {
     const rows = [
-      { at: "2026-11-01T01:40:00-07:00", k: "first" }, // 06:40Z
-      { at: "2026-11-01T01:10:00-08:00", k: "second" }, // 07:10Z, sorts first as a string
+      { at: "2026-11-01T01:40:00-05:00", k: "first" }, // 06:40Z
+      { at: "2026-11-01T01:10:00-06:00", k: "second" }, // 07:10Z, sorts first as a string
     ];
     expect(threadOrder([rows[1], rows[0]]).map((r) => r.k)).toEqual(["first", "second"]);
   });
@@ -40,8 +40,8 @@ describe("polls", () => {
     expect(polls.flatMap((p) => p.options.map((o) => o.label)).some(isRsvpOption)).toBe(false);
     const tacos = polls.find((p) => p.id === "poll_hoopers_tacos")!;
     expect(tacos.options.map((o) => o.label)).toEqual(["Tacos, yes", "Depends on the time", "Can't stay"]);
-    expect(pollClosed(tacos, Date.parse("2026-11-07T11:59:00-08:00"))).toBe(false);
-    expect(pollClosed(tacos, Date.parse("2026-11-07T12:00:00-08:00"))).toBe(true);
+    expect(pollClosed(tacos, Date.parse("2026-11-07T11:59:00-06:00"))).toBe(false);
+    expect(pollClosed(tacos, Date.parse("2026-11-07T12:00:00-06:00"))).toBe(true);
   });
   it("a closed status always wins", () => {
     expect(pollClosed({ status: "closed", closes_at: null }, 0)).toBe(true);

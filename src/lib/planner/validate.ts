@@ -21,7 +21,7 @@ export interface ValidateCtx {
 export interface ValidationResult {
   ok: boolean;
   errors: string[];
-  /** Normalized plan (times with the Seattle offset) when ok. */
+  /** Normalized plan (times with the Chicago offset) when ok. */
   plan?: Plan;
   venue?: PlannerVenue;
 }

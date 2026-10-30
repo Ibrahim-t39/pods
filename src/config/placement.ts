@@ -11,7 +11,7 @@ export const PlacementConfigSchema = z.object({
   maxAge: z.number().int(),
   maxInterestPods: z.number().int().min(1),
   maxCommunityPods: z.number().int().min(0),
-  metro: z.array(z.enum(["Seattle", "Bellevue", "Shoreline"])),
+  metro: z.array(z.enum(["Huntsville", "Madison", "Decatur"])),
   preferUpcomingHangout: z.boolean(),
 });
 export type PlacementConfig = z.infer<typeof PlacementConfigSchema>;
@@ -26,6 +26,6 @@ export const placementDefaults: PlacementConfig = PlacementConfigSchema.parse({
   maxAge: 29,
   maxInterestPods: 5,
   maxCommunityPods: 2,
-  metro: ["Seattle", "Bellevue", "Shoreline"],
+  metro: ["Huntsville", "Madison", "Decatur"],
   preferUpcomingHangout: true,
 });

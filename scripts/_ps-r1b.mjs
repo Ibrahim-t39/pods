@@ -8,7 +8,7 @@ const VPS = { m: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, 
 const browser = await chromium.launch({ executablePath: CHROME });
 for (const [vn, vp] of Object.entries(VPS)) {
   if (only && only !== vn) continue;
-  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Los_Angeles" });
+  const ctx = await browser.newContext({ ...vp, locale: "en-US", timezoneId: "America/Chicago" });
   const page = await ctx.newPage(); page.setDefaultTimeout(15000);
   const errs = []; page.on("pageerror", (e) => errs.push(e.message));
   const shot = async (n) => { await page.waitForTimeout(1100); await page.screenshot({ path: `${dir}/${n}.${vn}.png` }); console.log(`${dir}/${n}.${vn}.png`); };

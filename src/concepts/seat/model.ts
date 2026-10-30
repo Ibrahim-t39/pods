@@ -13,8 +13,8 @@ export const HUES: Record<Hue, { solid: string; tint: string; deep: string }> = 
 const DISC = ["#FD6123", "#1B78FE", "#19C185", "#40313F", "#01627E", "#315B26"];
 export const discColor = (id: ID) => DISC[hash32(`seat:${id}`) % DISC.length];
 
-const CITY = /\s*·\s*Seattle\b|\bSeattle\s+|\s+Seattle\b|\bEmerald City\s+/g;
-/** Table names never carry the city (product rule): "Hoopers" → "Hoopers". */
+const CITY = /\s*·\s*Huntsville\b|\bHuntsville\s+|\s+Huntsville\b|\bRocket City\s+/g;
+/** Table names never carry the city (product rule): "Huntsville Hoopers" → "Hoopers". */
 export function tableName(p: Pod): string {
   const n = p.name.replace(CITY, "").trim();
   return n || p.topic;
@@ -133,7 +133,7 @@ export function nextTableId(db: DbState, tables: MyTable[]): ID | null {
   return best?.id ?? tables.find((t) => !t.onDeck)?.pod.id ?? null;
 }
 
-// ── formatting (Seattle time, short) ───────────────────────────────────
+// ── formatting (Chicago time, short) ───────────────────────────────────
 const DOW = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const MON = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 function parts(iso: string) {
@@ -178,7 +178,7 @@ export function captions(s: HangoutSuggestion, v: Venue | undefined, rain: Venue
 
 /** One mono line per planner step, short enough for the table rim. */
 export function rimLine(step: { id: string; label: string; detail?: string }): string {
-  const d = (step.detail ?? "").replace(/Seattle\s*/g, "").replace(/\s+·\s+/g, " · ");
+  const d = (step.detail ?? "").replace(/Huntsville\s*/g, "").replace(/\s+·\s+/g, " · ");
   switch (step.id) {
     case "pod":
       return (d.split(" · ").slice(1).join(" · ") || "reading the table").toLowerCase();

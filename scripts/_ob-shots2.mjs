@@ -59,7 +59,7 @@ for (const vp of VPS) {
     await btn("Next").click();
     await page.waitForURL(/account/);
     await shot("10-seat-number");
-    await page.locator(".pods-ob-phone").fill("2065550142");
+    await page.locator(".pods-ob-phone").fill("2565550142");
     await shot("11-seat-filled", 300);
     await btn("Send code").click();
     await page.waitForTimeout(800);

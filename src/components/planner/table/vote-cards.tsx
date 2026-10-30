@@ -13,13 +13,13 @@ import { hm, type Person } from "./model";
 export interface VoteCardOption {
   id: string;
   iso: string;
-  /** the full place name ("Miller Community Center"), never truncated */
+  /** the full place name ("Brahan Spring Rec Center"), never truncated */
   place: string;
   voters: Person[];
 }
 
 const DAY = 86_400_000;
-export const dateWord = (iso: string) => new Date(iso).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "America/Los_Angeles" });
+export const dateWord = (iso: string) => new Date(iso).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 
 /** The +14-day option first, then by date. */
 export function orderOptions<T extends { iso: string }>(options: T[], lastIso: string | null | undefined): { list: T[]; twoWeeks: T | null } {

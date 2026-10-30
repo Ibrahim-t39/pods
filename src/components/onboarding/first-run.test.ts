@@ -10,11 +10,11 @@ const NEW = ["cooking", "coffee", "gym_yoga", "dancing", "gaming"];
 
 async function signUp(interests: string[]) {
   const repo = localRepo();
-  const ch = await repo.startPhoneAuth("(206) 555-0190");
+  const ch = await repo.startPhoneAuth("(256) 555-0190");
   if (!ch.ok) throw new Error("no challenge");
   const u = await repo.verifyPhoneCode(ch.data.challengeId, "123456");
   if (!u.ok) throw new Error(u.error.code);
-  await repo.updateAbout({ first_name: "Ade", nickname: null, date_of_birth: "2003-03-04", city: "Seattle" });
+  await repo.updateAbout({ first_name: "Ade", nickname: null, date_of_birth: "2003-03-04", city: "Huntsville" });
   const r = await repo.setInterests(interests);
   if (!r.ok) throw new Error(r.error.code);
   await repo.setAvailability(["saturday-morning", "weekday-evening"], []);

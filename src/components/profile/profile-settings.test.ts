@@ -33,13 +33,13 @@ describe("contact", () => {
 });
 
 const plan = (o: Partial<PlanItem>): PlanItem =>
-  ({ id: "x", kind: "plan", podId: "p1", starts_at: "2026-11-07T18:00:00.000Z", locked: false, ...o }) as PlanItem;
+  ({ id: "x", kind: "plan", podId: "p1", starts_at: "2026-11-07T16:00:00.000Z", locked: false, ...o }) as PlanItem;
 const NOW = Date.parse("2026-11-01T12:00:00.000Z");
 
 describe("profile pod line", () => {
   it("formats times as labels", () => {
-    expect(shortWhen("2026-11-07T18:00:00.000Z")).toBe("Sat, Nov 7 · 10am");
-    expect(shortWhen("2026-11-07T18:00:00.000Z")).not.toMatch(/AM|:00/);
+    expect(shortWhen("2026-11-07T16:00:00.000Z")).toBe("Sat, Nov 7 · 10am");
+    expect(shortWhen("2026-11-07T16:00:00.000Z")).not.toMatch(/AM|:00/);
   });
   it("reads 'Voting on #2' while a vote is open, not one option's date", () => {
     const db = {

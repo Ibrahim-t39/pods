@@ -17,7 +17,7 @@ import { ribAgain, ribShouldReveal } from "@/lib/planner/run-it-back";
 type D = Draft<DbState>;
 const HOUR = 3_600_000;
 const plusHours = (iso: string, h: number) => toOffsetISO(Date.parse(iso) + h * HOUR, iso);
-/** Keep the offset style of the reference ISO (Seattle). */
+/** Keep the offset style of the reference ISO (Chicago). */
 function toOffsetISO(ms: number, ref: string): string {
   const off = /([+-]\d{2}):(\d{2})$/.exec(ref);
   const offMin = off ? (off[1].startsWith("-") ? -1 : 1) * (Math.abs(Number(off[1])) * 60 + Number(off[2])) : 0;

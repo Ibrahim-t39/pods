@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toSeattleISO } from "@/lib/time/tz";
+import { toChicagoISO } from "@/lib/time/tz";
 import { useStore } from "@/lib/db/store";
 import { virtualNowMs } from "@/lib/time/clock-core";
 
@@ -21,5 +21,5 @@ export function useAdminNow(): { date: Date; iso: string } {
     };
   }, []);
   const ms = virtualNowMs(clock, hydrated, hydrated ? wall : null);
-  return { date: new Date(ms), iso: toSeattleISO(ms) };
+  return { date: new Date(ms), iso: toChicagoISO(ms) };
 }

@@ -78,7 +78,7 @@ export function snapFromPlan(
   source: Snap["source"],
   weather: string | null,
 ): Snap {
-  const fix = (s: string) => (/[+-]\d\d:\d\d$|Z$/.test(s) ? s : `${s}-08:00`);
+  const fix = (s: string) => (/[+-]\d\d:\d\d$|Z$/.test(s) ? s : `${s}-06:00`);
   return {
     round,
     summary: p.summary,

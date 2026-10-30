@@ -108,7 +108,7 @@ export function Doorway() {
     go("finding");
     const slots = FREE.filter((f) => free.includes(f.id)).flatMap((f) => f.slots) as Slot[];
     const steps = [
-      () => repo.updateAbout({ first_name: name.trim(), nickname: null, date_of_birth: dobISO!, city: "Seattle" }),
+      () => repo.updateAbout({ first_name: name.trim(), nickname: null, date_of_birth: dobISO!, city: "Huntsville" }),
       () => repo.setInterests(likes),
       () => repo.setAvailability(slots),
       () => repo.acceptPledge(),

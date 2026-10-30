@@ -7,7 +7,7 @@
 import type { DbState, ID } from "@/lib/types";
 import { myPlans } from "./selectors";
 import { icsDate, icsEscape, icsFold } from "./ics";
-import { seattleDayKey } from "@/lib/time/tz";
+import { chicagoDayKey } from "@/lib/time/tz";
 
 export type CalKind = "plan" | "hangout" | "vote" | "checkin";
 
@@ -21,7 +21,7 @@ export interface CalItem {
   line: string;
   starts_at: string;
   ends_at: string;
-  /** Seattle calendar day, YYYY-MM-DD */
+  /** Chicago calendar day, YYYY-MM-DD */
   day: string;
   href: string;
   needsYou: boolean;
@@ -44,7 +44,7 @@ export function calendarItems(db: DbState, nowMs: number): CalItem[] {
       line: p.locked ? (ended ? "Happened" : p.me === "going" ? "Locked · you're in" : "Locked") : p.me === "going" ? "You're in · waiting on the pod" : "Say if you're in",
       starts_at: p.starts_at,
       ends_at: p.ends_at,
-      day: seattleDayKey(p.starts_at),
+      day: chicagoDayKey(p.starts_at),
       href,
       needsYou: !p.locked && p.me !== "going",
       venue,
@@ -52,7 +52,7 @@ export function calendarItems(db: DbState, nowMs: number): CalItem[] {
     if (p.locked && ended && p.me === "going" && !p.checkedIn && nowMs - Date.parse(p.ends_at) < 3 * 86_400_000) {
       out.push({
         id: `${p.id}:checkin`, kind: "checkin", podId: p.podId, podName: p.podName, title: "Check in", line: `How was ${p.title.toLowerCase()}?`,
-        starts_at: p.ends_at, ends_at: p.ends_at, day: seattleDayKey(p.ends_at), href: `/app/pods/${p.podId}`, needsYou: true, venue: null,
+        starts_at: p.ends_at, ends_at: p.ends_at, day: chicagoDayKey(p.ends_at), href: `/app/pods/${p.podId}`, needsYou: true, venue: null,
       });
     }
   }
@@ -62,7 +62,7 @@ export function calendarItems(db: DbState, nowMs: number): CalItem[] {
     const voted = !!(db.me && v.votes[db.me]);
     out.push({
       id: `${v.id}:vote`, kind: "vote", podId: v.pod_id, podName: names[v.pod_id], title: "Vote closes", line: voted ? "You voted" : "Pick the next hangout",
-      starts_at: v.closes_at, ends_at: v.closes_at, day: seattleDayKey(v.closes_at), href: `/app/pods/${v.pod_id}`, needsYou: !voted, venue: null,
+      starts_at: v.closes_at, ends_at: v.closes_at, day: chicagoDayKey(v.closes_at), href: `/app/pods/${v.pod_id}`, needsYou: !voted, venue: null,
     });
   }
   return out.sort((a, b) => a.starts_at.localeCompare(b.starts_at));

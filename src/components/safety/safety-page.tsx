@@ -206,7 +206,7 @@ export function SafetyPage() {
   );
 }
 
-/** "(206) 555-0142" for US numbers, else the digits as saved. Display only. */
+/** "(256) 555-0142" for US numbers, else the digits as saved. Display only. */
 function prettyPhone(p: string) {
   const d = p.replace(/\D/g, "");
   const us = d.length === 11 && d.startsWith("1") ? d.slice(1) : d.length === 10 ? d : null;

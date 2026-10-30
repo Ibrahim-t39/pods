@@ -36,9 +36,10 @@ export interface PodWorld {
 /** Which venue-fit key the planner counts for this pod (communities plan like any pod: public, cheap, daytime). */
 const interestTopicOf = (def: PodDef) => (def.type === "interest" ? def.plan : def.plan === "sda" ? "hiking" : "any");
 
-/** Can this pod meet in this slot at this venue? (Dark evenings outdoors, no evening trips to a cafe with a bar.) */
+/** Can this pod meet in this slot at this venue? (Closed days, dark evenings outdoors, no evening trips to a cafe with a bar.) */
 function slotOk(plan: string, venueId: string, slot: PlanSlot, afterDate: string): boolean {
   if (slot === "saturday-evening" || slot === "sunday-evening") return false;
+  if (venueId === "venue_lowe_mill" && SLOT_WEEKDAY[slot] === 0) return false; // closed Sun to Tue
   if (venueId === "venue_lucky_dice" && isWeekdayEvening(slot)) return false; // the cafe has a bar: daytime only
   if (!VENUE_BY_ID[venueId].indoor && isWeekdayEvening(slot) && afterDate >= "2026-10-20") return false; // dark by 6
   void plan;
@@ -76,7 +77,7 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
     const ages = members.map((u) => ageOn(u.date_of_birth, anchor));
     const pod: Pod = {
       id: def.id, name: def.name, photo_url: `/pods/${def.id}.svg`, type: def.type, community_kind: def.kind, topic: def.topic,
-      topic_key: def.topic_key, city: "Seattle metro", age_min: Math.min(19, ...ages), age_max: Math.max(25, ...ages),
+      topic_key: def.topic_key, city: "Huntsville metro", age_min: Math.min(19, ...ages), age_max: Math.max(25, ...ages),
       widened_from: def.widened ?? null, status: "active", created_at: formedAt, hue: def.hue,
     };
     w.pods.push(pod);
@@ -124,13 +125,13 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
       const slot = isStrings ? ("weekday-evening" as PlanSlot) : ranks[0].slot;
       const date = isHoopers ? dateOf(DEMO.hoopers.starts_at)
         : isSA ? dateOf(DEMO.southernAfrican.starts_at)
-        : isStrings ? "2026-11-12" // Thu, 5:00 PM at Center Armory (indoors, open daily)
+        : isStrings ? "2026-11-12" // Thu, 5:00 PM at Lowe Mill (open Wed to Sat)
         : "2026-11-29"; // Adventist: Sunday trail walk
       const free = ranks.find((r) => r.slot === slot)!.free;
       const built = buildPlan({
         podId: def.id, podName: def.name, topicKey: def.plan, interestTopic: interestTopicOf(def), members: totalMembers, slot, free, topTwo: top, date,
         startHHMM: isStrings ? "17:00" : undefined,
-        title: isHoopers ? DEMO.hoopers.title : isSA ? "Sunday picnic at Gas Works Park" : undefined,
+        title: isHoopers ? DEMO.hoopers.title : isSA ? "Sunday picnic at Big Spring Park" : undefined,
         reasonOverride: isHoopers ? `Chosen because ${DEMO.hoopers.reason}.` : undefined,
         costText: isHoopers || isSA ? "Free" : undefined,
       });
@@ -149,7 +150,7 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
       }
 
       if (onDeckPod) {
-        pushMsg(null, `Welcome to ${def.name}. You're ${totalMembers} people ${WHAT_WELCOME[def.plan]}, all around Seattle. This pod opens after your first check-in anywhere, and Pods plans your first hangout then.`, addMinutes(formedAt, 6), "host");
+        pushMsg(null, `Welcome to ${def.name}. You're ${totalMembers} people ${WHAT_WELCOME[def.plan]}, all around Huntsville. This pod opens after your first check-in anywhere, and Pods plans your first hangout then.`, addMinutes(formedAt, 6), "host");
       } else {
         pushMsg(null, HOST.welcome(def.name, totalMembers, WHAT_WELCOME[def.plan]), addMinutes(formedAt, 6), "host",
           isHoopers ? { quick_replies: ["👋 Hey all", "Just moved here", "Who's bringing a ball?"] } : { quick_replies: ["👋 Hey all", "Just moved here"] });
@@ -167,7 +168,7 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
         pushMsg(botId("Ama"), "I'll bring a ball and a pump, mine's a little flat", at("2026-11-02", "19:30"));
         pushMsg(botId("Tobi"), "Thanks. I'll bring water for everyone", at("2026-11-02", "19:36"), "text", { reply_to: msgs[msgs.length - 1].id, reactions: { heart: [botId("Ama")] } });
         pushMsg(botId("Kayla"), "Cool, I'll be the one in the pink socks", at("2026-11-03", "20:05"), "text", { reactions: { laugh: [botId("Tobi"), botId("Malik")] } });
-        pushMsg(null, "Quick update: 3 of 8 are in for Saturday at Miller Playfield. One more and it locks.", at("2026-11-03", "20:30"), "host", { quick_replies: ["What to bring?", "Who's in?"] });
+        pushMsg(null, "Quick update: 3 of 8 are in for Saturday at Brahan Spring Park. One more and it locks.", at("2026-11-03", "20:30"), "host", { quick_replies: ["What to bring?", "Who's in?"] });
       } else if (onDeckPod) {
         pushMsg(a1.id, pickLine(lines.misc, "m1"), at("2026-11-02", "11:25"));
         pushMsg(a2.id, pickLine(lines.misc, "m2"), at("2026-11-03", "18:40"));
@@ -222,7 +223,7 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
         podId: def.id, podName: def.name, topicKey: climbingReview && isUp ? "climbing_gym" : def.plan, interestTopic: interestTopicOf(def), members: members.length, slot, free, topTwo: ranks.slice(0, 2),
         date, overBudget: climbingReview && isUp,
         venueId: climbingReview && isUp ? "venue_high_point_climbing" : rotated,
-        title: climbingReview && isUp ? "Intro climb at Vertical World" : undefined,
+        title: climbingReview && isUp ? "Intro climb at High Point, MidCity" : undefined,
         costText: climbingReview && isUp ? "Day pass, price to confirm" : undefined,
         reasonOverride: climbingReview && isUp ? `Chosen because ${free} of ${members.length} of you are free ${SLOT_PHRASE[slot]}. Day passes are over the usual $15, so a person checks it first.` : undefined,
       });
@@ -351,14 +352,14 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
   // ── cached Claude outputs for the four visible jobs (BLUEPRINT §6.6): why_fits, next_options, widen_explainer ──
   const cache = (pod_id: ID, job: PlannerCacheEntry["job"], output: unknown) =>
     w.plannerCache.push({ pod_id, job, source: "seed", output, created_at: at("2026-11-01", "09:10") });
-  cache(DEMO.hoopers.podId, "why_fits", { line: "Eight people who play pickup near Seattle, most free Sunday afternoons" });
+  cache(DEMO.hoopers.podId, "why_fits", { line: "Eight people who play pickup near Huntsville, most free Sunday afternoons" });
   cache("pod_rocket_city_strings", "why_fits", { line: "Six people who play guitar, free after work on weekdays" });
   cache(DEMO.southernAfrican.podId, "why_fits", { line: "Seven people with roots across Southern Africa, most free Sunday afternoons" });
   cache("pod_adventist_young_adults", "why_fits", { line: "Eight people from your community, nearly all free Sunday afternoons" });
   cache(DEMO.southernAfrican.podId, "widen_explainer", {
     body: "Only 3 Zambians live nearby, so we widened to Southern African. That gave you a group of 7.",
   });
-  cache("pod_adventist_young_adults", "widen_explainer", { body: "No widening needed: your community already has a group of 8 in Seattle." });
+  cache("pod_adventist_young_adults", "widen_explainer", { body: "No widening needed: your community already has a group of 8 in Huntsville." });
   // Job 3: option 3 for Hoopers' hangout #2 (options 1-2 are rule-based, see DEMO.hangout2Options).
   const o3 = buildPlan({
     podId: DEMO.hoopers.podId, podName: "Hoopers", topicKey: "basketball", interestTopic: "basketball", members: 8, slot: "saturday-morning", free: 7,
@@ -367,7 +368,7 @@ export function buildPodWorld(users: Map<string, User>, anchor: string): PodWorl
   });
   o3.plan.schedule = [
     { time: "10:00 AM", item: "Meet at the courts" }, { time: "10:15 AM", item: "Shootaround, pick teams" }, { time: "10:30 AM", item: "Games, winners stay on" },
-    { time: "11:45 AM", item: "Cool down" }, { time: "12:15 PM", item: "Optional coffee downtown at Victrola Coffee" },
+    { time: "11:45 AM", item: "Cool down" }, { time: "12:15 PM", item: "Optional coffee downtown at Honest Coffee Roasters" },
   ];
   cache(DEMO.hoopers.podId, "next_options", { options: [o3.plan], reasons: ["Keeps what worked and adds the food-after people asked for."] });
   return w;

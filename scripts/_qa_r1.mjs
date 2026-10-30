@@ -5,7 +5,7 @@ const vpn = process.argv[2] || "mobile";
 const VP = { mobile:{viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true}, desktop:{viewport:{width:1440,height:900},deviceScaleFactor:1}}[vpn];
 const out = `/tmp/qa/${vpn}`; mkdirSync(out,{recursive:true});
 const b = await chromium.launch({executablePath:CHROME});
-const ctx = await b.newContext({...VP, locale:"en-US", timezoneId:"America/Los_Angeles"});
+const ctx = await b.newContext({...VP, locale:"en-US", timezoneId:"America/Chicago"});
 const page = await ctx.newPage(); page.setDefaultTimeout(30000);
 const errs=[]; page.on("pageerror",e=>errs.push(e.message)); page.on("console",m=>m.type()==="error"&&errs.push(m.text().slice(0,160)));
 let n=0;

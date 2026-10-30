@@ -8,7 +8,7 @@ import { DEMO } from "@/config/demo";
 import type { DbState, HangoutSuggestion } from "@/lib/types";
 import { clampLock, isFirstHangout, lockBounds, lockMinFor, lockMinForTarget, lockRule, resolveLock } from "./lock";
 
-const NOW = "2026-11-04T09:00:00-08:00";
+const NOW = "2026-11-04T09:00:00-06:00";
 const hoopers = (db: DbState) => db.suggestions[DEMO.hoopers.suggestionId];
 const notGoing = (db: DbState, s: HangoutSuggestion) =>
   podMembers(db, s.pod_id).map((m) => m.user_id).filter((u) => !goingUserIds(db, s.id).includes(u));
@@ -47,7 +47,7 @@ describe("lockRule (AI fallback)", () => {
   });
   it("never above pod size; a 5v5 in a small pod drops to a format that fits", () => {
     expect(lockRule({ key: "basketball", size: 3 }).min_to_lock).toBe(3);
-    const r = lockRule({ key: "basketball", size: 7, format: "5v5 at Miller" });
+    const r = lockRule({ key: "basketball", size: 7, format: "5v5 at Brahan" });
     expect(r.min_to_lock).toBe(6);
     expect(r.lock_reason).toMatch(/3v3/);
     expect(lockRule({ key: "basketball", size: 10, format: "5v5 full run" }).min_to_lock).toBe(10);

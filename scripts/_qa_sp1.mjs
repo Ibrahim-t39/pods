@@ -4,7 +4,7 @@ const vpn = process.argv[2];
 const VP = { m:{viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true}, d:{viewport:{width:1440,height:900},deviceScaleFactor:1}}[vpn];
 const out=`/tmp/qa/${vpn}`;
 const b = await chromium.launch({executablePath:CHROME});
-const ctx = await b.newContext({...VP, locale:"en-US", timezoneId:"America/Los_Angeles"});
+const ctx = await b.newContext({...VP, locale:"en-US", timezoneId:"America/Chicago"});
 const page = await ctx.newPage(); page.setDefaultTimeout(20000);
 let n=0;
 const shot=async(name,full)=>{n++;await page.waitForTimeout(1300);await page.screenshot({path:`${out}/${String(n).padStart(2,"0")}-${name}.png`,fullPage:!!full});};

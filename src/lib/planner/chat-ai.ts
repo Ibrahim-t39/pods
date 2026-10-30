@@ -32,7 +32,7 @@ export function intentOf(q: string): AiIntent {
 
 const timeOf = (iso: string) => {
   const d = new Date(iso);
-  return d.toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" }).replace(":00", "");
+  return d.toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" }).replace(":00", "");
 };
 
 const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);

@@ -41,7 +41,7 @@ export function buildSeed(anchor: string): DbState {
   ];
   const memberships: Membership[] = world.memberships.map((m) => {
     const hit = left.find(([u, p]) => u === m.user_id && p === m.pod_id);
-    return hit ? { ...m, left_at: `${hit[2]}T18:00:00-07:00` } : m;
+    return hit ? { ...m, left_at: `${hit[2]}T18:00:00-05:00` } : m;
   });
 
   const interestIds = new Set(INTERESTS.map((i: Interest) => i.id));
@@ -90,8 +90,8 @@ export function buildSeed(anchor: string): DbState {
 }
 
 /**
- * Hoopers venue variant. Default (video script, Scene 5) is "park_courts": Saturday 10am on Miller Playfield's outdoor
- * courts, free, with Miller Community Center as the rain plan. The Director's "Make it rain" flips to "rec_center": the same
+ * Hoopers venue variant. Default (video script, Scene 5) is "park_courts": Saturday 10am on Brahan Spring Park's outdoor
+ * courts, free, with Brahan Spring Rec Center as the rain plan. The Director's "Make it rain" flips to "rec_center": the same
  * run moves indoors. Mutates a draft (call inside repo.commit) or a fresh buildSeed result. Idempotent.
  */
 export function applyVenueVariant(d: DbState, variant: "rec_center" | "park_courts"): void {
@@ -108,22 +108,22 @@ export function applyVenueVariant(d: DbState, variant: "rec_center" | "park_cour
     s.plan_json.venue_id = park.id;
     s.plan_json.rain_venue_id = rec.id;
     s.plan_json.cost = "Free";
-    s.plan_json.rain_plan = "If rain is likely, Pods moves it to Miller Community Center and tells everyone.";
+    s.plan_json.rain_plan = "If rain is likely, Pods moves it to Brahan Spring Rec Center and tells everyone.";
     s.plan_json.schedule[0] = { ...s.plan_json.schedule[0], item: "Meet at the courts" };
     s.trace = s.trace.map((x) =>
       x.id === "weather" ? { ...x, detail: "Rain plan included; the forecast is checked live" }
-      : x.id === "validate" ? { ...x, detail: "Miller Playfield ✓ public ✓ free ✓ daytime ✓ on the list" } : x);
+      : x.id === "validate" ? { ...x, detail: "Brahan Spring Park ✓ public ✓ free ✓ daytime ✓ on the list" } : x);
   } else {
     s.venue_id = rec.id;
-    s.summary = "Saturday pickup at Miller Community Center";
+    s.summary = "Saturday pickup at Brahan Spring Rec Center";
     s.plan_json.summary = s.summary;
     s.plan_json.venue_id = rec.id;
     s.plan_json.rain_venue_id = null;
     s.plan_json.cost = "Free";
-    s.plan_json.rain_plan = "Rain plan on: the run moves indoors to Miller Community Center.";
+    s.plan_json.rain_plan = "Rain plan on: the run moves indoors to Brahan Spring Rec Center.";
     s.plan_json.schedule[0] = { ...s.plan_json.schedule[0], item: "Meet at the entrance" };
     s.trace = s.trace.map((x) =>
       x.id === "weather" ? { ...x, detail: "Rain likely, so the rain plan is on" }
-      : x.id === "validate" ? { ...x, detail: "Miller Community Center ✓ public ✓ free ✓ daytime ✓ on the list" } : x);
+      : x.id === "validate" ? { ...x, detail: "Brahan Spring Rec Center ✓ public ✓ free ✓ daytime ✓ on the list" } : x);
   }
 }

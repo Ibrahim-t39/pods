@@ -6,7 +6,7 @@ import type { DbState, Hangout, HangoutSuggestion, ID, Membership, NextHangoutVo
 import { activeSuggestion, goingUserIds, hangoutForSuggestion, membership, myMemberships, podMembers } from "@/lib/db/selectors";
 import { toPublicMember } from "@/lib/utils";
 import { formatInTimeZone } from "date-fns-tz";
-import { toSeattleISO, TZ } from "@/lib/time/tz";
+import { toChicagoISO, TZ } from "@/lib/time/tz";
 import { cardView } from "@/lib/planner/card-state";
 
 const MIN = 60_000;
@@ -225,7 +225,7 @@ export interface PodRowVM {
 }
 
 function isToday(iso: string, nowMs: number) {
-  return toSeattleISO(Date.parse(iso)).slice(0, 10) === toSeattleISO(nowMs).slice(0, 10);
+  return toChicagoISO(Date.parse(iso)).slice(0, 10) === toChicagoISO(nowMs).slice(0, 10);
 }
 
 export function podStatus(db: DbState, pod: Pod, m: Membership, plan: PlanVM | null, loop: LoopStage | null, nowMs: number): PodStatus {
@@ -407,7 +407,7 @@ export function dayWord(iso: string, nowMs?: number): string {
 
 function near(iso: string, nowMs?: number) {
   if (nowMs == null) return true;
-  const days = (Date.parse(toSeattleISO(Date.parse(iso)).slice(0, 10)) - Date.parse(toSeattleISO(nowMs).slice(0, 10))) / 86_400_000;
+  const days = (Date.parse(toChicagoISO(Date.parse(iso)).slice(0, 10)) - Date.parse(toChicagoISO(nowMs).slice(0, 10))) / 86_400_000;
   return days >= 0 && days <= 6;
 }
 
@@ -492,6 +492,6 @@ export function nextLine(t: RoomTable | undefined, nowMs: number): string | null
       break;
   }
   if (!row.plan || row.plan.s.status === "pending_review") return null;
-  const today = toSeattleISO(Date.parse(row.plan.startsAt)).slice(0, 10) === toSeattleISO(nowMs).slice(0, 10);
+  const today = toChicagoISO(Date.parse(row.plan.startsAt)).slice(0, 10) === toChicagoISO(nowMs).slice(0, 10);
   return `${row.name}, ${today ? "today" : dayWord(row.plan.startsAt, nowMs)} ${shortTime(row.plan.startsAt)}.`;
 }

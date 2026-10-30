@@ -20,7 +20,7 @@ import { useDb, useMe } from "@/lib/db/hooks";
 import { activeDestination, destinationsFor, DESTINATIONS, type Destination, type DestinationId } from "@/lib/platform/nav";
 import { searchAll, unreadCount } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
-import { toSeattleISO } from "@/lib/time/tz";
+import { toChicagoISO } from "@/lib/time/tz";
 import { NAV_GLYPH, SearchGlyph } from "./nav-glyphs";
 import { isTypingTarget } from "./shortcuts";
 
@@ -229,7 +229,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const [q, setQ] = useState("");
   const [at, setAt] = useState(0);
   const input = useRef<HTMLInputElement>(null);
-  const iso = toSeattleISO(useClock(60_000).getTime());
+  const iso = toChicagoISO(useClock(60_000).getTime());
   const found = useDb(useCallback((db) => (q.trim() ? searchAll(db, q, iso, 8) : []), [q, iso]));
 
   const hits: Hit[] = useMemo(() => {

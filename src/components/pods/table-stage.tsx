@@ -60,7 +60,7 @@ function activityWord(event: string) {
   return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), 20)).trimEnd()}…`;
 }
 
-/** Venue names step down to the place word ("Miller Community Center" → "Miller"), T5. */
+/** Venue names step down to the place word ("Brahan Spring Rec Center" → "Brahan Spring"), T5. */
 function placeWord(name: string) {
   return name.replace(/\s+(Rec(reation)? Center|Community Center|Public Library|Library|Park|Center|Courts?)$/i, "").trim() || name;
 }

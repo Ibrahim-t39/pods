@@ -41,7 +41,7 @@ export const TOPICS: Record<string, Topic> = {
   running: {
     noun: "easy loop", event: "Easy run or walk, every pace welcome", venue: "venue_big_spring_park", rainVenue: "venue_hmcpl_main",
     bring: ["Water", "Shoes you can walk in after"], dur: 90, fits: "running and walking",
-    sched: [[0, "Meet at the main entrance"], [10, "Easy loop together, groups by pace"], [60, "Stretch and talk"], [75, "Coffee if people want it"]],
+    sched: [[0, "Meet by the footbridge"], [10, "Easy loop together, groups by pace"], [60, "Stretch and talk"], [75, "Coffee if people want it"]],
     icebreaker: "What's the one song that gets you moving, no judgment?",
   },
   hiking: {
@@ -99,7 +99,7 @@ export const TOPICS: Record<string, Topic> = {
     icebreaker: "What book did you finish most recently, and would you press it on a stranger?",
   },
   art: {
-    noun: "studio walk", event: "Wander the building, then sketch or talk about what we saw", venue: "venue_lowe_mill", rainVenue: null,
+    noun: "studio walk", event: "Wander the studios, then sketch or talk about what we saw", venue: "venue_lowe_mill", rainVenue: null,
     bring: ["A sketchbook or notes app", "Something to draw with"], dur: 90, fits: "art and making",
     sched: [[0, "Meet at the main entrance"], [10, "Wander on your own"], [50, "Regroup and compare favorites"], [75, "Plan a make-it hangout"]],
     icebreaker: "What's the last thing you made that you were proud of?",
@@ -107,7 +107,7 @@ export const TOPICS: Record<string, Topic> = {
   photography: {
     noun: "photo walk", event: "Slow photo walk, phone or camera, no experience needed", venue: "venue_big_spring_park", rainVenue: "venue_hmcpl_main",
     bring: ["A phone or camera", "Layers"], dur: 120, fits: "photography",
-    sched: [[0, "Meet at the main entrance"], [10, "Walk the loop, shoot what you like"], [80, "Share a favorite each"], [105, "Wrap up"]],
+    sched: [[0, "Meet by the footbridge"], [10, "Walk the loop, shoot what you like"], [80, "Share a favorite each"], [105, "Wrap up"]],
     icebreaker: "What's one photo you took that you would frame?",
   },
   volunteering: {
@@ -120,13 +120,13 @@ export const TOPICS: Record<string, Topic> = {
   southern_african: {
     noun: "picnic", event: "Picnic and a slow loop around the park", venue: "venue_big_spring_park", rainVenue: null,
     bring: ["A dish or snack to share", "A blanket"], dur: 120, fits: "a group picnic",
-    sched: [[0, "Meet at the main entrance"], [15, "Spread out the food"], [45, "Slow loop around the park"], [105, "Plan the next one"]],
+    sched: [[0, "Meet by the footbridge"], [15, "Spread out the food"], [45, "Slow loop around the park"], [105, "Plan the next one"]],
     icebreaker: "What's a dish from home you wish someone here made?",
   },
   west_african: {
     noun: "picnic", event: "Picnic and a slow loop around the park", venue: "venue_big_spring_park", rainVenue: null,
     bring: ["A snack to share", "A blanket"], dur: 120, fits: "a group picnic",
-    sched: [[0, "Meet at the main entrance"], [15, "Spread out the food"], [45, "Slow loop around the park"], [105, "Plan the next one"]],
+    sched: [[0, "Meet by the footbridge"], [15, "Spread out the food"], [45, "Slow loop around the park"], [105, "Plan the next one"]],
     icebreaker: "What's one place you have found here that you would recommend?",
   },
   sda: {

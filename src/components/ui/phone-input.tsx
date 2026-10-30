@@ -80,7 +80,7 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(function
             disabled={disabled}
             aria-describedby={describedBy}
             aria-invalid={invalid || undefined}
-            placeholder={nanp ? "(206) 555-0142" : "Phone number"}
+            placeholder={nanp ? "(256) 555-0142" : "Phone number"}
             value={nanp ? formatUsPhone(value) : value}
             onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, nanp ? 10 : 12))}
             className={cn(controlClass, "h-[52px] flex-1 tabular tracking-[0.01em]")}

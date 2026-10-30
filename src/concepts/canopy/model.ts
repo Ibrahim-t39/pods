@@ -9,8 +9,8 @@ import type { DbState, HangoutSuggestion, ID, Pod, Slot, Venue } from "@/lib/typ
 
 export type Hue = "ember" | "signal" | "grove";
 
-/** City words never reach the product chrome (playbook rule 5). "Hoopers" → "Hoopers". */
-const CITY = /\b(Seattle|Emerald City|Bellevue|Shoreline|Washington|UW)\b\s*·?\s*/g;
+/** City words never reach the product chrome (playbook rule 5). "Huntsville Hoopers" → "Hoopers". */
+const CITY = /\b(Huntsville|Rocket City|Madison|Decatur|Alabama|AAMU)\b\s*·?\s*/g;
 export function podWord(db: DbState, p: Pod): string {
   if (p.type === "community" && db.config.flags.maskCommunityInApp) return "Community";
   const n = p.name.replace(CITY, "").replace(/\s{2,}/g, " ").replace(/^[\s·]+|[\s·]+$/g, "").trim();
@@ -81,15 +81,15 @@ export function freeCounts(db: DbState, podId: ID): Record<Slot, number> {
 
 export function slotOf(iso: string): Slot {
   const d = new Date(iso);
-  const day = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "America/Los_Angeles" }).format(d);
-  const h = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: "America/Los_Angeles" }).format(d));
+  const day = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "America/Chicago" }).format(d);
+  const h = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: "America/Chicago" }).format(d));
   const part = h < 12 ? "morning" : h < 16 ? "afternoon" : "evening";
   if (day === "Sat") return `saturday-${part}` as Slot;
   if (day === "Sun") return `sunday-${part}` as Slot;
   return "wednesday-evening";
 }
 
-const fmt = (iso: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", ...o }).format(new Date(iso));
+const fmt = (iso: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", ...o }).format(new Date(iso));
 export const dayWord = (iso: string) => fmt(iso, { weekday: "long" });
 export const dateShort = (iso: string) => fmt(iso, { month: "short", day: "numeric" }).toLowerCase();
 export const timeShort = (iso: string) => fmt(iso, { hour: "numeric", minute: "2-digit" }).replace(":00", "").replace(" ", "").toLowerCase();

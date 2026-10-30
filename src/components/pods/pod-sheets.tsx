@@ -16,14 +16,14 @@ import { podPublicMembers } from "@/lib/db/selectors";
 import { podMemories } from "@/lib/platform/selectors";
 import { useClock } from "@/lib/time/clock";
 import { formatRelative } from "@/lib/time/format";
-import { toSeattleISO } from "@/lib/time/tz";
+import { toChicagoISO } from "@/lib/time/tz";
 import { firstName, planVM, shortDay } from "./model";
 import { InChip, memberLine } from "@/components/platform/kit";
 
 type SheetProps = { open: boolean; onOpenChange: (o: boolean) => void; podId: string; podName: string; hue: PodHueKey };
 
 export function MembersSheet({ open, onOpenChange, podId, podName, hue }: SheetProps) {
-  const iso = toSeattleISO(useClock(60_000).getTime());
+  const iso = toChicagoISO(useClock(60_000).getTime());
   const me = useDb((db) => db.me);
   const members = useDb(useCallback((db) => podPublicMembers(db, podId, iso), [podId, iso]));
   const going = useDb(useCallback((db) => planVM(db, podId)?.going ?? [], [podId]));

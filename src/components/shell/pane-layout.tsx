@@ -11,7 +11,7 @@
 // Usage (U7):
 //   <PaneLayout list={<PodList />} details={<PodDetailsPanel podId={id} />} detailsOpen={isDetailsRoute}
 //               onDetailsOpenChange={(o) => router.push(o ? `/app/pods/${id}/details` : `/app/pods/${id}`)}
-//               mobileFocus="main" listLabel="Your pods" mainLabel="Hoopers chat">
+//               mobileFocus="main" listLabel="Your pods" mainLabel="Huntsville Hoopers chat">
 //     <PodChat />
 //   </PaneLayout>
 // Each pane scrolls on its own at ≥768 (height = the main column), and in document flow on phones.

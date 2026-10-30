@@ -5,7 +5,7 @@ import { useStore, freshDb } from "@/lib/db/store";
 import { localRepo } from "@/lib/db/local";
 import { myMemberships } from "@/lib/db/selectors";
 
-async function signIn(phone = "(206) 555-0142") {
+async function signIn(phone = "(256) 555-0142") {
   const repo = localRepo();
   const ch = await repo.startPhoneAuth(phone);
   if (!ch.ok) throw new Error("no challenge");
@@ -19,7 +19,7 @@ describe("U6 onboarding repo", () => {
 
   it("previewPlacement is a dry run and real placement waits for approval", async () => {
     const repo = await signIn();
-    await repo.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-04", city: "Seattle" });
+    await repo.updateAbout({ first_name: "Chanda", nickname: null, date_of_birth: "2004-03-04", city: "Huntsville" });
     await repo.setInterests(["basketball", "guitar"]);
     await repo.setIdentity({ heritage: { level: "country", code: "ZM" }, faith: { level: "denomination", code: "sda" }, consent: true });
     await repo.acceptPledge();
@@ -42,8 +42,8 @@ describe("U6 onboarding repo", () => {
   });
 
   it("under 18: no account is kept and the phone is blocked", async () => {
-    const repo = await signIn("(206) 555-0177");
-    const r = await repo.updateAbout({ first_name: "Kid", nickname: null, date_of_birth: "2012-01-01", city: "Seattle" });
+    const repo = await signIn("(256) 555-0177");
+    const r = await repo.updateAbout({ first_name: "Kid", nickname: null, date_of_birth: "2012-01-01", city: "Huntsville" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.code).toBe("UNDERAGE");
     expect(useStore.getState().db.me).toBeNull();

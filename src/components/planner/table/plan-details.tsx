@@ -3,7 +3,7 @@
 // live elements with one name abort the transition. The sheet rises from the card's edge instead. Core's [podId] layout keeps the pod mounted underneath, so this is a sheet over
 // it: full height on a phone (drag the top down or tap ✕ to close), a margin card on a laptop so the pod stays in view.
 //
-//   header   Hoopers #1 · "Saturday pickup run" · Saturday. / 10am. / Miller Playfield.   (shared element plan-<id>)
+//   header   Hoopers #1 · "Saturday pickup run" · Saturday. / 10am. / Brahan Spring Park.   (shared element plan-<id>)
 //   blocks   The plan (schedule) · Bring · Rain backup · Why this plan       (each `settle`s in as a slow scroll reaches it)
 //   foot     ●●●○ 3 of 8 in                                       [I'm in]  (glass bar; ticks to 4 of 8 + Locked)
 //

@@ -14,7 +14,7 @@ import type { DbState } from "@/lib/types";
 import { buildSeed, SEED_VERSION } from "@/data/seed";
 import { buildLiveSeed, LIVE_SEED_VERSION } from "@/data/live-seed";
 import { DB_KEYS, MODE_KEY, modeFromSearch, readModePref, resolveInitialMode, writeModePref, type AppMode } from "@/lib/mode/mode";
-import { toSeattleISO } from "@/lib/time/tz";
+import { toChicagoISO } from "@/lib/time/tz";
 import { DEMO } from "@/config/demo";
 import { AppConfigSchema } from "@/config";
 import { hash32 } from "@/lib/ids";
@@ -46,14 +46,14 @@ export interface StoreState {
 
 /** A fresh database for a mode. Live reads the real clock, so call it on the client only. */
 export function freshDb(mode: AppMode = "demo"): DbState {
-  if (mode === "live") return buildLiveSeed(toSeattleISO(typeof window === "undefined" ? Date.parse(DEMO.anchor) : Date.now()));
+  if (mode === "live") return buildLiveSeed(toChicagoISO(typeof window === "undefined" ? Date.parse(DEMO.anchor) : Date.now()));
   return buildSeed(DEMO.anchor);
 }
 
 /** Live runs on the real clock: re-anchor virtual time to real time at boot (Demo keeps its pinned clock). */
 function realClock(): DbState["clock"] {
   const t = Date.now();
-  return { virtual_at: toSeattleISO(t), real_at: t };
+  return { virtual_at: toChicagoISO(t), real_at: t };
 }
 
 // ── Storage: localStorage with in-memory fallback ─────────────────────
